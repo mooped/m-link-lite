@@ -30,17 +30,6 @@
 #include "rom/crc.h"
 #include "event.h"
 
-/* ESPNOW can work in both station and softap mode. It is configured in menuconfig. */
-#if CONFIG_STATION_MODE
-#define ESPNOW_WIFI_MODE WIFI_MODE_STA
-#define ESPNOW_WIFI_IF   ESP_IF_WIFI_STA
-#else
-#define ESPNOW_WIFI_MODE WIFI_MODE_AP
-#define ESPNOW_WIFI_IF   ESP_IF_WIFI_AP
-#endif
-
-#define IS_BROADCAST_ADDR(addr) (memcmp(addr, example_broadcast_mac, ESP_NOW_ETH_ALEN) == 0)
-
 static const char *TAG = "m-link";
 
 static xQueueHandle transport_event_queue;
@@ -302,6 +291,13 @@ static esp_err_t transport_espnow_init(void)
 {
     mlink_send_param_t *send_param;
 
+    transport_event_queue = xQueueCreate(EVENT_QUEUE_SIZE, sizeof(mlink_event_t));
+    if (transport_event_queue == NULL) {
+        ESP_LOGE(TAG, "Create mutex fail");
+        return ESP_FAIL;
+    }
+
+
     /* Initialize ESPNOW and register sending and receiving callback function. */
     ESP_ERROR_CHECK( esp_now_init() );
     ESP_ERROR_CHECK( esp_now_register_send_cb(mlink_send_cb) );
@@ -314,6 +310,7 @@ static esp_err_t transport_espnow_init(void)
     esp_now_peer_info_t *peer = malloc(sizeof(esp_now_peer_info_t));
     if (peer == NULL) {
         ESP_LOGE(TAG, "Malloc peer information fail");
+        vSemaphoreDelete(transport_event_queue);
         esp_now_deinit();
         return ESP_FAIL;
     }
@@ -330,6 +327,7 @@ static esp_err_t transport_espnow_init(void)
     memset(send_param, 0, sizeof(mlink_send_param_t));
     if (send_param == NULL) {
         ESP_LOGE(TAG, "Malloc send parameter fail");
+        vSemaphoreDelete(transport_event_queue);
         esp_now_deinit();
         return ESP_FAIL;
     }
@@ -343,6 +341,7 @@ static esp_err_t transport_espnow_init(void)
     send_param->buffer = malloc(CONFIG_ESPNOW_SEND_LEN);
     if (send_param->buffer == NULL) {
         ESP_LOGE(TAG, "Malloc send buffer fail");
+        vSemaphoreDelete(transport_event_queue);
         free(send_param);
         esp_now_deinit();
         return ESP_FAIL;
@@ -359,13 +358,12 @@ static void transport_espnow_deinit(mlink_send_param_t *send_param)
 {
     free(send_param->buffer);
     free(send_param);
+    vSemaphoreDelete(transport_event_queue);
     esp_now_deinit();
 }
 
-esp_err_t transport_init(xQueueHandle event_queue)
+esp_err_t transport_init(void)
 {
-  transport_event_queue = event_queue;
-
   transport_wifi_init();
   return transport_espnow_init();
 }

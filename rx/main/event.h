@@ -12,6 +12,19 @@
 
 #include "esp_now.h"
 
+/* ESPNOW can work in both station and softap mode. It is configured in menuconfig. */
+#if CONFIG_STATION_MODE
+#define ESPNOW_WIFI_MODE WIFI_MODE_STA
+#define ESPNOW_WIFI_IF   ESP_IF_WIFI_STA
+#else
+#define ESPNOW_WIFI_MODE WIFI_MODE_AP
+#define ESPNOW_WIFI_IF   ESP_IF_WIFI_AP
+#endif
+
+#define EVENT_QUEUE_SIZE  6
+
+#define IS_BROADCAST_ADDR(addr) (memcmp(addr, example_broadcast_mac, ESP_NOW_ETH_ALEN) == 0)
+
 typedef enum {
     ESPNOW_SEND_CB,
     ESPNOW_RECV_CB,
@@ -68,6 +81,6 @@ typedef struct {
     uint8_t dest_mac[ESP_NOW_ETH_ALEN];   //MAC address of destination device.
 } mlink_send_param_t;
 
-esp_err_t transport_init(xQueueHandle event_queue);
+esp_err_t transport_init(void);
 
 #endif

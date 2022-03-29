@@ -22,30 +22,17 @@
 #include "esp_system.h"
 #include "esp_err.h"
 
-//#include "esp8266/gpio_register.h"
-//#include "esp8266/pin_mux_register.h"
-
 #include "rx-pwm.h"
 #include "event.h"
 
-#define EVENT_QUEUE_SIZE  6
-
 static const char *TAG = "m-link-rx-pwm";
-
-static xQueueHandle transport_event_queue;
 
 void app_main()
 {
   // Initialize NVS
   ESP_ERROR_CHECK( nvs_flash_init() );
 
-  transport_event_queue = xQueueCreate(EVENT_QUEUE_SIZE, sizeof(mlink_event_t));
-  if (transport_event_queue == NULL) {
-      ESP_LOGE(TAG, "Create mutex fail");
-      return;
-  }
-
-  ESP_ERROR_CHECK( transport_init(transport_event_queue) );
+  ESP_ERROR_CHECK( transport_init() );
 
   rx_pwm_init();
 
