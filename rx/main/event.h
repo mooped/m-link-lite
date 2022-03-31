@@ -23,7 +23,7 @@
 
 #define EVENT_QUEUE_SIZE  6
 
-#define IS_BROADCAST_ADDR(addr) (memcmp(addr, example_broadcast_mac, ESP_NOW_ETH_ALEN) == 0)
+#define IS_BROADCAST_ADDR(addr) (memcmp(addr, mlink_broadcast_mac, ESP_NOW_ETH_ALEN) == 0)
 
 typedef enum {
     ESPNOW_SEND_CB,
@@ -81,6 +81,8 @@ typedef struct {
     uint8_t dest_mac[ESP_NOW_ETH_ALEN];   //MAC address of destination device.
 } mlink_send_param_t;
 
-esp_err_t transport_init(void);
+esp_err_t transport_init(void (*parse_cb)(void*, size_t), void (*sent_cb)(void));
+
+esp_err_t transport_send(void* packet, size_t len);
 
 #endif

@@ -24,15 +24,32 @@
 
 #include "rx-pwm.h"
 #include "event.h"
+#include "mlink.h"
 
 static const char *TAG = "m-link-rx-pwm";
+
+#define ROLE_TX 0
+#define ROLE_RX 1
+
+#define ROLE ROLE_RX
+
+#if ROLE == ROLE_RX
+void parse_cb(void* data, size_t length)
+{
+
+}
+
+void sent_cb(void)
+{
+
+}
 
 void app_main()
 {
   // Initialize NVS
   ESP_ERROR_CHECK( nvs_flash_init() );
 
-  ESP_ERROR_CHECK( transport_init() );
+  ESP_ERROR_CHECK( transport_init(&parse_cb, &sent_cb) );
 
   rx_pwm_init();
 
@@ -54,4 +71,6 @@ void app_main()
       vTaskDelay(1000 / portTICK_RATE_MS);
     }
 }
+#elif ROLE == ROLE_TX
 
+#endif

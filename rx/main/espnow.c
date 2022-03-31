@@ -34,7 +34,10 @@ static const char *TAG = "m-link";
 
 static xQueueHandle transport_event_queue;
 
-static uint8_t example_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+static void (*transport_parse_cb)(void*, size_t length) = NULL;
+static void (*transport_sent_cb)(void) = NULL;
+
+static uint8_t mlink_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 static uint16_t s_mlink_seq[MLINK_DATA_MAX] = { 0, 0 };
 
 static void transport_espnow_deinit(mlink_send_param_t *send_param);
@@ -318,7 +321,7 @@ static esp_err_t transport_espnow_init(void)
     peer->channel = CONFIG_ESPNOW_CHANNEL;
     peer->ifidx = ESPNOW_WIFI_IF;
     peer->encrypt = false;
-    memcpy(peer->peer_addr, example_broadcast_mac, ESP_NOW_ETH_ALEN);
+    memcpy(peer->peer_addr, mlink_broadcast_mac, ESP_NOW_ETH_ALEN);
     ESP_ERROR_CHECK( esp_now_add_peer(peer) );
     free(peer);
 
@@ -346,7 +349,7 @@ static esp_err_t transport_espnow_init(void)
         esp_now_deinit();
         return ESP_FAIL;
     }
-    memcpy(send_param->dest_mac, example_broadcast_mac, ESP_NOW_ETH_ALEN);
+    memcpy(send_param->dest_mac, mlink_broadcast_mac, ESP_NOW_ETH_ALEN);
     mlink_data_prepare(send_param);
 
     xTaskCreate(mlink_task, "mlink_task", 2048, send_param, 4, NULL);
@@ -362,8 +365,16 @@ static void transport_espnow_deinit(mlink_send_param_t *send_param)
     esp_now_deinit();
 }
 
-esp_err_t transport_init(void)
+esp_err_t transport_init(void (*parse_cb)(void*, size_t), void (*sent_cb)(void))
 {
+  if (parse_cb == NULL || sent_cb == NULL)
+  {
+    return ESP_FAIL;
+  }
+
+  transport_parse_cb = parse_cb;
+  transport_sent_cb = sent_cb;
+
   transport_wifi_init();
   return transport_espnow_init();
 }
