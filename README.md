@@ -4,6 +4,13 @@ M-Link is a receiver and transmitter firmware for combat robotics based on the E
 
 The M-Link hardware currently consists of a receiver and triple ESC PCB with two auxiliary servo outputs, and a transmitter module with a form factor to fit the Hitec Aurora 9 radio handset.
 
+Channel assignments:
+
+Channels 1, 2, and 3 control motor outputs 1, 2, and 3.
+Channels 4, and 5 control the auxiliary servo outputs 4, and 5.
+Channels 6, 7, and 8 set the respective motors into brake mode.
+Channel 9 is used by the transmitter to enter bind mode.
+
 The M-Link protocol follows the following flow:
 
 Transmitter:
