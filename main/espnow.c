@@ -400,6 +400,32 @@ esp_err_t transport_init(void (*parse_cb)(uint8_t[ESP_NOW_ETH_ALEN], void*, size
   return transport_espnow_init();
 }
 
+esp_err_t transport_add_peer(uint8_t mac_addr[ESP_NOW_ETH_ALEN])
+{
+  // Add a peer if we've not already
+  if (esp_now_is_peer_exist(mac_addr) == false)
+  {
+    esp_now_peer_info_t* peer = malloc(sizeof(esp_now_peer_info_t));
+    if (peer != NULL)
+    {
+ 	    ESP_LOGI(TAG, "Add peer "MACSTR".", MAC2STR(mac_addr));
+      memset(peer, 0, sizeof(esp_now_peer_info_t));
+      peer->channel = CONFIG_ESPNOW_CHANNEL;
+      peer->ifidx = ESPNOW_WIFI_IF;
+      peer->encrypt = false;
+      memcpy(peer->peer_addr, mac_addr, ESP_NOW_ETH_ALEN);
+      ESP_ERROR_CHECK( esp_now_add_peer(peer) );
+      free(peer);
+    }
+    else
+    {
+      ESP_LOGE(TAG, "Malloc peer information fail.");
+      return ESP_FAIL;
+    }
+  }
+  return ESP_OK;
+}
+
 esp_err_t transport_send(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* packet, size_t len)
 {
   send_param->broadcast = true;

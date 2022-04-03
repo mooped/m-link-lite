@@ -146,29 +146,29 @@ void rx_task(void* args)
         // Received a beacon packet from the TX, complete handshake
         case RX_EVENT_BEACON_RECEIVED:
         {
+          // Turn on the LED
           rx_pwm_set_led(1);
+
+          // Transmit RX beacon so the TX can start sending unicast
+          // TODO: Only do this if we're bound to this TX
+          if (!tx_beacon_received && xSemaphoreTake(rx_send_semaphore, 0))
+          {
+            ESP_LOGI(TAG, "Send RX beacon.");
+            transport_add_peer(tx_unicast_mac);
+            mlink_packet_t packet;
+            packet.type = MLINK_BEACON;
+            packet.beacon.type = MLINK_BEACON_RX;
+            transport_send(tx_unicast_mac, &packet, sizeof(packet));
+          }
+          else
+          {
+            ESP_LOGI(TAG, "No control packet sent.");
+          }
+
           tx_beacon_received = true;
         } break;
       }
     }
-    /*
-    // No control packet or TX beacon received in 500ms send a RX beacon
-    else
-    {
-      if (xSemaphoreTake(rx_send_semaphore, 0))
-      {
-        ESP_LOGI(TAG, "Send RX beacon (no TX beacon received).");
-        mlink_packet_t packet;
-        packet.type = MLINK_BEACON;
-        packet.beacon.type = MLINK_BEACON_RX;
-        transport_send(mlink_broadcast_mac, &packet, sizeof(packet));
-      }
-      else
-      {
-        ESP_LOGI(TAG, "No control packet sent.");
-      }
-    }
-    */
   }
 }
 
@@ -327,7 +327,7 @@ void tx_task(void* args)
             }
           }
           // Otherwise send a TX beacon
-          else
+          else if (!rx_beacon_received)
           {
             if (xSemaphoreTake(tx_send_semaphore, 0))
             {
@@ -350,12 +350,14 @@ void tx_task(void* args)
         // Received a beacon from the RX, complete handshake
         case TX_EVENT_BEACON_RECEIVED:
         {
+          // Add the RX as a peer
           rx_beacon_received = true;
+          transport_add_peer(rx_unicast_mac);
         } break;
       }
     }
     // No PPM packet or RX beacon received in 500ms send a TX beacon
-    else
+    else if (!rx_beacon_received)
     {
       if (xSemaphoreTake(tx_send_semaphore, 0))
       {

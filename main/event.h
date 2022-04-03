@@ -83,6 +83,8 @@ typedef struct {
 
 esp_err_t transport_init(void (*parse_cb)(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void*, size_t), void (*sent_cb)(void));
 
+esp_err_t transport_add_peer(uint8_t mac_addr[ESP_NOW_ETH_ALEN]);
+
 esp_err_t transport_send(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* packet, size_t len);
 
 #endif
