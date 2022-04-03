@@ -94,11 +94,11 @@ void ppm_cb(uint16_t channels[PPM_NUM_CHANNELS])
 void app_main()
 {
   // Initialize NVS
-  ESP_ERROR_CHECK( nvs_flash_init() );
+  //ESP_ERROR_CHECK( nvs_flash_init() );
 
-  ESP_ERROR_CHECK( transport_init(&parse_cb, &sent_cb) );
+  //ESP_ERROR_CHECK( transport_init(&parse_cb, &sent_cb) );
 
-  tx_pwm_init();
+  //tx_pwm_init();
 
   tx_ppm_init(&ppm_cb);
 
