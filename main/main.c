@@ -31,7 +31,7 @@
 #define ROLE_TX 0
 #define ROLE_RX 1
 
-#define ROLE ROLE_RX
+#define ROLE ROLE_TX
 
 #if ROLE == ROLE_RX
 static const char *TAG = "m-link-rx-main";
@@ -63,7 +63,7 @@ void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
       {
         ESP_LOGI(TAG, "TX beacon received.");
         // Copy TX mac address
-        //memcpy(tx_unicast_mac, mac_addr, sizeof(tx_unicast_mac));
+        memcpy(tx_unicast_mac, mac_addr, sizeof(tx_unicast_mac));
         // Send an event to inform the TX control task
         event = RX_EVENT_BEACON_RECEIVED;
         if (xQueueSend(rx_control_queue, &event, portMAX_DELAY) != pdTRUE)
@@ -98,11 +98,18 @@ void sent_cb(void)
   xSemaphoreGive(rx_send_semaphore);
 }
 
-int motor_translate(uint16_t value)
+int motor_translate(uint16_t value, uint16_t brake_value)
 {
-  value = (value > 3500) ? (value - 3500) : 0;
-  value = (value < 4096) ? (value / 4) : 1024;
-  return ((int)value) -  512;
+  if (brake_value < 6000)
+  {
+    value = (value > 3500) ? (value - 3500) : 0;
+    value = (value < 4096) ? (value / 4) : 1024;
+    return ((int)value) - 512;
+  }
+  else
+  {
+    return 512;
+  }
 }
 
 void rx_task(void* args)
@@ -125,14 +132,14 @@ void rx_task(void* args)
             rx_controls.motors[2],
             rx_controls.servos[0],
             rx_controls.servos[1],
-            motor_translate(rx_controls.motors[0]),
-            motor_translate(rx_controls.motors[1]),
-            motor_translate(rx_controls.motors[2])
+            motor_translate(rx_controls.motors[0], rx_controls.brakes[0]),
+            motor_translate(rx_controls.motors[1], rx_controls.brakes[1]),
+            motor_translate(rx_controls.motors[2], rx_controls.brakes[2])
           );
           rx_pwm_set_motors(
-            motor_translate(rx_controls.motors[0]),
-            motor_translate(rx_controls.motors[1]),
-            motor_translate(rx_controls.motors[2])
+            motor_translate(rx_controls.motors[0], rx_controls.brakes[0]),
+            motor_translate(rx_controls.motors[1], rx_controls.brakes[1]),
+            motor_translate(rx_controls.motors[2], rx_controls.brakes[2])
           );
           rx_pwm_update();
         } break;
@@ -198,12 +205,15 @@ typedef enum
 }
 tx_event_t;
 
-#define CHANNEL_M1    0
-#define CHANNEL_M2    1
-#define CHANNEL_M3    2
-#define CHANNEL_AUX1  3
-#define CHANNEL_AUX2  4
-#define CHANNEL_BIND  8
+#define CHANNEL_M1      0
+#define CHANNEL_M2      1
+#define CHANNEL_M3      2
+#define CHANNEL_AUX1    3
+#define CHANNEL_AUX2    4
+#define CHANNEL_BRAKE1  5
+#define CHANNEL_BRAKE2  6
+#define CHANNEL_BRAKE3  7
+#define CHANNEL_BIND    8
 
 static uint32_t controls[PPM_NUM_CHANNELS] = { 0 };
 static uint8_t rx_unicast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
@@ -222,7 +232,7 @@ static void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t leng
       {
         ESP_LOGI(TAG, "RX beacon received.");
         // Copy RX mac address
-        //memcpy(rx_unicast_mac, mac_addr, sizeof(rx_unicast_mac));
+        memcpy(rx_unicast_mac, mac_addr, sizeof(rx_unicast_mac));
         // Send an event to inform the TX control task
         event = TX_EVENT_BEACON_RECEIVED;
         if (xQueueSend(tx_control_queue, &event, portMAX_DELAY) != pdTRUE)
@@ -304,6 +314,9 @@ void tx_task(void* args)
               packet.control.motors[0] = controls[CHANNEL_M1];
               packet.control.motors[1] = controls[CHANNEL_M2];
               packet.control.motors[2] = controls[CHANNEL_M3];
+              packet.control.brakes[0] = controls[CHANNEL_BRAKE1];
+              packet.control.brakes[1] = controls[CHANNEL_BRAKE2];
+              packet.control.brakes[2] = controls[CHANNEL_BRAKE3];
               packet.control.servos[0] = controls[CHANNEL_AUX1];
               packet.control.servos[1] = controls[CHANNEL_AUX2];
               transport_send(rx_unicast_mac, &packet, sizeof(packet));

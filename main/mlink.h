@@ -20,7 +20,7 @@ typedef struct
 typedef struct
 {
   uint16_t motors[3];               // Motor control data
-  //uint16_t brake[3];                // Motor brake data
+  uint16_t brakes[3];                // Motor brake data
   uint16_t servos[2];               // Servo control data
 } __attribute__((packed)) mlink_control_t;
 
