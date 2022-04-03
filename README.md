@@ -34,9 +34,15 @@ Receiver:
    |    10s Elapsed?                     Process Control Inputs      |
    N <-------|-------> Y                                             |
          ------------->|                                             |
+        |              |                                             |
         |              V                                             |
         |     TX Beacon Received?                                    |
         N <------------|-----------> Y                               |
                                      |                               |
                                      V                               |
-                               Store TX MAC -------------------------
+                               Store TX MAC                          |
+                                     |                               |
+                                     V                               |
+                               Send RX Beacon                        |
+                                     |                               |
+                                     --------------------------------

@@ -25,6 +25,8 @@
 
 #define IS_BROADCAST_ADDR(addr) (memcmp(addr, mlink_broadcast_mac, ESP_NOW_ETH_ALEN) == 0)
 
+extern uint8_t mlink_broadcast_mac[ESP_NOW_ETH_ALEN];
+
 typedef enum {
   ESPNOW_SEND_CB,
   ESPNOW_RECV_CB,
@@ -62,7 +64,6 @@ enum {
 typedef struct {
   uint8_t type;                         // Broadcast or unicast ESPNOW data.
   uint16_t crc;                         // CRC16 value of ESPNOW data.
-  uint8_t payload_type;                 // Payload packet type
   uint8_t length;                       // Length of payload data
   uint8_t payload[0];                   // Real payload of ESPNOW data.
 } __attribute__((packed)) mlink_data_t;

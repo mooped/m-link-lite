@@ -37,9 +37,11 @@ static xQueueHandle transport_event_queue;
 static void (*transport_parse_cb)(uint8_t[ESP_NOW_ETH_ALEN], void*, size_t length) = NULL;
 static void (*transport_sent_cb)(void) = NULL;
 
-static uint8_t mlink_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+uint8_t mlink_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
 static void transport_espnow_deinit(mlink_send_param_t *send_param);
+
+static mlink_send_param_t* send_param = NULL;
 
 /* WiFi should start before using ESPNOW */
 static void transport_wifi_init(void)
@@ -132,7 +134,7 @@ int mlink_data_parse(uint8_t mac_addr[ESP_NOW_ETH_ALEN], uint8_t *data, uint16_t
     {
         if (transport_parse_cb)
         {
-          (*transport_parse_cb)(mac_addr, buf->payload, buf->length);
+          (*transport_parse_cb)(mac_addr, buf->payload, data_len - sizeof(mlink_data_t));
         }
         return buf->type;
     }
@@ -141,10 +143,12 @@ int mlink_data_parse(uint8_t mac_addr[ESP_NOW_ETH_ALEN], uint8_t *data, uint16_t
 }
 
 /* Prepare ESPNOW data to be sent. */
-void mlink_data_prepare(mlink_send_param_t *send_param)
+void mlink_data_prepare(mlink_send_param_t *send_param, uint8_t* payload, size_t payload_length)
 {
     mlink_data_t *buf = (mlink_data_t *)send_param->buffer;
     int i = 0;
+
+    send_param->len = sizeof(mlink_data_t) + payload_length;
 
     assert(send_param->len >= sizeof(mlink_data_t));
 
@@ -152,7 +156,7 @@ void mlink_data_prepare(mlink_send_param_t *send_param)
     buf->crc = 0;
     for (i = 0; i < send_param->len - sizeof(mlink_data_t); i++)
     {
-        buf->payload[i] = (uint8_t)esp_random();
+        buf->payload[i] = payload[i];
     }
     buf->crc = crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
 }
@@ -166,17 +170,17 @@ static void mlink_task(void *pvParameter)
     bool is_broadcast = false;
     int ret;
 
-    vTaskDelay(5000 / portTICK_RATE_MS);
-    ESP_LOGI(TAG, "Start sending broadcast data");
-
-    /* Start sending broadcast ESPNOW data. */
-    mlink_send_param_t *send_param = (mlink_send_param_t *)pvParameter;
-    if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK)
-    {
-        ESP_LOGE(TAG, "Send error");
-        transport_espnow_deinit(send_param);
-        vTaskDelete(NULL);
-    }
+//    vTaskDelay(5000 / portTICK_RATE_MS);
+//    ESP_LOGI(TAG, "Start sending broadcast data");
+//
+//    /* Start sending broadcast ESPNOW data. */
+//    mlink_send_param_t *send_param = (mlink_send_param_t *)pvParameter;
+//    if (esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len) != ESP_OK)
+//    {
+//        ESP_LOGE(TAG, "Send error");
+//        transport_espnow_deinit(send_param);
+//        vTaskDelete(NULL);
+//    }
 
     while (xQueueReceive(transport_event_queue, &evt, portMAX_DELAY) == pdTRUE)
     {
@@ -307,8 +311,6 @@ static void mlink_task(void *pvParameter)
 
 static esp_err_t transport_espnow_init(void)
 {
-    mlink_send_param_t *send_param;
-
     transport_event_queue = xQueueCreate(EVENT_QUEUE_SIZE, sizeof(mlink_event_t));
     if (transport_event_queue == NULL)
     {
@@ -368,7 +370,7 @@ static esp_err_t transport_espnow_init(void)
         return ESP_FAIL;
     }
     memcpy(send_param->dest_mac, mlink_broadcast_mac, ESP_NOW_ETH_ALEN);
-    mlink_data_prepare(send_param);
+    mlink_data_prepare(send_param, NULL, 0);
 
     xTaskCreate(mlink_task, "mlink_task", 2048, send_param, 4, NULL);
 
@@ -379,6 +381,7 @@ static void transport_espnow_deinit(mlink_send_param_t *send_param)
 {
     free(send_param->buffer);
     free(send_param);
+    send_param = NULL;
     vSemaphoreDelete(transport_event_queue);
     esp_now_deinit();
 }
@@ -399,14 +402,12 @@ esp_err_t transport_init(void (*parse_cb)(uint8_t[ESP_NOW_ETH_ALEN], void*, size
 
 esp_err_t transport_send(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* packet, size_t len)
 {
-  mlink_send_param_t* send_param = (mlink_send_param_t*)malloc(sizeof(mlink_send_param_t));
   send_param->broadcast = true;
-  send_param->len = len;
-  send_param->buffer = packet;
-  mlink_data_prepare(send_param);
+  mlink_data_prepare(send_param, packet, len);
   esp_err_t ret = esp_now_send(send_param->dest_mac, send_param->buffer, send_param->len);
   if (ret != ESP_OK)
   {
+    ESP_ERROR_CHECK(ret);
     ESP_LOGE(TAG, "Send error");
   }
   free(send_param);

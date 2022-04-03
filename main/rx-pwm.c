@@ -115,7 +115,6 @@ void rx_pwm_set_motors(int m1, int m2, int m3)
 
 void rx_pwm_set_led(int status)
 {
-  ESP_LOGI(TAG, "PWM update duty %d\n", status);
   duties[PWM_LED_CHANNEL] = status ? 0 : PWM_PERIOD;
 }
 
