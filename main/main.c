@@ -31,7 +31,7 @@
 #define ROLE_TX 0
 #define ROLE_RX 1
 
-#define ROLE ROLE_TX
+#define ROLE ROLE_RX
 
 #if ROLE == ROLE_RX
 static const char *TAG = "m-link-rx-main";
@@ -44,11 +44,24 @@ typedef enum
   RX_EVENT_CONTROL_UPDATE,
   RX_EVENT_BEACON_RECEIVED,
 }
+rx_event_type_t;
+
+typedef struct
+{
+  rx_event_type_t type;
+  union
+  {
+    mlink_control_t controls;
+    struct
+    {
+      uint8_t mac[ESP_NOW_ETH_ALEN];
+    } beacon;
+  };
+}
 rx_event_t;
 
 static uint8_t tx_unicast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 static uint8_t tx_beacon_received = 0;
-static mlink_control_t rx_controls;
 
 void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
 {
@@ -62,10 +75,9 @@ void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
       if (packet->beacon.type & MLINK_BEACON_TX)
       {
         ESP_LOGI(TAG, "TX beacon received.");
-        // Copy TX mac address
-        memcpy(tx_unicast_mac, mac_addr, sizeof(tx_unicast_mac));
-        // Send an event to inform the TX control task
-        event = RX_EVENT_BEACON_RECEIVED;
+        // Send an event to the RX task with the beacon MAC address
+        event.type = RX_EVENT_BEACON_RECEIVED;
+        memcpy(event.beacon.mac, mac_addr, sizeof(tx_unicast_mac));
         if (xQueueSend(rx_control_queue, &event, portMAX_DELAY) != pdTRUE)
         {
           ESP_LOGW(TAG, "Control event queue fail.");
@@ -78,8 +90,9 @@ void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
     } break;
     case MLINK_CONTROL:
     {
-      memcpy(&rx_controls, &(packet->control), sizeof(mlink_control_t));
-      event = RX_EVENT_CONTROL_UPDATE;
+      // Send an event to the RX task with the control data
+      event.type = RX_EVENT_CONTROL_UPDATE;
+      memcpy(&event.controls, &(packet->control), sizeof(mlink_control_t));
       if (xQueueSend(rx_control_queue, &event, portMAX_DELAY) != pdTRUE)
       {
         ESP_LOGW(TAG, "Control event queue fail.");
@@ -87,7 +100,7 @@ void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
     } break;
     case MLINK_TELEMETRY:
     {
-      ESP_LOGI(TAG, "Telemetry packet received - ignoring");
+      ESP_LOGW(TAG, "Telemetry packet not expected by RX!");
     } break;
   }
 }
@@ -121,25 +134,25 @@ void rx_task(void* args)
     // Wait for events, waking up every 500ms if nothing has happened
     if (xQueueReceive(rx_control_queue, &event, 500 / portTICK_PERIOD_MS))
     {
-      switch (event)
+      switch (event.type)
       {
         // Received a control packet
         case RX_EVENT_CONTROL_UPDATE:
         {
           ESP_LOGI(TAG, "Control packet received %d %d %d %d %d -> %d %d %d",
-            rx_controls.motors[0],
-            rx_controls.motors[1],
-            rx_controls.motors[2],
-            rx_controls.servos[0],
-            rx_controls.servos[1],
-            motor_translate(rx_controls.motors[0], rx_controls.brakes[0]),
-            motor_translate(rx_controls.motors[1], rx_controls.brakes[1]),
-            motor_translate(rx_controls.motors[2], rx_controls.brakes[2])
+            event.controls.motors[0],
+            event.controls.motors[1],
+            event.controls.motors[2],
+            event.controls.servos[0],
+            event.controls.servos[1],
+            motor_translate(event.controls.motors[0], event.controls.brakes[0]),
+            motor_translate(event.controls.motors[1], event.controls.brakes[1]),
+            motor_translate(event.controls.motors[2], event.controls.brakes[2])
           );
           rx_pwm_set_motors(
-            motor_translate(rx_controls.motors[0], rx_controls.brakes[0]),
-            motor_translate(rx_controls.motors[1], rx_controls.brakes[1]),
-            motor_translate(rx_controls.motors[2], rx_controls.brakes[2])
+            motor_translate(event.controls.motors[0], event.controls.brakes[0]),
+            motor_translate(event.controls.motors[1], event.controls.brakes[1]),
+            motor_translate(event.controls.motors[2], event.controls.brakes[2])
           );
           rx_pwm_update();
         } break;
@@ -154,6 +167,7 @@ void rx_task(void* args)
           if (!tx_beacon_received && xSemaphoreTake(rx_send_semaphore, 0))
           {
             ESP_LOGI(TAG, "Send RX beacon.");
+            memcpy(tx_unicast_mac, event.beacon.mac, sizeof(tx_unicast_mac));
             transport_add_peer(tx_unicast_mac);
             mlink_packet_t packet;
             packet.type = MLINK_BEACON;
@@ -162,7 +176,7 @@ void rx_task(void* args)
           }
           else
           {
-            ESP_LOGI(TAG, "No control packet sent.");
+            ESP_LOGI(TAG, "No RX beacon packet sent.");
           }
 
           tx_beacon_received = true;
@@ -203,6 +217,23 @@ typedef enum
   TX_EVENT_CONTROL_UPDATE,
   TX_EVENT_BEACON_RECEIVED,
 }
+tx_event_type_t;
+
+typedef struct
+{
+  tx_event_type_t type;
+  union
+  {
+    struct
+    {
+      uint32_t channels[PPM_NUM_CHANNELS];
+    } controls;
+    struct
+    {
+      uint8_t mac[ESP_NOW_ETH_ALEN];
+    } beacon;
+  };
+}
 tx_event_t;
 
 #define CHANNEL_M1      0
@@ -215,7 +246,6 @@ tx_event_t;
 #define CHANNEL_BRAKE3  7
 #define CHANNEL_BIND    8
 
-static uint32_t controls[PPM_NUM_CHANNELS] = { 0 };
 static uint8_t rx_unicast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 static uint8_t rx_beacon_received = 0;
 static uint8_t bind_mode = 0;
@@ -231,10 +261,9 @@ static void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t leng
       if (packet->beacon.type & MLINK_BEACON_RX)
       {
         ESP_LOGI(TAG, "RX beacon received.");
-        // Copy RX mac address
-        memcpy(rx_unicast_mac, mac_addr, sizeof(rx_unicast_mac));
         // Send an event to inform the TX control task
-        event = TX_EVENT_BEACON_RECEIVED;
+        event.type = TX_EVENT_BEACON_RECEIVED;
+        memcpy(event.beacon.mac, mac_addr, sizeof(rx_unicast_mac));
         if (xQueueSend(tx_control_queue, &event, portMAX_DELAY) != pdTRUE)
         {
           ESP_LOGW(TAG, "Control event queue fail.");
@@ -247,11 +276,11 @@ static void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t leng
     } break;
     case MLINK_CONTROL:
     {
-      ESP_LOGI(TAG, "Control packet received - ignoring");
+      ESP_LOGW(TAG, "Control packet not expected by TX!");
     } break;
     case MLINK_TELEMETRY:
     {
-      ESP_LOGI(TAG, "Telemetry packet received - ignoring");
+      ESP_LOGI(TAG, "Telemetry packet received - not yet implemented");
     } break;
   }
 }
@@ -281,8 +310,9 @@ static void ppm_cb(uint32_t channels[PPM_NUM_CHANNELS])
     );
   }
 
-  tx_event_t event = TX_EVENT_CONTROL_UPDATE;
-  memcpy(controls, channels, sizeof(controls));
+  tx_event_t event;
+  event.type = TX_EVENT_CONTROL_UPDATE;
+  memcpy(event.controls.channels, channels, sizeof(event.controls.channels));
   if (xQueueSend(tx_control_queue, &event, portMAX_DELAY) != pdTRUE)
   {
     ESP_LOGW(TAG, "Control event queue fail.");
@@ -298,27 +328,32 @@ void tx_task(void* args)
     // Wait for events, waking up every 500ms if nothing has happened
     if (xQueueReceive(tx_control_queue, &event, 500 / portTICK_PERIOD_MS))
     {
-      switch (event)
+      switch (event.type)
       {
         // Received a PPM frame
         case TX_EVENT_CONTROL_UPDATE:
         {
+          // Extract the channel data
+          const uint32_t* channels = event.controls.channels;
+          // Set bind mode if requested
+          bind_mode = channels[CHANNEL_BIND] >= 6000;
           // If we're not in bind mode and the RX handshake is complete, send a control packet
-          if (!bind_mode)// && rx_beacon_received)
+          if (!bind_mode && rx_beacon_received)
           {
             if (xSemaphoreTake(tx_send_semaphore, 0))
             {
               ESP_LOGI(TAG, "Send control packet.");
+              // Fill out and send control packet
               mlink_packet_t packet;
               packet.type = MLINK_CONTROL;
-              packet.control.motors[0] = controls[CHANNEL_M1];
-              packet.control.motors[1] = controls[CHANNEL_M2];
-              packet.control.motors[2] = controls[CHANNEL_M3];
-              packet.control.brakes[0] = controls[CHANNEL_BRAKE1];
-              packet.control.brakes[1] = controls[CHANNEL_BRAKE2];
-              packet.control.brakes[2] = controls[CHANNEL_BRAKE3];
-              packet.control.servos[0] = controls[CHANNEL_AUX1];
-              packet.control.servos[1] = controls[CHANNEL_AUX2];
+              packet.control.motors[0] = channels[CHANNEL_M1];
+              packet.control.motors[1] = channels[CHANNEL_M2];
+              packet.control.motors[2] = channels[CHANNEL_M3];
+              packet.control.brakes[0] = channels[CHANNEL_BRAKE1];
+              packet.control.brakes[1] = channels[CHANNEL_BRAKE2];
+              packet.control.brakes[2] = channels[CHANNEL_BRAKE3];
+              packet.control.servos[0] = channels[CHANNEL_AUX1];
+              packet.control.servos[1] = channels[CHANNEL_AUX2];
               transport_send(rx_unicast_mac, &packet, sizeof(packet));
             }
             else
@@ -335,7 +370,7 @@ void tx_task(void* args)
               mlink_packet_t packet;
               packet.type = MLINK_BEACON;
               packet.beacon.type = MLINK_BEACON_TX;
-              if (controls[CHANNEL_BIND] >= 6000)
+              if (bind_mode)
               {
                 packet.beacon.type |= MLINK_BEACON_BIND;
               }
@@ -352,6 +387,7 @@ void tx_task(void* args)
         {
           // Add the RX as a peer
           rx_beacon_received = true;
+          memcpy(rx_unicast_mac, event.beacon.mac, sizeof(rx_unicast_mac));
           transport_add_peer(rx_unicast_mac);
         } break;
       }

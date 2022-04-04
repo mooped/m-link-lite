@@ -53,3 +53,6 @@ Receiver:
                                Send RX Beacon                        |
                                      |                               |
                                      --------------------------------
+
+RX MAC: 30:83:98:9a:bf:79
+TX MAC: a0:20:a6:17:b2:e4
