@@ -30,6 +30,8 @@ extern uint8_t mlink_broadcast_mac[ESP_NOW_ETH_ALEN];
 typedef enum {
   ESPNOW_SEND_CB,
   ESPNOW_RECV_CB,
+  ESPNOW_SEND_REQUEST,
+  ESPNOW_ADD_PEER,
 } mlink_event_id_t;
 
 typedef struct {
@@ -43,9 +45,21 @@ typedef struct {
   int data_len;
 } mlink_event_recv_cb_t;
 
+typedef struct {
+  uint8_t mac_addr[ESP_NOW_ETH_ALEN];
+  uint8_t* data;
+  int data_len;
+} mlink_event_send_request_t;
+
+typedef struct {
+  uint8_t mac_addr[ESP_NOW_ETH_ALEN];
+} mlink_event_add_peer_t;
+
 typedef union {
   mlink_event_send_cb_t send_cb;
   mlink_event_recv_cb_t recv_cb;
+  mlink_event_send_request_t send_request;
+  mlink_event_add_peer_t add_peer;
 } mlink_event_info_t;
 
 /* When ESPNOW sending or receiving callback function is called, post event to ESPNOW task. */
