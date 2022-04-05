@@ -39,10 +39,6 @@ static void (*transport_sent_cb)(void) = NULL;
 
 uint8_t mlink_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
-static void transport_espnow_deinit(mlink_send_param_t *send_param);
-
-static mlink_send_param_t* send_param = NULL;
-
 /* WiFi should start before using ESPNOW */
 static void transport_wifi_init(void)
 {
@@ -163,6 +159,7 @@ void mlink_data_prepare(mlink_send_param_t *send_param, uint8_t* payload, size_t
 
 static void mlink_task(void *pvParameter)
 {
+    mlink_send_param_t* send_param = (mlink_send_param_t*)pvParameter;
     mlink_event_t evt;
 
     while (xQueueReceive(transport_event_queue, &evt, portMAX_DELAY) == pdTRUE)
@@ -212,6 +209,15 @@ static void mlink_task(void *pvParameter)
                 }
               }
             } break;
+            case ESPNOW_DEINIT:
+            {
+              free(send_param->buffer);
+              free(send_param);
+              send_param = NULL;
+              vSemaphoreDelete(transport_event_queue);
+              esp_now_deinit();
+              vTaskDelete(NULL);
+            } break;
             default:
             {
               ESP_LOGE(TAG, "Callback type error: %d", evt.id);
@@ -222,6 +228,7 @@ static void mlink_task(void *pvParameter)
 
 static esp_err_t transport_espnow_init(void)
 {
+    mlink_send_param_t* send_param = NULL;
     transport_event_queue = xQueueCreate(EVENT_QUEUE_SIZE, sizeof(mlink_event_t));
     if (transport_event_queue == NULL)
     {
@@ -264,12 +271,6 @@ static esp_err_t transport_espnow_init(void)
         esp_now_deinit();
         return ESP_FAIL;
     }
-    send_param->unicast = false;
-    send_param->broadcast = true;
-    send_param->state = 0;
-    send_param->magic = esp_random();
-    send_param->count = CONFIG_ESPNOW_SEND_COUNT;
-    send_param->delay = CONFIG_ESPNOW_SEND_DELAY;
     send_param->len = CONFIG_ESPNOW_SEND_LEN;
     send_param->buffer = malloc(CONFIG_ESPNOW_SEND_LEN);
     if (send_param->buffer == NULL)
@@ -288,17 +289,6 @@ static esp_err_t transport_espnow_init(void)
     return ESP_OK;
 }
 
-/*
-static void transport_espnow_deinit(mlink_send_param_t *send_param)
-{
-    free(send_param->buffer);
-    free(send_param);
-    send_param = NULL;
-    vSemaphoreDelete(transport_event_queue);
-    esp_now_deinit();
-}
-*/
-
 esp_err_t transport_init(void (*parse_cb)(uint8_t[ESP_NOW_ETH_ALEN], void*, size_t), void (*sent_cb)(void))
 {
   if (parse_cb == NULL || sent_cb == NULL)
@@ -311,6 +301,18 @@ esp_err_t transport_init(void (*parse_cb)(uint8_t[ESP_NOW_ETH_ALEN], void*, size
 
   transport_wifi_init();
   return transport_espnow_init();
+}
+
+esp_err_t transport_deinit(void)
+{
+  mlink_event_t event;
+  event.id = ESPNOW_DEINIT;
+  if (xQueueSend(transport_event_queue, &event, portMAX_DELAY) != pdTRUE)
+  {
+    ESP_LOGW(TAG, "Add peer queue fail");
+    return ESP_FAIL;
+  }
+  return ESP_OK;
 }
 
 esp_err_t transport_add_peer(uint8_t mac_addr[ESP_NOW_ETH_ALEN])

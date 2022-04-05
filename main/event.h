@@ -32,6 +32,7 @@ typedef enum {
   ESPNOW_RECV_CB,
   ESPNOW_SEND_REQUEST,
   ESPNOW_ADD_PEER,
+  ESPNOW_DEINIT,
 } mlink_event_id_t;
 
 typedef struct {
@@ -84,18 +85,13 @@ typedef struct {
 
 /* Parameters of sending ESPNOW data. */
 typedef struct {
-  bool unicast;                         //Send unicast ESPNOW data.
-  bool broadcast;                       //Send broadcast ESPNOW data.
-  uint8_t state;                        //Indicate that if has received broadcast ESPNOW data or not.
-  uint32_t magic;                       //Magic number which is used to determine which device to send unicast ESPNOW data.
-  uint16_t count;                       //Total count of unicast ESPNOW data to be sent.
-  uint16_t delay;                       //Delay between sending two ESPNOW data, unit: ms.
   int len;                              //Length of ESPNOW data to be sent, unit: byte.
   uint8_t *buffer;                      //Buffer pointing to ESPNOW data.
   uint8_t dest_mac[ESP_NOW_ETH_ALEN];   //MAC address of destination device.
 } mlink_send_param_t;
 
 esp_err_t transport_init(void (*parse_cb)(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void*, size_t), void (*sent_cb)(void));
+esp_err_t transport_deinit(void);
 
 esp_err_t transport_add_peer(uint8_t mac_addr[ESP_NOW_ETH_ALEN]);
 
