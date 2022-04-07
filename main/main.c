@@ -37,17 +37,6 @@
 #if ROLE == ROLE_RX
 static const char *TAG = "m-link-rx-main";
 
-xQueueHandle rx_bind_mailbox = NULL;
-xTimerHandle rx_bind_timer = NULL;
-
-typedef enum
-{
-  RX_BIND_WAITING,
-  RX_BIND_BINDING,
-  RX_BIND_TIMEDOUT,
-}
-rx_bind_mode_t;
-
 xQueueHandle rx_control_queue = NULL;
 SemaphoreHandle_t rx_send_semaphore = NULL;
 
@@ -73,7 +62,6 @@ typedef struct
 rx_event_t;
 
 static uint8_t tx_unicast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-static uint8_t tx_stored_mac[ESP_NOW_ETH_ALEN] = { 0xA0, 0x20, 0xA6, 0x17, 0xB2, 0xE4 };
 static uint8_t tx_beacon_received = 0;
 
 void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
@@ -81,6 +69,11 @@ void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
   mlink_packet_t* packet = data;
   ESP_LOGI(TAG, "Got some data. Type: %d Length: %d", packet->type, length);
   rx_event_t event;
+  if (!rx_control_queue)
+  {
+    ESP_LOGW(TAG, "Data received before control queue creation - ignoring.");
+    return;
+  }
   switch (packet->type)
   {
     case MLINK_BEACON:
@@ -138,30 +131,6 @@ int motor_translate(uint16_t value, uint16_t brake_value)
   }
 }
 
-void rx_bind_timer_callback(xTimerHandle xTimer)
-{
-  ESP_LOGI(TAG, "Bind timer elapsed");
-
-  rx_bind_mode_t mode;
-  if (xQueuePeek(rx_bind_mailbox, &mode, 0) == pdTRUE)
-  {
-    if (mode == RX_BIND_WAITING)
-    {
-      mode = RX_BIND_BINDING;
-      xQueueOverwrite(rx_bind_mailbox, &mode);
-      ESP_LOGI(TAG, "===== Entering bind mode =====");
-    }
-    else
-    {
-      ESP_LOGW(TAG, "Bind timer elapsed, but it should have been cancelled by an incoming beacon.");
-    }
-  }
-  else
-  {
-    ESP_LOGW(TAG, "Bind mailbox is empty!");
-  }
-}
-
 void rx_task(void* args)
 {
   static rx_event_t event;
@@ -201,7 +170,7 @@ void rx_task(void* args)
 
           // Transmit RX beacon so the TX can start sending unicast
           // TODO: Only do this if we're bound to this TX
-          if (!tx_beacon_received && xSemaphoreTake(rx_send_semaphore, 0))
+          if (/*!tx_beacon_received && */xSemaphoreTake(rx_send_semaphore, 0))
           {
             ESP_LOGI(TAG, "Send RX beacon.");
             memcpy(tx_unicast_mac, event.beacon.mac, sizeof(tx_unicast_mac));
@@ -237,20 +206,6 @@ void app_main()
   rx_pwm_set_motors(0, 0, 0);
   rx_pwm_set_led(0);
   rx_pwm_update();
-
-  // Start the timer to trigger bind mode after 10 seconds
-  rx_bind_mode_t mode = RX_BIND_WAITING;
-  rx_bind_mailbox = xQueueCreate(1, sizeof(uint32_t));
-  xQueueOverwrite(rx_bind_mailbox, &mode);
-  rx_bind_timer = xTimerCreate("rx-bind-timer", pdMS_TO_TICKS(10000), pdFALSE, (void*)0, &rx_bind_timer_callback);
-  if (!rx_bind_timer)
-  {
-    ESP_LOGW(TAG, "Failed to create bind timer.");
-  }
-  if (xTimerStart(rx_bind_timer, portMAX_DELAY) != pdPASS)
-  {
-    ESP_LOGW(TAG, "Failed to start bind timer.");
-  }
 
   // Initialise RX task
   rx_control_queue = xQueueCreate(10, sizeof(rx_event_t));
