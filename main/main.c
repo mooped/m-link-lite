@@ -40,10 +40,13 @@ static const char *TAG = "m-link-rx-main";
 xQueueHandle rx_control_queue = NULL;
 SemaphoreHandle_t rx_send_semaphore = NULL;
 
+xTimerHandle rx_failsafe_timer = NULL;
+
 typedef enum
 {
   RX_EVENT_CONTROL_UPDATE,
   RX_EVENT_BEACON_RECEIVED,
+  RX_EVENT_FAILSAFE,
 }
 rx_event_type_t;
 
@@ -117,6 +120,16 @@ void sent_cb(void)
   xSemaphoreGive(rx_send_semaphore);
 }
 
+void rx_failsafe_callback(xTimerHandle xTimer)
+{
+  rx_event_t event;
+  event.type = RX_EVENT_FAILSAFE;
+  if (xQueueSend(rx_control_queue, &event, portMAX_DELAY) != pdTRUE)
+  {
+    ESP_LOGW(TAG, "Control event queue fail.");
+  }
+}
+
 int motor_translate(uint16_t value, uint16_t brake_value)
 {
   if (brake_value < 6000)
@@ -155,6 +168,11 @@ void rx_task(void* args)
             motor_translate(event.controls.motors[1], event.controls.brakes[1]),
             motor_translate(event.controls.motors[2], event.controls.brakes[2])
           );
+
+          // Reset failsafe timer
+          xTimerReset(rx_failsafe_timer, 0);
+
+          // Update motors
           rx_pwm_set_motors(
             motor_translate(event.controls.motors[0], event.controls.brakes[0]),
             motor_translate(event.controls.motors[1], event.controls.brakes[1]),
@@ -167,6 +185,7 @@ void rx_task(void* args)
         {
           // Turn on the LED
           rx_pwm_set_led(1);
+          rx_pwm_update();
 
           // Transmit RX beacon so the TX can start sending unicast
           // TODO: Only do this if we're bound to this TX
@@ -187,6 +206,14 @@ void rx_task(void* args)
 
           tx_beacon_received = true;
         } break;
+        case RX_EVENT_FAILSAFE:
+        {
+          ESP_LOGW(TAG, "Failsafe triggered - setting motors to coast!");
+          // Turn off the LED
+          rx_pwm_set_led(0);
+          rx_pwm_set_motors(0, 0, 0);
+          rx_pwm_update();
+        }
       }
     }
   }
@@ -206,6 +233,9 @@ void app_main()
   rx_pwm_set_motors(0, 0, 0);
   rx_pwm_set_led(0);
   rx_pwm_update();
+
+  // Create failsafe timer
+  rx_failsafe_timer = xTimerCreate("rx-failsafe-timer", pdMS_TO_TICKS(500), pdTRUE, NULL, rx_failsafe_callback);
 
   // Initialise RX task
   rx_control_queue = xQueueCreate(10, sizeof(rx_event_t));
