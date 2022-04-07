@@ -16,17 +16,17 @@ The M-Link protocol follows the following flow:
 Transmitter:
 
                              Start
-                               |<----------------------------------------
-        ---------------------->|<--------------------------------        |
-       |                       V                                 |       |
-       |                  Bind Switch?                           |       |
-       |    Y <----------------|----------------> N              |       |
-       |    |                                     |              |       |
-       |    V                                     V              |       |
-    Broadcast TX Beacon            Y <-- Received RX Beacon? --> N       |
-                                   |                                     |
-                                   V                                     |
-                         Unicast Control Data ---------------------------
+                               |<-----------------------------------------
+        ---------------------->|<--------------------------------         |
+       |                       V                                 |        |
+       |                  Bind Switch?               Broadcast TX Beacon  |
+       |    Y <----------------|----------------> N              |        |
+       |    |                                     |              |        |
+       |    V                                     V              |        |
+ Broadcast TX | BIND Beacon        Y <-- Received RX Beacon? --> N        |
+                                   |                                      |
+                                   V                                      |
+                         Unicast Control Data ----------------------------
 
 Receiver:
 
