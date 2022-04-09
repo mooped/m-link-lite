@@ -92,15 +92,58 @@ esp_err_t led_init(led_config_t* in_config, size_t in_led_num)
   return ESP_OK;
 }
 
-void led_set(int index, int duty, int period)
+void led_set(int index, int state, int duty, int period)
 {
-  if (index < led_num && config[index].timer)
+  if (index < led_num)
   {
-    config[index].duty = pdMS_TO_TICKS(duty);
-    config[index].period = pdMS_TO_TICKS(period);
-    config[index].state = 0;
-    xTimerChangePeriod(config[index].timer, config[index].duty, 0);
-    xTimerReset(config[index].timer, 0);
+    led_config_t* info = &config[index];
+    if (info->timer)
+    {
+      info->duty = pdMS_TO_TICKS(duty);
+      info->period = pdMS_TO_TICKS(period);
+      info->state = state;
+      // Always off - avoid using a timer
+      if (duty <= 0)
+      {
+        if (xTimerStop(info->timer, 0) != pdPASS)
+        {
+          ESP_LOGW(TAG, "Timer stop failed.");
+        }
+        ESP_ERROR_CHECK( gpio_set_level(info->gpio_num, 0) );
+      }
+      // Always on - avoid using a timer
+      else if (duty >= period)
+      {
+        if (xTimerStop(info->timer, 0) != pdPASS)
+        {
+          ESP_LOGW(TAG, "Timer stop failed.");
+        }
+        ESP_ERROR_CHECK( gpio_set_level(info->gpio_num, 1) );
+      }
+      // Blinking - using a timer
+      else
+      {
+        if (info->state)
+        {
+          if (xTimerChangePeriod(info->timer, info->duty, 0) != pdPASS)
+          {
+            ESP_LOGW(TAG, "Timer change period failed.");
+          }
+        }
+        else
+        {
+          if (xTimerChangePeriod(info->timer, info->period - info->duty, 0) != pdPASS)
+          {
+            ESP_LOGW(TAG, "Timer change period failed.");
+          }
+        }
+        if (xTimerReset(info->timer, 0) != pdPASS)
+        {
+          ESP_LOGW(TAG, "Timer restart failed.");
+        }
+        ESP_ERROR_CHECK( gpio_set_level(info->gpio_num, info->state) );
+      }
+    }
   }
 }
 

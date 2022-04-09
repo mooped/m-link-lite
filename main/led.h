@@ -16,5 +16,5 @@ led_config_t;
 esp_err_t led_init(led_config_t* config, size_t led_num);
 
 // Set LED duty and period
-void led_set(int index, int duty, int period);
+void led_set(int index, int state, int duty, int period);
 

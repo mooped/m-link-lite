@@ -100,6 +100,49 @@ static led_config_t rx_led_config[RX_LED_NUM] = {
   },
 };
 
+typedef enum
+{
+  RX_LED_WAITING,
+  RX_LED_BIND,
+  RX_LED_ACTIVE,
+  RX_LED_FAILSAFE,
+  RX_LED_INITIAL,
+}
+rx_led_state_t;
+
+rx_led_state_t rx_led_state = RX_LED_INITIAL;
+
+void rx_led_set_state(rx_led_state_t new_state)
+{
+  if (new_state != rx_led_state)
+  {
+    switch (new_state)
+    {
+      case RX_LED_WAITING:
+      {
+        led_set(0, 1, 1000, 2000);
+      } break;
+      case RX_LED_BIND:
+      {
+        led_set(0, 1, 180, 200);
+      } break;
+      case RX_LED_ACTIVE:
+      {
+        led_set(0, 1, 1000, 1000);
+      } break;
+      case RX_LED_FAILSAFE:
+      {
+        led_set(0, 1, 500, 1000);
+      } break;
+      default:
+      {
+        ESP_LOGW(TAG, "Invalid LED state requested.");
+      }
+    }
+    rx_led_state = new_state;
+  }
+}
+
 void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
 {
   mlink_packet_t* packet = data;
@@ -175,7 +218,7 @@ void rx_bind_timer_callback(xTimerHandle xTimer)
     bind_mode = RX_BIND_BINDING;
 
     // Update LEDs to binding
-    led_set(0, 20, 100);
+    rx_led_set_state(RX_LED_BIND);
   }
   else
   {
@@ -243,8 +286,8 @@ void rx_task(void* args)
         // Received a control packet
         case RX_EVENT_CONTROL_UPDATE:
         {
-          // Only respond to our bound TX
-          if (memcmp(event.controls.mac, tx_unicast_mac, ESP_NOW_ETH_ALEN) == 0)
+          // Only respond to our bound TX and only outside of bind mode
+          if (bind_mode != RX_BIND_BINDING && memcmp(event.controls.mac, tx_unicast_mac, ESP_NOW_ETH_ALEN) == 0)
           {
             const mlink_control_t* controls = &event.controls.controls;
             ESP_LOGI(TAG, "Control packet received %d %d %d %d %d -> %d %d %d",
@@ -270,7 +313,7 @@ void rx_task(void* args)
             rx_pwm_update();
 
             // Update LEDs to active mode
-            led_set(0, 100, 200);
+            rx_led_set_state(RX_LED_ACTIVE);
           }
           else
           {
@@ -373,7 +416,7 @@ void rx_task(void* args)
           rx_pwm_set_motors(0, 0, 0);
           rx_pwm_update();
           // Update LEDs to failsafe
-          led_set(0, 1000, 2000);
+          rx_led_set_state(RX_LED_FAILSAFE);
         }
       }
     }
@@ -480,6 +523,32 @@ tx_event_t;
 static uint8_t rx_unicast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 static uint8_t rx_beacon_received = 0;
 static uint8_t bind_mode = 0;
+
+#define TX_LED_NUM  3
+
+static led_config_t tx_led_config[TX_LED_NUM] = {
+  {
+    .timer = NULL,
+    .gpio_num = GPIO_NUM_2,
+    .period = pdMS_TO_TICKS(2000),
+    .duty = pdMS_TO_TICKS(100),
+    .state = 0,
+  },
+  {
+    .timer = NULL,
+    .gpio_num = GPIO_NUM_5,
+    .period = pdMS_TO_TICKS(2000),
+    .duty = pdMS_TO_TICKS(1000),
+    .state = 1,
+  },
+  {
+    .timer = NULL,
+    .gpio_num = GPIO_NUM_4,
+    .period = pdMS_TO_TICKS(2000),
+    .duty = pdMS_TO_TICKS(1000),
+    .state = 0,
+  },
+};
 
 static void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
 {
@@ -663,8 +732,9 @@ void app_main()
   // Initialise M-Link ESPNOW transport
   ESP_ERROR_CHECK( transport_init(&parse_cb, &sent_cb) );
 
-  // Initialise PWM LED driver
-  tx_pwm_init();
+  // Initialise LED driver
+  ESP_ERROR_CHECK( led_init(tx_led_config, TX_LED_NUM) );
+  rx_led_set_state(RX_LED_WAITING);
 
   // Initialise TX task
   xTaskCreate(tx_task, "tx-task", 2048, NULL, 10, NULL);
