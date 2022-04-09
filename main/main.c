@@ -26,7 +26,7 @@
 #include "tx-ppm.h"
 #include "tx-pwm.h"
 #include "rx-pwm.h"
-#include "rx-led.h"
+#include "led.h"
 #include "event.h"
 #include "mlink.h"
 
@@ -87,6 +87,18 @@ rx_event_t;
 
 static uint8_t tx_unicast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 static uint8_t tx_beacon_received = 0;
+
+#define RX_LED_NUM  1
+
+static led_config_t rx_led_config[RX_LED_NUM] = {
+  {
+    .timer = NULL,
+    .gpio_num = GPIO_NUM_2,
+    .period = pdMS_TO_TICKS(2000),
+    .duty = pdMS_TO_TICKS(1000),
+    .state = 0,
+  },
+};
 
 void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
 {
@@ -163,7 +175,7 @@ void rx_bind_timer_callback(xTimerHandle xTimer)
     bind_mode = RX_BIND_BINDING;
 
     // Update LEDs to binding
-    rx_led_set(0, 20, 100);
+    led_set(0, 20, 100);
   }
   else
   {
@@ -258,7 +270,7 @@ void rx_task(void* args)
             rx_pwm_update();
 
             // Update LEDs to active mode
-            rx_led_set(0, 100, 200);
+            led_set(0, 100, 200);
           }
           else
           {
@@ -361,7 +373,7 @@ void rx_task(void* args)
           rx_pwm_set_motors(0, 0, 0);
           rx_pwm_update();
           // Update LEDs to failsafe
-          rx_led_set(0, 1000, 2000);
+          led_set(0, 1000, 2000);
         }
       }
     }
@@ -409,7 +421,7 @@ void app_main()
   transport_add_peer(tx_unicast_mac);
 
   // Set LED to boot state (2 second flash)
-  ESP_ERROR_CHECK( rx_led_init() );
+  ESP_ERROR_CHECK( led_init(rx_led_config, RX_LED_NUM) );
 
   // Initialise PWM driver for motors, set motors off
   rx_pwm_init();

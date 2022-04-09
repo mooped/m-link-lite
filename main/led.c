@@ -13,8 +13,6 @@
 
 static const char* TAG = "m-link-rx-led";
 
-#define LED_NUM   1
-
 typedef struct
 {
   xTimerHandle timer;
@@ -23,22 +21,14 @@ typedef struct
   int duty;
   int state;
 }
-timer_info_t;
+led_config_t;
 
-static timer_info_t timers[LED_NUM] = {
-  {
-    .timer = NULL,
-    .gpio_num = GPIO_NUM_2,
-    .period = pdMS_TO_TICKS(2000),
-    .duty = pdMS_TO_TICKS(1000),
-    .state = 0,
-    
-  },
-};
+static led_config_t* config = NULL;
+static size_t led_num = 0;
 
-void rx_led_timer_callback(xTimerHandle xTimer)
+void led_timer_callback(xTimerHandle xTimer)
 {
-  timer_info_t* info = (timer_info_t*)pvTimerGetTimerID(xTimer);
+  led_config_t* info = (led_config_t*)pvTimerGetTimerID(xTimer);
 
   if (info)
   {
@@ -60,11 +50,20 @@ void rx_led_timer_callback(xTimerHandle xTimer)
   }
 }
 
-esp_err_t rx_led_init(void)
+esp_err_t led_init(led_config_t* in_config, size_t in_led_num)
 {
-  for (int led_idx = 0; led_idx < LED_NUM; ++led_idx)
+  if (!in_config)
   {
-    timer_info_t* info = &timers[led_idx];
+    ESP_LOGW(TAG, "led_init received null config!");
+    return ESP_FAIL;
+  }
+
+  config = in_config;
+  led_num = in_led_num;
+
+  for (int led_idx = 0; led_idx < led_num; ++led_idx)
+  {
+    led_config_t* info = &config[led_idx];
 
     gpio_config_t config;
     config.pin_bit_mask = (1ull<<(info->gpio_num));
@@ -75,7 +74,7 @@ esp_err_t rx_led_init(void)
     ESP_ERROR_CHECK( gpio_config(&config) );
     ESP_ERROR_CHECK( gpio_set_level(info->gpio_num, info->state) );
 
-    info->timer = xTimerCreate("rx-led-timer", info->duty, pdTRUE, (void*)info, &rx_led_timer_callback);
+    info->timer = xTimerCreate("rx-led-timer", info->duty, pdTRUE, (void*)info, &led_timer_callback);
     if (!info->timer)
     {
       ESP_LOGW(TAG, "Failed to create LED timer.");
@@ -93,15 +92,15 @@ esp_err_t rx_led_init(void)
   return ESP_OK;
 }
 
-void rx_led_set(int index, int duty, int period)
+void led_set(int index, int duty, int period)
 {
-  if (index < LED_NUM && timers[index].timer)
+  if (index < led_num && config[index].timer)
   {
-    timers[index].duty = pdMS_TO_TICKS(duty);
-    timers[index].period = pdMS_TO_TICKS(period);
-    timers[index].state = 0;
-    xTimerChangePeriod(timers[index].timer, timers[index].duty, 0);
-    xTimerReset(timers[index].timer, 0);
+    config[index].duty = pdMS_TO_TICKS(duty);
+    config[index].period = pdMS_TO_TICKS(period);
+    config[index].state = 0;
+    xTimerChangePeriod(config[index].timer, config[index].duty, 0);
+    xTimerReset(config[index].timer, 0);
   }
 }
 
