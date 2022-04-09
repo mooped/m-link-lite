@@ -37,6 +37,8 @@
 #if ROLE == ROLE_RX
 static const char *TAG = "m-link-rx-main";
 
+nvs_handle_t rx_nvs_handle;
+
 xQueueHandle rx_control_queue = NULL;
 SemaphoreHandle_t rx_send_semaphore = NULL;
 
@@ -222,7 +224,36 @@ void rx_task(void* args)
 void app_main()
 {
   // Initialize NVS
-  ESP_ERROR_CHECK( nvs_flash_init() );
+  esp_err_t err = nvs_flash_init();
+  if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND)
+  {
+    ESP_LOGW(TAG, "Failed to initialise NVS, erasing to reinitialise.");
+    // If we can't initialise NVS, erase and recreate the partition
+    ESP_ERROR_CHECK( nvs_flash_erase() );
+    err = nvs_flash_init();
+  }
+  ESP_ERROR_CHECK(err);
+
+  // Extract bound MAC address from NVS
+  size_t length = 6;
+  ESP_ERROR_CHECK( nvs_open("nvs", NVS_READWRITE, &rx_nvs_handle) );
+  //err = nvs_get_blob(rx_nvs_handle, "tx_mac", tx_unicast_mac, &length);
+  if (err == ESP_ERR_NVS_NOT_FOUND)
+  {
+    // Write the broadcast address if tx_mac key is not present
+    ESP_LOGW(TAG, "Initialised tx_mac to "MACSTR"", MAC2STR(tx_unicast_mac));
+    ESP_ERROR_CHECK( nvs_set_blob(rx_nvs_handle, "tx_mac", tx_unicast_mac, length) );
+    ESP_ERROR_CHECK( nvs_commit(rx_nvs_handle) );
+  }
+  else
+  {
+    ESP_ERROR_CHECK(err);
+  }
+  ESP_LOGI(TAG, "Bound TX MAC is "MACSTR"", MAC2STR(tx_unicast_mac));
+
+  // Create objects for the control task
+  rx_control_queue = xQueueCreate(10, sizeof(rx_event_t));
+  rx_send_semaphore = xSemaphoreCreateMutex();
 
   // Initialise M-Link ESPNOW transport
   ESP_ERROR_CHECK( transport_init(&parse_cb, &sent_cb) );
@@ -238,8 +269,6 @@ void app_main()
   rx_failsafe_timer = xTimerCreate("rx-failsafe-timer", pdMS_TO_TICKS(500), pdTRUE, NULL, rx_failsafe_callback);
 
   // Initialise RX task
-  rx_control_queue = xQueueCreate(10, sizeof(rx_event_t));
-  rx_send_semaphore = xSemaphoreCreateMutex();
   xTaskCreate(rx_task, "rx-task", 2048, NULL, 10, NULL);
 }
 #elif ROLE == ROLE_TX
@@ -452,6 +481,10 @@ void app_main()
   // Initialize NVS
   ESP_ERROR_CHECK( nvs_flash_init() );
 
+  // Create objects for the control task
+  tx_control_queue = xQueueCreate(10, sizeof(tx_event_t));
+  tx_send_semaphore = xSemaphoreCreateMutex();
+
   // Initialise M-Link ESPNOW transport
   ESP_ERROR_CHECK( transport_init(&parse_cb, &sent_cb) );
 
@@ -459,8 +492,6 @@ void app_main()
   tx_pwm_init();
 
   // Initialise TX task
-  tx_control_queue = xQueueCreate(10, sizeof(tx_event_t));
-  tx_send_semaphore = xSemaphoreCreateMutex();
   xTaskCreate(tx_task, "tx-task", 2048, NULL, 10, NULL);
 
   // Initialise PPM decoder
