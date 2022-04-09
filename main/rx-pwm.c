@@ -24,7 +24,7 @@
 
 #include "driver/pwm.h"
 
-#define PWM_IO_COUNT      7
+#define PWM_IO_COUNT      6
 
 #define PWM_0_OUT_IO_NUM  4   // Motor 1A
 #define PWM_1_OUT_IO_NUM  5   // Motor 1B
@@ -32,7 +32,6 @@
 #define PWM_3_OUT_IO_NUM  13  // Motor 2B
 #define PWM_4_OUT_IO_NUM  12  // Motor 3A
 #define PWM_5_OUT_IO_NUM  14  // Motor 3B
-#define PWM_6_OUT_IO_NUM  2   // LED
 
 #define PWM_M1A_CHANNEL 0
 #define PWM_M1B_CHANNEL 1
@@ -40,7 +39,6 @@
 #define PWM_M2B_CHANNEL 3
 #define PWM_M3A_CHANNEL 4
 #define PWM_M3B_CHANNEL 5
-#define PWM_LED_CHANNEL 6
 
 // PWM period 1024us(~1Khz)
 #define PWM_PERIOD    (511)
@@ -55,17 +53,16 @@ const uint32_t pin_num[PWM_IO_COUNT] = {
   PWM_3_OUT_IO_NUM,
   PWM_4_OUT_IO_NUM,
   PWM_5_OUT_IO_NUM,
-  PWM_6_OUT_IO_NUM
 };
 
 // duties table, real_duty = duties[x]/PERIOD
 uint32_t duties[PWM_IO_COUNT] = {
-  0, 0, 0, 0, 0, 0, 0
+  0, 0, 0, 0, 0, 0,
 };
 
 // phase table, delay = (phase[x]/360)*PERIOD
 float phase[PWM_IO_COUNT] = {
-  0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f
+  0.f, 0.f, 0.f, 0.f, 0.f, 0.f,
 };
 
 void rx_pwm_init(void)
@@ -111,11 +108,6 @@ void rx_pwm_set_motors(int m1, int m2, int m3)
   rx_pwm_set_motor(m1, PWM_M1A_CHANNEL, PWM_M1B_CHANNEL);
   rx_pwm_set_motor(m2, PWM_M2A_CHANNEL, PWM_M2B_CHANNEL);
   rx_pwm_set_motor(m3, PWM_M3A_CHANNEL, PWM_M3B_CHANNEL);
-}
-
-void rx_pwm_set_led(int status)
-{
-  duties[PWM_LED_CHANNEL] = status ? 0 : PWM_PERIOD;
 }
 
 void rx_pwm_update(void)

@@ -26,6 +26,7 @@
 #include "tx-ppm.h"
 #include "tx-pwm.h"
 #include "rx-pwm.h"
+#include "rx-led.h"
 #include "event.h"
 #include "mlink.h"
 
@@ -44,6 +45,19 @@ SemaphoreHandle_t rx_send_semaphore = NULL;
 
 xTimerHandle rx_failsafe_timer = NULL;
 
+xTimerHandle rx_bind_timer = NULL;
+
+typedef enum
+{
+  RX_BIND_WAITING,
+  RX_BIND_BINDING,
+  RX_BIND_CANCELLED,
+  RX_BIND_BOUND,
+}
+rx_bind_mode_t;
+
+rx_bind_mode_t bind_mode = RX_BIND_WAITING;
+
 typedef enum
 {
   RX_EVENT_CONTROL_UPDATE,
@@ -57,9 +71,14 @@ typedef struct
   rx_event_type_t type;
   union
   {
-    mlink_control_t controls;
     struct
     {
+      mlink_control_t controls;
+      uint8_t mac[ESP_NOW_ETH_ALEN];
+    } controls;
+    struct
+    {
+      uint8_t type;
       uint8_t mac[ESP_NOW_ETH_ALEN];
     } beacon;
   };
@@ -88,7 +107,8 @@ void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
         ESP_LOGI(TAG, "TX beacon received.");
         // Send an event to the RX task with the beacon MAC address
         event.type = RX_EVENT_BEACON_RECEIVED;
-        memcpy(event.beacon.mac, mac_addr, sizeof(tx_unicast_mac));
+        event.beacon.type = packet->beacon.type;
+        memcpy(event.beacon.mac, mac_addr, ESP_NOW_ETH_ALEN);
         if (xQueueSend(rx_control_queue, &event, portMAX_DELAY) != pdTRUE)
         {
           ESP_LOGW(TAG, "Control event queue fail.");
@@ -103,7 +123,8 @@ void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
     {
       // Send an event to the RX task with the control data
       event.type = RX_EVENT_CONTROL_UPDATE;
-      memcpy(&event.controls, &(packet->control), sizeof(mlink_control_t));
+      memcpy(&event.controls.controls, &(packet->control), sizeof(mlink_control_t));
+      memcpy(event.controls.mac, mac_addr, ESP_NOW_ETH_ALEN);
       if (xQueueSend(rx_control_queue, &event, portMAX_DELAY) != pdTRUE)
       {
         ESP_LOGW(TAG, "Control event queue fail.");
@@ -132,6 +153,54 @@ void rx_failsafe_callback(xTimerHandle xTimer)
   }
 }
 
+void rx_bind_timer_callback(xTimerHandle xTimer)
+{
+  ESP_LOGI(TAG, "Bind timer elapsed.");
+
+  if (bind_mode == RX_BIND_WAITING)
+  {
+    ESP_LOGW(TAG, "Entered bind mode.");
+    bind_mode = RX_BIND_BINDING;
+
+    // Update LEDs to binding
+    rx_led_set(0, 20, 100);
+  }
+  else
+  {
+    ESP_LOGW(TAG, "Bind timer elapsed, but should have been cancelled by an incoming beacon.");
+  }
+}
+
+esp_err_t rx_bind_begin_wait(void)
+{
+  // Start the timer to enter bind mode if our TX doesn't respond in 10 seconds
+  bind_mode = RX_BIND_WAITING;
+  rx_bind_timer = xTimerCreate("rx-bind-timer", pdMS_TO_TICKS(10000), pdFALSE, (void*)0, &rx_bind_timer_callback);
+  if (!rx_bind_timer)
+  {
+    ESP_LOGW(TAG, "Failed to create bind timer.");
+    return ESP_FAIL;
+  }
+  if (xTimerStart(rx_bind_timer, 0) != pdPASS)
+  {
+    ESP_LOGW(TAG, "Failed to start bind timer.");
+    return ESP_FAIL;
+  }
+  return ESP_OK;
+}
+
+esp_err_t rx_bind_cancel(void)
+{
+  BaseType_t ret = xTimerStop(rx_bind_timer, 0);
+  bind_mode = RX_BIND_CANCELLED;
+  if (ret != pdPASS)
+  {
+    ESP_LOGW(TAG, "Failed to stop bind timer.");
+    return ESP_FAIL;
+  }
+  return ESP_OK;
+}
+
 int motor_translate(uint16_t value, uint16_t brake_value)
 {
   if (brake_value < 6000)
@@ -150,6 +219,8 @@ void rx_task(void* args)
 {
   static rx_event_t event;
 
+  ESP_ERROR_CHECK( rx_bind_begin_wait() );
+
   for (;;)
   {
     // Wait for events, waking up every 500ms if nothing has happened
@@ -160,42 +231,117 @@ void rx_task(void* args)
         // Received a control packet
         case RX_EVENT_CONTROL_UPDATE:
         {
-          ESP_LOGI(TAG, "Control packet received %d %d %d %d %d -> %d %d %d",
-            event.controls.motors[0],
-            event.controls.motors[1],
-            event.controls.motors[2],
-            event.controls.servos[0],
-            event.controls.servos[1],
-            motor_translate(event.controls.motors[0], event.controls.brakes[0]),
-            motor_translate(event.controls.motors[1], event.controls.brakes[1]),
-            motor_translate(event.controls.motors[2], event.controls.brakes[2])
-          );
+          // Only respond to our bound TX
+          if (memcmp(event.controls.mac, tx_unicast_mac, ESP_NOW_ETH_ALEN) == 0)
+          {
+            const mlink_control_t* controls = &event.controls.controls;
+            ESP_LOGI(TAG, "Control packet received %d %d %d %d %d -> %d %d %d",
+              controls->motors[0],
+              controls->motors[1],
+              controls->motors[2],
+              controls->servos[0],
+              controls->servos[1],
+              motor_translate(controls->motors[0], controls->brakes[0]),
+              motor_translate(controls->motors[1], controls->brakes[1]),
+              motor_translate(controls->motors[2], controls->brakes[2])
+            );
+  
+            // Reset failsafe timer
+            xTimerReset(rx_failsafe_timer, 0);
+  
+            // Update motors
+            rx_pwm_set_motors(
+              motor_translate(controls->motors[0], controls->brakes[0]),
+              motor_translate(controls->motors[1], controls->brakes[1]),
+              motor_translate(controls->motors[2], controls->brakes[2])
+            );
+            rx_pwm_update();
 
-          // Reset failsafe timer
-          xTimerReset(rx_failsafe_timer, 0);
-
-          // Update motors
-          rx_pwm_set_motors(
-            motor_translate(event.controls.motors[0], event.controls.brakes[0]),
-            motor_translate(event.controls.motors[1], event.controls.brakes[1]),
-            motor_translate(event.controls.motors[2], event.controls.brakes[2])
-          );
-          rx_pwm_update();
+            // Update LEDs to active mode
+            rx_led_set(0, 100, 200);
+          }
+          else
+          {
+            ESP_LOGW(TAG, "Unexpected control packet from "MACSTR" rejected.", MAC2STR(event.controls.mac));
+          }
         } break;
         // Received a beacon packet from the TX, complete handshake
         case RX_EVENT_BEACON_RECEIVED:
         {
           // Turn on the LED
-          rx_pwm_set_led(1);
+          //rx_pwm_set_led(1);
           rx_pwm_update();
+
+          int send_beacon = 0;
+
+          if (bind_mode == RX_BIND_BINDING)
+          {
+            // If in bind mode, and the TX beacon has the bind flag, then bind to this TX, then exit bind mode
+            if (event.beacon.type == (MLINK_BEACON_TX | MLINK_BEACON_BIND))
+            {
+              ESP_LOGW(TAG, "Binding to "MACSTR".", MAC2STR(event.beacon.mac));
+
+              // Record that we're bound
+              bind_mode = RX_BIND_BOUND;
+
+              // Store TX MAC address
+              memcpy(tx_unicast_mac, event.beacon.mac, ESP_NOW_ETH_ALEN);
+              transport_add_peer(tx_unicast_mac);
+
+              // Write TX MAC address to flash
+              ESP_LOGI(TAG, "Writing "MACSTR" to NVS...", MAC2STR(tx_unicast_mac));
+              ESP_ERROR_CHECK( nvs_set_blob(rx_nvs_handle, "tx_mac", tx_unicast_mac, ESP_NOW_ETH_ALEN) );
+              ESP_ERROR_CHECK( nvs_commit(rx_nvs_handle) );
+              ESP_LOGI(TAG, "Written "MACSTR" to NVS.", MAC2STR(tx_unicast_mac));
+
+              // Transmit RX beacon with bind flag
+              if (xSemaphoreTake(rx_send_semaphore, pdMS_TO_TICKS(1000)))
+              {
+                ESP_LOGI(TAG, "Send RX | BIND beacon.");
+                mlink_packet_t packet;
+                packet.type = MLINK_BEACON;
+                packet.beacon.type = MLINK_BEACON_RX | MLINK_BEACON_BIND;
+                transport_send(tx_unicast_mac, &packet, sizeof(packet));
+              }
+              else
+              {
+                ESP_LOGW(TAG, "Failed to acknowledge binding!");
+              }
+            }
+            else
+            {
+              ESP_LOGW(TAG, "Received non-bind mode beacon while in bind mode.");
+            }
+          }
+          else
+          {
+            // If we're not in bind mode, only send a response if we're bound to this TX
+            if (event.beacon.type == MLINK_BEACON_TX && memcmp(tx_unicast_mac, event.beacon.mac, ESP_NOW_ETH_ALEN) == 0)
+            {
+              // Acknowledge TX beacon with an RX beacon
+              if (xSemaphoreTake(rx_send_semaphore, 0))
+              {
+                ESP_LOGI(TAG, "Send RX beacon.");
+                mlink_packet_t packet;
+                packet.type = MLINK_BEACON;
+                packet.beacon.type = MLINK_BEACON_RX;
+                transport_send(tx_unicast_mac, &packet, sizeof(packet));
+
+                // Cancel bind timer
+                rx_bind_cancel();
+              }
+              else
+              {
+                ESP_LOGW(TAG, "Failed to acknowledge TX beacon!");
+              }
+            }
+          }
 
           // Transmit RX beacon so the TX can start sending unicast
           // TODO: Only do this if we're bound to this TX
-          if (/*!tx_beacon_received && */xSemaphoreTake(rx_send_semaphore, 0))
+          if (send_beacon && xSemaphoreTake(rx_send_semaphore, 0))
           {
             ESP_LOGI(TAG, "Send RX beacon.");
-            memcpy(tx_unicast_mac, event.beacon.mac, sizeof(tx_unicast_mac));
-            transport_add_peer(tx_unicast_mac);
             mlink_packet_t packet;
             packet.type = MLINK_BEACON;
             packet.beacon.type = MLINK_BEACON_RX;
@@ -211,10 +357,11 @@ void rx_task(void* args)
         case RX_EVENT_FAILSAFE:
         {
           ESP_LOGW(TAG, "Failsafe triggered - setting motors to coast!");
-          // Turn off the LED
-          rx_pwm_set_led(0);
+          // Set motors to coast
           rx_pwm_set_motors(0, 0, 0);
           rx_pwm_update();
+          // Update LEDs to failsafe
+          rx_led_set(0, 1000, 2000);
         }
       }
     }
@@ -237,7 +384,7 @@ void app_main()
   // Extract bound MAC address from NVS
   size_t length = 6;
   ESP_ERROR_CHECK( nvs_open("nvs", NVS_READWRITE, &rx_nvs_handle) );
-  //err = nvs_get_blob(rx_nvs_handle, "tx_mac", tx_unicast_mac, &length);
+  err = nvs_get_blob(rx_nvs_handle, "tx_mac", tx_unicast_mac, &length);
   if (err == ESP_ERR_NVS_NOT_FOUND)
   {
     // Write the broadcast address if tx_mac key is not present
@@ -258,12 +405,18 @@ void app_main()
   // Initialise M-Link ESPNOW transport
   ESP_ERROR_CHECK( transport_init(&parse_cb, &sent_cb) );
 
-  // Initialise PWM driver for motors, servos, and LED
+  // Add the bound MAC address as a peer
+  transport_add_peer(tx_unicast_mac);
+
+  // Set LED to boot state (2 second flash)
+  ESP_ERROR_CHECK( rx_led_init() );
+
+  // Initialise PWM driver for motors, set motors off
   rx_pwm_init();
-  // Motors off, LED off
   rx_pwm_set_motors(0, 0, 0);
-  rx_pwm_set_led(0);
   rx_pwm_update();
+  // Initialise LED 
+  // TODO: Initialise servo driver
 
   // Create failsafe timer
   rx_failsafe_timer = xTimerCreate("rx-failsafe-timer", pdMS_TO_TICKS(500), pdTRUE, NULL, rx_failsafe_callback);
@@ -295,6 +448,7 @@ typedef struct
     } controls;
     struct
     {
+      uint8_t type;
       uint8_t mac[ESP_NOW_ETH_ALEN];
     } beacon;
   };
@@ -328,7 +482,8 @@ static void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t leng
         ESP_LOGI(TAG, "RX beacon received.");
         // Send an event to inform the TX control task
         event.type = TX_EVENT_BEACON_RECEIVED;
-        memcpy(event.beacon.mac, mac_addr, sizeof(rx_unicast_mac));
+        event.beacon.type = packet->beacon.type;
+        memcpy(event.beacon.mac, mac_addr, ESP_NOW_ETH_ALEN);
         if (xQueueSend(tx_control_queue, &event, portMAX_DELAY) != pdTRUE)
         {
           ESP_LOGW(TAG, "Control event queue fail.");
@@ -402,10 +557,10 @@ void tx_task(void* args)
           const uint32_t* channels = event.controls.channels;
           // Set bind mode if requested
           bind_mode = channels[CHANNEL_BIND] >= 6000;
-          // If we're not in bind mode and the RX handshake is complete, send a control packet
+          // If we're not in bind mode and we have a unicast address for the rx, send a control packet
           if (!bind_mode && rx_beacon_received)
           {
-            if (xSemaphoreTake(tx_send_semaphore, 0))
+            if (!IS_BROADCAST_ADDR(rx_unicast_mac) && xSemaphoreTake(tx_send_semaphore, 0))
             {
               ESP_LOGI(TAG, "Send control packet.");
               // Fill out and send control packet
@@ -431,13 +586,17 @@ void tx_task(void* args)
           {
             if (xSemaphoreTake(tx_send_semaphore, 0))
             {
-              ESP_LOGI(TAG, "Send TX beacon.");
               mlink_packet_t packet;
               packet.type = MLINK_BEACON;
               packet.beacon.type = MLINK_BEACON_TX;
               if (bind_mode)
               {
+                ESP_LOGI(TAG, "Send TX | BIND beacon.");
                 packet.beacon.type |= MLINK_BEACON_BIND;
+              }
+              else
+              {
+                ESP_LOGI(TAG, "Send TX beacon.");
               }
               transport_send(mlink_broadcast_mac, &packet, sizeof(packet));
             }
@@ -450,15 +609,19 @@ void tx_task(void* args)
         // Received a beacon from the RX, complete handshake
         case TX_EVENT_BEACON_RECEIVED:
         {
-          // Add the RX as a peer
-          rx_beacon_received = true;
-          memcpy(rx_unicast_mac, event.beacon.mac, sizeof(rx_unicast_mac));
-          transport_add_peer(rx_unicast_mac);
+          // Add the RX as a peer if we've not completed the handshake
+          if (!rx_beacon_received)
+          {
+            ESP_LOGW(TAG, "Handshake complete with RX "MACSTR"", MAC2STR(event.beacon.mac));
+            rx_beacon_received = true;
+            memcpy(rx_unicast_mac, event.beacon.mac, ESP_NOW_ETH_ALEN);
+            transport_add_peer(rx_unicast_mac);
+          }
         } break;
       }
     }
     // No PPM packet or RX beacon received in 500ms send a TX beacon
-    else if (!rx_beacon_received)
+    else
     {
       if (xSemaphoreTake(tx_send_semaphore, 0))
       {

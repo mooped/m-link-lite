@@ -50,7 +50,7 @@ Receiver:
                                Store TX MAC                          |
                                      |                               |
                                      V                               |
-                               Send RX Beacon                        |
+                           Send RX | BIND Beacon                     |
                                      |                               |
                                      --------------------------------
 
