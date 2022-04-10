@@ -13,6 +13,8 @@
 #include "oled.h"
 #include "font.h"
 
+#define OLED_ADDR (0x3c<<1)
+
 #define OLED_SDA_GPIO_NUM   13
 #define OLED_SCL_GPIO_NUM   12
 #define OLED_MASTER_NUM     0
@@ -25,6 +27,16 @@
 #define ACK_VAL         0x0
 #define NACK_VAL        0x1
 #define LAST_NACK_VAL   0x2
+
+/*
+// Internal methods
+esp_err_t twi_ssd1306_init(void);
+esp_err_t twi_ssd1306_command(uint8_t addr, uint8_t command);
+esp_err_t twi_ssd1306_commands(uint8_t addr, const uint8_t* commands, size_t count);
+esp_err_t twi_ssd1306_send_data(uint8_t addr, const uint8_t* data, size_t count);
+esp_err_t twi_ssd1306_send_data_glyph(uint8_t addr, const uint8_t* data);
+esp_err_t twi_ssd1306_send_data_repeated(uint8_t addr, uint8_t data, size_t count);
+*/
 
 esp_err_t twi_ssd1306_init(void)
 {
@@ -263,6 +275,11 @@ void oled_print(const char* str)
 
     ++str;
   };
+}
+
+void oled_glyph(const uint8_t* data, size_t length)
+{
+  ESP_ERROR_CHECK( twi_ssd1306_send_data(OLED_ADDR, data, length) );
 }
 
 void oled_number_byte(uint8_t num)

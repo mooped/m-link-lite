@@ -723,6 +723,31 @@ static void ppm_cb(uint32_t channels[PPM_NUM_CHANNELS])
   }
 }
 
+const uint8_t glyph_battery[] = {
+  0b00111100,
+  0b01000010,
+  0b01000010,
+  0b01000010,
+  0b01000010,
+  0b01000010,
+  0b00111100,
+  0b00011000,
+  0b00000000,
+};
+
+const uint8_t glyph_antenna[] = {
+  0b01100000,
+  0b00000000,
+  0b01110000,
+  0b00000000,
+  0b01111000,
+  0b00000000,
+  0b01111100,
+  0b00000000,
+  0b01111110,
+  0b00000000,
+};
+
 void tx_telemetry_task(void* args)
 {
   ESP_LOGI(TAG, "Started telemetry task.");
@@ -765,18 +790,22 @@ void tx_telemetry_task(void* args)
 
       // Update OLED
       oled_at(0, 0);
-      oled_print("RX VBATT: ");
+      oled_print("RX:");
+      oled_at(12, 0);
+      oled_glyph(glyph_battery, sizeof(glyph_battery));
       oled_number_half(telemetry_data.battery_voltage);
-      oled_at(0, 1);
-      oled_print("   Signal: ");
+      oled_at(12, 1);
+      oled_glyph(glyph_antenna, sizeof(glyph_antenna));
       oled_number_half(telemetry_data.packet_loss + telemetry_data.sequence_errors);
       oled_print(" / ");
       oled_number_half(telemetry_data.packet_count);
       oled_at(0, 2);
-      oled_print("TX VBATT: ");
+      oled_print("TX:");
+      oled_at(12, 2);
+      oled_glyph(glyph_battery, sizeof(glyph_battery));
       oled_number_half(battery_get_level());
-      oled_at(0, 3);
-      oled_print("   Signal: ");
+      oled_at(12, 3);
+      oled_glyph(glyph_antenna, sizeof(glyph_antenna));
       oled_number_half(rssi_get_dropped() + rssi_get_out_of_sequence());
       oled_print(" / ");
       oled_number_half(rssi_get_packet_count());
