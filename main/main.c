@@ -27,6 +27,7 @@
 #include "tx-pwm.h"
 #include "rx-pwm.h"
 #include "led.h"
+#include "battery.h"
 #include "event.h"
 #include "mlink.h"
 
@@ -465,13 +466,17 @@ void app_main()
 
   // Set LED to boot state (2 second flash)
   ESP_ERROR_CHECK( led_init(rx_led_config, RX_LED_NUM) );
+  rx_led_set_state(RX_LED_WAITING);
 
   // Initialise PWM driver for motors, set motors off
   rx_pwm_init();
   rx_pwm_set_motors(0, 0, 0);
   rx_pwm_update();
-  // Initialise LED 
+
   // TODO: Initialise servo driver
+
+  // Initialise battery voltage measurement
+  ESP_ERROR_CHECK( battery_init() );
 
   // Create failsafe timer
   rx_failsafe_timer = xTimerCreate("rx-failsafe-timer", pdMS_TO_TICKS(500), pdTRUE, NULL, rx_failsafe_callback);
@@ -530,8 +535,8 @@ static led_config_t tx_led_config[TX_LED_NUM] = {
   {
     .timer = NULL,
     .gpio_num = GPIO_NUM_2,
-    .period = pdMS_TO_TICKS(2000),
-    .duty = pdMS_TO_TICKS(100),
+    .period = pdMS_TO_TICKS(4000),
+    .duty = pdMS_TO_TICKS(500),
     .state = 0,
   },
   {
@@ -549,6 +554,48 @@ static led_config_t tx_led_config[TX_LED_NUM] = {
     .state = 0,
   },
 };
+
+typedef enum
+{
+  TX_LED_WAITING,
+  TX_LED_RX_FOUND,
+  TX_LED_BINDING,
+  TX_LED_INITIAL,
+}
+tx_led_state_t;
+
+tx_led_state_t tx_led_state = TX_LED_INITIAL;
+
+void tx_led_set_state(tx_led_state_t new_state)
+{
+  if (new_state != tx_led_state)
+  {
+    switch (new_state)
+    {
+      case TX_LED_WAITING:
+      {
+        led_set(0, 1, 500, 4000);
+        led_set(1, 1, 1000, 2000);
+        led_set(2, 0, 1000, 2000);
+      } break;
+      case TX_LED_RX_FOUND:
+      {
+        led_set(1, 1, 1000, 1000);
+        led_set(2, 1, 1000, 1000);
+      } break;
+      case TX_LED_BINDING:
+      {
+        led_set(1, 0, 20, 200);
+        led_set(1, 0, 20, 200);
+      } break;
+      default:
+      {
+        ESP_LOGW(TAG, "Invalid LED state requested.");
+      }
+    }
+    tx_led_state = new_state;
+  }
+}
 
 static void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
 {
@@ -638,6 +685,11 @@ void tx_task(void* args)
           const uint32_t* channels = event.controls.channels;
           // Set bind mode if requested
           bind_mode = channels[CHANNEL_BIND] >= 6000;
+          // Update LED state if we're in bind mode
+          if (bind_mode)
+          {
+            tx_led_set_state(TX_LED_BINDING);
+          }
           // If we're not in bind mode and we have a unicast address for the rx, send a control packet
           if (!bind_mode && rx_beacon_received)
           {
@@ -698,6 +750,8 @@ void tx_task(void* args)
             memcpy(rx_unicast_mac, event.beacon.mac, ESP_NOW_ETH_ALEN);
             transport_add_peer(rx_unicast_mac);
           }
+          // Update LED state
+          tx_led_set_state(TX_LED_RX_FOUND);
         } break;
       }
     }
@@ -734,7 +788,10 @@ void app_main()
 
   // Initialise LED driver
   ESP_ERROR_CHECK( led_init(tx_led_config, TX_LED_NUM) );
-  rx_led_set_state(RX_LED_WAITING);
+  tx_led_set_state(TX_LED_WAITING);
+
+  // Initialise battery voltage measurement
+  ESP_ERROR_CHECK( battery_init() );
 
   // Initialise TX task
   xTaskCreate(tx_task, "tx-task", 2048, NULL, 10, NULL);
