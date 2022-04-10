@@ -300,6 +300,31 @@ void oled_number_byte(uint8_t num)
   oled_print(ptr);
 }
 
+static const char* const hex[] = {
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+};
+
+void oled_number_hex(uint8_t num)
+{
+  oled_print(hex[(num & 0xf0) >> 4]);
+  oled_print(hex[num & 0x0f]);
+}
+
 void oled_number_half(uint16_t num)
 {
   // Parse number to a string starting from the end
@@ -316,5 +341,43 @@ void oled_number_half(uint16_t num)
 
   // Print the number
   oled_print(ptr);
+}
+
+void oled_number_voltage(uint16_t num)
+{
+  // Parse number to a string starting from the end
+  char buffer[8] = {
+    0x00
+  };
+  char* ptr = &buffer[6];
+  uint16_t digit = 0;
+  do {
+    digit = num % 10;
+    num = num / 10;
+    // Add a period at 3 significant figures
+    if (ptr == &buffer[3])
+    {
+      (*--ptr) = '.';
+    }
+    (*--ptr) = '0' + digit;
+  } while (num || ptr > &buffer[2]);
+
+  // Print the number
+  oled_print(ptr);
+}
+
+void oled_print_mac(uint8_t mac_addr[6])
+{
+  oled_number_hex(mac_addr[0]);
+  oled_print(":");
+  oled_number_hex(mac_addr[1]);
+  oled_print(":");
+  oled_number_hex(mac_addr[2]);
+  oled_print(":");
+  oled_number_hex(mac_addr[3]);
+  oled_print(":");
+  oled_number_hex(mac_addr[4]);
+  oled_print(":");
+  oled_number_hex(mac_addr[5]);
 }
 

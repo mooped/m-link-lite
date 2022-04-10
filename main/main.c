@@ -730,9 +730,9 @@ const uint8_t glyph_battery[] = {
   0b01000010,
   0b01000010,
   0b01000010,
+  0b01000010,
   0b00111100,
   0b00011000,
-  0b00000000,
 };
 
 const uint8_t glyph_antenna[] = {
@@ -745,7 +745,6 @@ const uint8_t glyph_antenna[] = {
   0b01111100,
   0b00000000,
   0b01111110,
-  0b00000000,
 };
 
 void tx_telemetry_task(void* args)
@@ -759,8 +758,8 @@ void tx_telemetry_task(void* args)
   // Initialise OLED
   oled_init();
 
-  // Update telemetry display once every 100ms
-  const TickType_t interval = pdMS_TO_TICKS(100);
+  // Update telemetry display once every 500ms
+  const TickType_t interval = pdMS_TO_TICKS(500);
   TickType_t previous_wake_time = xTaskGetTickCount();
 
   for (;;)
@@ -789,26 +788,46 @@ void tx_telemetry_task(void* args)
       ESP_LOGI(TAG, "RX Battery Voltage: %d", telemetry_data.battery_voltage);
 
       // Update OLED
+      oled_at(16, 0);
+      oled_print("RX:  ");
+      oled_number_voltage(telemetry_data.battery_voltage);
+      oled_print("v    ");
+
+      oled_at(72, 0);
+      oled_print("TX:  ");
+      oled_number_voltage(battery_get_level());
+      oled_print("v     ");
+
       oled_at(0, 0);
-      oled_print("RX:");
-      oled_at(12, 0);
       oled_glyph(glyph_battery, sizeof(glyph_battery));
-      oled_number_half(telemetry_data.battery_voltage);
-      oled_at(12, 1);
+
+      oled_at(16, 1);
+      oled_print("RX:  ");
+      uint16_t sig = 0;
+      if (telemetry_data.packet_count)
+      {
+        float fraction = 1.f - (float)(telemetry_data.packet_loss + telemetry_data.sequence_errors) / (float)(telemetry_data.packet_count);
+        sig = (uint16_t)(fraction * 100.f);
+      }
+      oled_number_half(sig);
+      oled_print("%     ");
+
+      oled_at(72, 1);
+      oled_print("TX:  ");
+      sig = 0;
+      if (telemetry_data.packet_count)
+      {
+        float fraction = 1.f - (float)(rssi_get_dropped() + rssi_get_out_of_sequence()) / (float)(rssi_get_packet_count());
+        sig = (uint16_t)(fraction * 100.f);
+      }
+      oled_number_half(sig);
+      oled_print("%     ");
+      oled_at(0, 1);
       oled_glyph(glyph_antenna, sizeof(glyph_antenna));
-      oled_number_half(telemetry_data.packet_loss + telemetry_data.sequence_errors);
-      oled_print(" / ");
-      oled_number_half(telemetry_data.packet_count);
-      oled_at(0, 2);
-      oled_print("TX:");
-      oled_at(12, 2);
-      oled_glyph(glyph_battery, sizeof(glyph_battery));
-      oled_number_half(battery_get_level());
-      oled_at(12, 3);
-      oled_glyph(glyph_antenna, sizeof(glyph_antenna));
-      oled_number_half(rssi_get_dropped() + rssi_get_out_of_sequence());
-      oled_print(" / ");
-      oled_number_half(rssi_get_packet_count());
+
+      oled_at(0, 3);
+      oled_print("RX MAC: ");
+      oled_print_mac(rx_unicast_mac);
     }
 
     // Wait for the next interval

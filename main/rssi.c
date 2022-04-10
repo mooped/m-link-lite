@@ -53,14 +53,11 @@ void rssi_recv(uint16_t seq_num)
     {
       dropped_packets += (seq_num - recv_seq_num);
     }
-    if (seq_num <= recv_seq_num)
+    if (seq_num < recv_seq_num)
     {
       sequence_errors += 1;
     }
-    else
-    {
-      recv_seq_num = seq_num;
-    }
+    recv_seq_num = seq_num;
   }
   else
   {
