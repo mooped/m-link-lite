@@ -28,6 +28,7 @@
 #include "rx-pwm.h"
 #include "led.h"
 #include "battery.h"
+#include "rssi.h"
 #include "event.h"
 #include "mlink.h"
 
@@ -35,6 +36,8 @@
 #define ROLE_RX 1
 
 #define ROLE ROLE_RX
+
+uint16_t send_seq_num = 0;
 
 #if ROLE == ROLE_RX
 static const char *TAG = "m-link-rx-main";
@@ -149,11 +152,9 @@ void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
   mlink_packet_t* packet = data;
   ESP_LOGI(TAG, "Got some data. Type: %d Length: %d", packet->type, length);
   rx_event_t event;
-  if (!rx_control_queue)
-  {
-    ESP_LOGW(TAG, "Data received before control queue creation - ignoring.");
-    return;
-  }
+
+  rssi_recv(packet->seq_num);
+
   switch (packet->type)
   {
     case MLINK_BEACON:
@@ -356,6 +357,7 @@ void rx_task(void* args)
                 ESP_LOGI(TAG, "Send RX | BIND beacon.");
                 mlink_packet_t packet;
                 packet.type = MLINK_BEACON;
+                packet.seq_num = send_seq_num++;
                 packet.beacon.type = MLINK_BEACON_RX | MLINK_BEACON_BIND;
                 transport_send(tx_unicast_mac, &packet, sizeof(packet));
               }
@@ -380,6 +382,7 @@ void rx_task(void* args)
                 ESP_LOGI(TAG, "Send RX beacon.");
                 mlink_packet_t packet;
                 packet.type = MLINK_BEACON;
+                packet.seq_num = send_seq_num++;
                 packet.beacon.type = MLINK_BEACON_RX;
                 transport_send(tx_unicast_mac, &packet, sizeof(packet));
 
@@ -400,6 +403,7 @@ void rx_task(void* args)
             ESP_LOGI(TAG, "Send RX beacon.");
             mlink_packet_t packet;
             packet.type = MLINK_BEACON;
+            packet.seq_num = send_seq_num++;
             packet.beacon.type = MLINK_BEACON_RX;
             transport_send(tx_unicast_mac, &packet, sizeof(packet));
           }
@@ -475,8 +479,9 @@ void app_main()
 
   // TODO: Initialise servo driver
 
-  // Initialise battery voltage measurement
+  // Initialise battery voltage and RSSI measurement
   ESP_ERROR_CHECK( battery_init() );
+  rssi_init();
 
   // Create failsafe timer
   rx_failsafe_timer = xTimerCreate("rx-failsafe-timer", pdMS_TO_TICKS(500), pdTRUE, NULL, rx_failsafe_callback);
@@ -601,6 +606,9 @@ static void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t leng
 {
   mlink_packet_t* packet = data;
   tx_event_t event;
+
+  rssi_recv(packet->seq_num);
+
   switch (packet->type)
   {
     case MLINK_BEACON:
@@ -699,6 +707,7 @@ void tx_task(void* args)
               // Fill out and send control packet
               mlink_packet_t packet;
               packet.type = MLINK_CONTROL;
+              packet.seq_num = send_seq_num++;
               packet.control.motors[0] = channels[CHANNEL_M1];
               packet.control.motors[1] = channels[CHANNEL_M2];
               packet.control.motors[2] = channels[CHANNEL_M3];
@@ -721,6 +730,7 @@ void tx_task(void* args)
             {
               mlink_packet_t packet;
               packet.type = MLINK_BEACON;
+              packet.seq_num = send_seq_num++;
               packet.beacon.type = MLINK_BEACON_TX;
               if (bind_mode)
               {
@@ -763,6 +773,7 @@ void tx_task(void* args)
         ESP_LOGI(TAG, "Send TX beacon (no PPM or RX beacon).");
         mlink_packet_t packet;
         packet.type = MLINK_BEACON;
+        packet.seq_num = send_seq_num++;
         packet.beacon.type = MLINK_BEACON_TX;
         transport_send(mlink_broadcast_mac, &packet, sizeof(packet));
       }
@@ -790,8 +801,9 @@ void app_main()
   ESP_ERROR_CHECK( led_init(tx_led_config, TX_LED_NUM) );
   tx_led_set_state(TX_LED_WAITING);
 
-  // Initialise battery voltage measurement
+  // Initialise battery voltage and RSSI measurement
   ESP_ERROR_CHECK( battery_init() );
+  rssi_init();
 
   // Initialise TX task
   xTaskCreate(tx_task, "tx-task", 2048, NULL, 10, NULL);

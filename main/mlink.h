@@ -27,6 +27,7 @@ typedef struct
 typedef struct
 {
   uint16_t battery_voltage;         // RX battery voltage
+  uint16_t packet_loss;             // Packet loss counter 
 } __attribute__((packed)) mlink_telemetry_t;
 
 typedef struct
