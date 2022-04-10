@@ -24,18 +24,18 @@
 #include "esp_err.h"
 
 #include "tx-ppm.h"
-#include "tx-pwm.h"
 #include "rx-pwm.h"
 #include "led.h"
 #include "battery.h"
 #include "rssi.h"
+#include "oled.h"
 #include "event.h"
 #include "mlink.h"
 
 #define ROLE_TX 0
 #define ROLE_RX 1
 
-#define ROLE ROLE_RX
+#define ROLE ROLE_TX
 
 uint16_t send_seq_num = 0;
 
@@ -637,6 +637,9 @@ void tx_led_set_state(tx_led_state_t new_state)
   }
 }
 
+mlink_telemetry_t tx_telemetry_buffer;
+SemaphoreHandle_t tx_telemetry_mutex = NULL;
+
 static void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
 {
   mlink_packet_t* packet = data;
@@ -671,7 +674,17 @@ static void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t leng
     } break;
     case MLINK_TELEMETRY:
     {
-      ESP_LOGI(TAG, "Telemetry packet received - not yet implemented");
+      ESP_LOGI(TAG, "Telemetry packet received.");
+      if (xSemaphoreTake(tx_telemetry_mutex, 0) == pdTRUE)
+      {
+        // Copy telemetry data into the buffer
+        memcpy(&tx_telemetry_buffer, &packet->telemetry, sizeof(mlink_telemetry_t));
+        xSemaphoreGive(tx_telemetry_mutex);
+      }
+      else
+      {
+        ESP_LOGW(TAG, "Failed to acquire telemetry mutex.");
+      }
     } break;
   }
 }
@@ -707,6 +720,58 @@ static void ppm_cb(uint32_t channels[PPM_NUM_CHANNELS])
   if (xQueueSend(tx_control_queue, &event, portMAX_DELAY) != pdTRUE)
   {
     ESP_LOGW(TAG, "Control event queue fail.");
+  }
+}
+
+void tx_telemetry_task(void* args)
+{
+  ESP_LOGI(TAG, "Started telemetry task.");
+
+  // Initialise battery voltage and RSSI measurement
+  ESP_ERROR_CHECK( battery_init() );
+  rssi_init(false);
+
+  // Initialise OLED
+  oled_init();
+
+  // Update telemetry display once every 100ms
+  const TickType_t interval = pdMS_TO_TICKS(100);
+  TickType_t previous_wake_time = xTaskGetTickCount();
+
+  for (;;)
+  {
+    mlink_telemetry_t telemetry_data;
+    // Wait up to one interval for the data
+    if (xSemaphoreTake(tx_telemetry_mutex, interval) == pdTRUE)
+    {
+      // Copy telemetry buffer
+      memcpy(&telemetry_data, &tx_telemetry_buffer, sizeof(mlink_telemetry_t));
+      xSemaphoreGive(tx_telemetry_mutex);
+
+      // Report local telemetry stats
+      ESP_LOGI(TAG, "TX Sequence Num: %d Packets: %d Dropped Packets: %d Sequence Errors: %d",
+          rssi_get_seq_num(),
+          rssi_get_packet_count(),
+          rssi_get_dropped(),
+          rssi_get_out_of_sequence()
+      );
+      // Report remote telemetry stats
+      ESP_LOGI(TAG, "RX                  Packets: %d Dropped Packets: %d Sequence Errors: %d", 
+          telemetry_data.packet_count,
+          telemetry_data.packet_loss,
+          telemetry_data.sequence_errors
+      );
+      ESP_LOGI(TAG, "RX Battery Voltage: %d", telemetry_data.battery_voltage);
+
+      // Update OLED
+      oled_at(0, 0);
+      oled_print("HELLO WORLD!");
+      oled_at(0, 1);
+      oled_print("HELLO WORLD!");
+    }
+
+    // Wait for the next interval
+    vTaskDelayUntil(&previous_wake_time, interval);
   }
 }
 
@@ -829,6 +894,9 @@ void app_main()
   tx_control_queue = xQueueCreate(10, sizeof(tx_event_t));
   tx_send_semaphore = xSemaphoreCreateMutex();
 
+  // Create objects for the telemetry task
+  tx_telemetry_mutex = xSemaphoreCreateMutex();
+
   // Initialise M-Link ESPNOW transport
   ESP_ERROR_CHECK( transport_init(&parse_cb, &sent_cb) );
 
@@ -836,12 +904,11 @@ void app_main()
   ESP_ERROR_CHECK( led_init(tx_led_config, TX_LED_NUM) );
   tx_led_set_state(TX_LED_WAITING);
 
-  // Initialise battery voltage and RSSI measurement
-  ESP_ERROR_CHECK( battery_init() );
-  rssi_init(true);
-
   // Initialise TX task
   xTaskCreate(tx_task, "tx-task", 2048, NULL, 10, NULL);
+
+  // Initialise telemetry task
+  xTaskCreate(tx_telemetry_task, "tx-telemetry-task", 2048, NULL, 7, NULL);
 
   // Initialise PPM decoder
   ESP_ERROR_CHECK( tx_ppm_init(&ppm_cb) );
