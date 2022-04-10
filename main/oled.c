@@ -271,7 +271,7 @@ void oled_number_byte(uint8_t num)
   char buffer[4] = {
     0x00
   };
-  char* ptr = &buffer[7];
+  char* ptr = &buffer[2];
   uint8_t digit = 0;
   do {
     digit = num % 10;
@@ -286,10 +286,10 @@ void oled_number_byte(uint8_t num)
 void oled_number_half(uint16_t num)
 {
   // Parse number to a string starting from the end
-  char buffer[6] = {
+  char buffer[8] = {
     0x00
   };
-  char* ptr = &buffer[7];
+  char* ptr = &buffer[6];
   uint16_t digit = 0;
   do {
     digit = num % 10;

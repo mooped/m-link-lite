@@ -765,9 +765,21 @@ void tx_telemetry_task(void* args)
 
       // Update OLED
       oled_at(0, 0);
-      oled_print("HELLO WORLD!");
+      oled_print("RX VBATT: ");
+      oled_number_half(telemetry_data.battery_voltage);
       oled_at(0, 1);
-      oled_print("HELLO WORLD!");
+      oled_print("   Signal: ");
+      oled_number_half(telemetry_data.packet_loss + telemetry_data.sequence_errors);
+      oled_print(" / ");
+      oled_number_half(telemetry_data.packet_count);
+      oled_at(0, 2);
+      oled_print("TX VBATT: ");
+      oled_number_half(battery_get_level());
+      oled_at(0, 3);
+      oled_print("   Signal: ");
+      oled_number_half(rssi_get_dropped() + rssi_get_out_of_sequence());
+      oled_print(" / ");
+      oled_number_half(rssi_get_packet_count());
     }
 
     // Wait for the next interval
