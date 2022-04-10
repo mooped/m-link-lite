@@ -272,6 +272,42 @@ int motor_translate(uint16_t value, uint16_t brake_value)
   }
 }
 
+void rx_telemetry_task(void* args)
+{
+  ESP_LOGI(TAG, "Started telemetry task.");
+
+  // Initialise battery voltage and RSSI measurement
+  ESP_ERROR_CHECK( battery_init() );
+  rssi_init(false);
+
+  // Update telemetry once a second
+  const TickType_t interval = pdMS_TO_TICKS(1000);
+  TickType_t previous_wake_time = xTaskGetTickCount();
+
+  for (;;)
+  {
+    // Report RSSI stats to console
+    ESP_LOGI(TAG, "Sequence Num: %d Packets: %d Dropped Packets: %d Sequence Errors: %d", rssi_get_seq_num(), rssi_get_packet_count(), rssi_get_dropped(), rssi_get_out_of_sequence());
+
+    // Create and send a telemetry packet
+    if (xSemaphoreTake(rx_send_semaphore, pdMS_TO_TICKS(1000)))
+    {
+      ESP_LOGI(TAG, "Send telemetry packet.");
+      mlink_packet_t packet;
+      packet.type = MLINK_TELEMETRY;
+      packet.seq_num = send_seq_num++;
+      packet.telemetry.battery_voltage = battery_get_level();
+      packet.telemetry.packet_count = rssi_get_packet_count();
+      packet.telemetry.packet_loss = rssi_get_dropped();
+      packet.telemetry.sequence_errors = rssi_get_out_of_sequence();
+      transport_send(tx_unicast_mac, &packet, sizeof(packet));
+    }
+
+    // Wait for the next interval
+    vTaskDelayUntil(&previous_wake_time, interval);
+  }
+}
+
 void rx_task(void* args)
 {
   static rx_event_t event;
@@ -479,15 +515,14 @@ void app_main()
 
   // TODO: Initialise servo driver
 
-  // Initialise battery voltage and RSSI measurement
-  ESP_ERROR_CHECK( battery_init() );
-  rssi_init();
-
   // Create failsafe timer
   rx_failsafe_timer = xTimerCreate("rx-failsafe-timer", pdMS_TO_TICKS(500), pdTRUE, NULL, rx_failsafe_callback);
 
   // Initialise RX task
   xTaskCreate(rx_task, "rx-task", 2048, NULL, 10, NULL);
+
+  // Initialise RX telemetry task
+  xTaskCreate(rx_telemetry_task, "rx-telemetry-task", 2048, NULL, 7, NULL);
 }
 #elif ROLE == ROLE_TX
 static const char *TAG = "m-link-tx-main";
@@ -803,7 +838,7 @@ void app_main()
 
   // Initialise battery voltage and RSSI measurement
   ESP_ERROR_CHECK( battery_init() );
-  rssi_init();
+  rssi_init(true);
 
   // Initialise TX task
   xTaskCreate(tx_task, "tx-task", 2048, NULL, 10, NULL);
