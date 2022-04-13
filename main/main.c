@@ -23,7 +23,7 @@
 #include "esp_system.h"
 #include "esp_err.h"
 
-#include "tx-ppm.h"
+#include "ppm.h"
 #include "rx-pwm.h"
 #include "led.h"
 #include "battery.h"
@@ -35,7 +35,7 @@
 #define ROLE_TX 0
 #define ROLE_RX 1
 
-#define ROLE ROLE_RX
+#define ROLE ROLE_TX
 
 uint16_t send_seq_num = 0;
 
@@ -1022,6 +1022,6 @@ void app_main()
   xTaskCreate(tx_telemetry_task, "tx-telemetry-task", 2048, NULL, 7, NULL);
 
   // Initialise PPM decoder
-  ESP_ERROR_CHECK( tx_ppm_init(&ppm_cb) );
+  ESP_ERROR_CHECK( ppm_init(&ppm_cb) );
 }
 #endif

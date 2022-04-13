@@ -13,15 +13,15 @@
 #include "driver/gpio.h"
 #include "driver/hw_timer.h"
 
-#include "tx-ppm.h"
+#include "ppm.h"
 
-static const char *TAG = "m-link-tx-ppm";
+static const char *TAG = "m-link-ppm";
 
 #define PPM_IO_NUM    14
 
-static tx_ppm_callback_t tx_ppm_cb = NULL;
+static ppm_callback_t ppm_cb = NULL;
 
-xQueueHandle tx_ppm_evt_queue = NULL;
+xQueueHandle ppm_evt_queue = NULL;
 
 typedef enum
 {
@@ -37,7 +37,7 @@ static uint32_t ppm_data[PPM_NUM_CHANNELS] = { 0 };
 
 static volatile uint32_t ppm_rollover = 0;
 
-static void tx_ppm_isr_handler(void* arg)
+static void ppm_isr_handler(void* arg)
 {
   // Capture the current time and calculate with width of the last pulse
   volatile uint32_t now = (0x199999 - hw_timer_get_count_data()) + (ppm_rollover << 23);
@@ -77,7 +77,7 @@ static void tx_ppm_isr_handler(void* arg)
         {
           ppm_state = PPM_WAITING;
           ppm_channel = 0;
-          xQueueOverwriteFromISR(tx_ppm_evt_queue, ppm_data, NULL);
+          xQueueOverwriteFromISR(ppm_evt_queue, ppm_data, NULL);
         }
       } break;
       // Waiting for sync pulse
@@ -86,41 +86,41 @@ static void tx_ppm_isr_handler(void* arg)
   }
 }
 
-static void tx_ppm_timer_isr(void* arg)
+static void ppm_timer_isr(void* arg)
 {
   // Count when the hardware timer resets
   ++ppm_rollover;
 }
 
-static void tx_ppm_task(void* args)
+static void ppm_task(void* args)
 {
   static uint32_t frame_data[PPM_NUM_CHANNELS];
 
   for (;;)
   {
     // Wait for events from the PPM callback and hand off to the user callback
-    if (xQueueReceive(tx_ppm_evt_queue, &frame_data, portMAX_DELAY))
+    if (xQueueReceive(ppm_evt_queue, &frame_data, portMAX_DELAY))
     {
-      (*tx_ppm_cb)(frame_data);
+      (*ppm_cb)(frame_data);
     }
   }
 }
 
-esp_err_t tx_ppm_init(tx_ppm_callback_t ppm_cb)
+esp_err_t ppm_init(ppm_callback_t in_ppm_cb)
 {
   // Assign callback
-  if (!ppm_cb)
+  if (!in_ppm_cb)
   {
     return ESP_FAIL;
   }
-  tx_ppm_cb = ppm_cb;
+  ppm_cb = in_ppm_cb;
 
   // Create queue and task to receive messages from the PPM interrupt
-  tx_ppm_evt_queue = xQueueCreate(1, sizeof(uint32_t) * PPM_NUM_CHANNELS);
-  xTaskCreate(tx_ppm_task, "tx-ppm-task", 2048, NULL, 10, NULL);
+  ppm_evt_queue = xQueueCreate(1, sizeof(uint32_t) * PPM_NUM_CHANNELS);
+  xTaskCreate(ppm_task, "ppm-task", 2048, NULL, 10, NULL);
 
   // Start hardware timer to count time between callbacks
-  ESP_ERROR_CHECK( hw_timer_init(tx_ppm_timer_isr, NULL) );
+  ESP_ERROR_CHECK( hw_timer_init(ppm_timer_isr, NULL) );
   ESP_ERROR_CHECK( hw_timer_alarm_us(0x199999, pdTRUE) );
 
   // Setup pin change interrupt to detect PPM signal edges
@@ -131,7 +131,7 @@ esp_err_t tx_ppm_init(tx_ppm_callback_t ppm_cb)
   config.pull_down_en = GPIO_PULLDOWN_DISABLE;
   config.intr_type = GPIO_INTR_ANYEDGE;
   ESP_ERROR_CHECK( gpio_install_isr_service(0) );
-  ESP_ERROR_CHECK( gpio_isr_handler_add(PPM_IO_NUM, tx_ppm_isr_handler, (void*)PPM_IO_NUM) );
+  ESP_ERROR_CHECK( gpio_isr_handler_add(PPM_IO_NUM, ppm_isr_handler, (void*)PPM_IO_NUM) );
   ESP_ERROR_CHECK( gpio_config(&config) );
 
   // Log that PPM has been initialised
