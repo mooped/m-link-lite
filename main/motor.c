@@ -41,7 +41,7 @@
 // PWM period 1024us(~1Khz)
 #define PWM_PERIOD    (511)
 
-static const char *TAG = "m-link-rx-pwm";
+static const char *TAG = "m-link-motor";
 
 // pwm pin number
 const uint32_t pin_num[PWM_IO_COUNT] = {
@@ -63,14 +63,14 @@ float phase[PWM_IO_COUNT] = {
   0.f, 0.f, 0.f, 0.f, 0.f, 0.f,
 };
 
-void rx_pwm_init(void)
+void motor_init(void)
 {
   ESP_ERROR_CHECK( pwm_init(PWM_PERIOD, duties, PWM_IO_COUNT, pin_num) );
   ESP_ERROR_CHECK( pwm_set_phases(phase) );
   ESP_ERROR_CHECK( pwm_start() );
 }
 
-void rx_pwm_set_motor(int speed, int channel_a, int channel_b)
+void motor_set(int speed, int channel_a, int channel_b)
 {
   // Coast
   if (speed == 0)
@@ -101,15 +101,12 @@ void rx_pwm_set_motor(int speed, int channel_a, int channel_b)
   }
 }
 
-void rx_pwm_set_motors(int m1, int m2, int m3)
+void motor_set_all(int m1, int m2, int m3)
 {
-  rx_pwm_set_motor(m1, PWM_M1A_CHANNEL, PWM_M1B_CHANNEL);
-  rx_pwm_set_motor(m2, PWM_M2A_CHANNEL, PWM_M2B_CHANNEL);
-  rx_pwm_set_motor(m3, PWM_M3A_CHANNEL, PWM_M3B_CHANNEL);
-}
+  motor_set(m1, PWM_M1A_CHANNEL, PWM_M1B_CHANNEL);
+  motor_set(m2, PWM_M2A_CHANNEL, PWM_M2B_CHANNEL);
+  motor_set(m3, PWM_M3A_CHANNEL, PWM_M3B_CHANNEL);
 
-void rx_pwm_update(void)
-{
   pwm_set_duties(duties);
   pwm_start();
 }

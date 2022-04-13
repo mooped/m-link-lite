@@ -24,7 +24,7 @@
 #include "esp_err.h"
 
 #include "ppm.h"
-#include "rx-pwm.h"
+#include "motor.h"
 #include "led.h"
 #include "battery.h"
 #include "rssi.h"
@@ -358,12 +358,11 @@ void rx_task(void* args)
             }
   
             // Update motors
-            rx_pwm_set_motors(
+            motor_set_all(
               motor_translate(motors[0], controls->brakes[0]),
               motor_translate(motors[1], controls->brakes[1]),
               motor_translate(motors[2], controls->brakes[2])
             );
-            rx_pwm_update();
 
             // Update LEDs to active mode
             rx_led_set_state(RX_LED_ACTIVE);
@@ -376,10 +375,6 @@ void rx_task(void* args)
         // Received a beacon packet from the TX, complete handshake
         case RX_EVENT_BEACON_RECEIVED:
         {
-          // Turn on the LED
-          //rx_pwm_set_led(1);
-          rx_pwm_update();
-
           int send_beacon = 0;
 
           if (bind_mode == RX_BIND_BINDING)
@@ -468,8 +463,7 @@ void rx_task(void* args)
         {
           ESP_LOGW(TAG, "Failsafe triggered - setting motors to coast!");
           // Set motors to coast
-          rx_pwm_set_motors(0, 0, 0);
-          rx_pwm_update();
+          motor_set_all(0, 0, 0);
           // Update LEDs to failsafe
           rx_led_set_state(RX_LED_FAILSAFE);
         }
@@ -481,9 +475,8 @@ void rx_task(void* args)
 void app_main()
 {
   // Initialise PWM driver for motors, set motors off
-  rx_pwm_init();
-  rx_pwm_set_motors(0, 0, 0);
-  rx_pwm_update();
+  motor_init();
+  motor_set_all(0, 0, 0);
 
   // Initialize NVS
   esp_err_t err = nvs_flash_init();
