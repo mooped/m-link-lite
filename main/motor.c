@@ -22,6 +22,14 @@
 
 #include "driver/pwm.h"
 
+#include "motor.h"
+
+#include "motor.h"
+
+#include "motor.h"
+
+#include "motor.h"
+
 #define PWM_IO_COUNT      6
 
 #define PWM_0_OUT_IO_NUM  4   // Motor 1A
@@ -38,8 +46,8 @@
 #define PWM_M3A_CHANNEL 4
 #define PWM_M3B_CHANNEL 5
 
-// PWM period 1024us(~1Khz)
-#define PWM_PERIOD    (511)
+// PWM period 1000us (1Khz)
+#define PWM_PERIOD    (1000)
 
 static const char *TAG = "m-link-motor";
 
@@ -73,13 +81,13 @@ void motor_init(void)
 void motor_set(int speed, int channel_a, int channel_b)
 {
   // Coast
-  if (speed == 0)
+  if (speed == MOTOR_COAST)
   {
     duties[channel_a] = 0;
     duties[channel_b] = 0;
   }
   // Brake
-  else if (speed == 512)
+  else if (speed == MOTOR_BRAKE)
   {
     duties[channel_a] = PWM_PERIOD;
     duties[channel_b] = PWM_PERIOD;
@@ -87,15 +95,14 @@ void motor_set(int speed, int channel_a, int channel_b)
   // Drive
   else
   {
-    // Coast when not driving
-    if (speed > 0)
+    if (speed > MOTOR_COAST)
     {
       duties[channel_a] = 0;
-      duties[channel_b] = (speed > 511) ? 511 : speed;
+      duties[channel_b] = (speed > MOTOR_MAX) ? MOTOR_MAX : speed;
     }
     else
     {
-      duties[channel_a] = (speed < -511) ? 511 : -speed;
+      duties[channel_a] = (speed < -MOTOR_MAX) ? MOTOR_MAX : -speed;
       duties[channel_b] = 0;
     }
   }

@@ -1,5 +1,9 @@
 #pragma once
 
+#define MOTOR_MAX     500
+#define MOTOR_COAST   0
+#define MOTOR_BRAKE   501
+
 /// Initialise the PWM/motor control module
 void motor_init(void);
 

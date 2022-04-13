@@ -35,7 +35,7 @@
 #define ROLE_TX 0
 #define ROLE_RX 1
 
-#define ROLE ROLE_TX
+#define ROLE ROLE_RX
 
 uint16_t send_seq_num = 0;
 
@@ -260,16 +260,27 @@ esp_err_t rx_bind_cancel(void)
 
 int motor_translate(uint16_t value, uint16_t brake_value)
 {
-  if (brake_value < 6000)
+  // PPM pulses run from 5500 - 9500 clock ticks, so subtract 5500 and divide by 4
+  // Clamp if out of range
+  value = (value >= 5500) ? (value - 5500) : 0;
+  value = (value < 4000) ? (value / 4) : 1000;
+
+  // Check deadzone
+  const int deadzone_width = 20;
+  if (value > 500 - deadzone_width && value < 500 + deadzone_width)
   {
-    value = (value > 3500) ? (value - 3500) : 0;
-    value = (value < 4096) ? (value / 4) : 1024;
-    return ((int)value) - 512;
+    // Center braking - if enabled
+    if (brake_value > 6500)
+    {
+      return MOTOR_BRAKE;
+    }
+    // Otherwise coast in the deadzone
+    else
+    {
+      return MOTOR_COAST;
+    }
   }
-  else
-  {
-    return 512;
-  }
+  return ((int)value) - 500;
 }
 
 void rx_telemetry_task(void* args)
@@ -919,8 +930,11 @@ void tx_task(void* args)
               ESP_LOGW(TAG, "No TX beacon sent.");
             }
           }
-          // Output for debugging
-          ppm_debug(channels);
+          // Output for debugging - use bind mode to trigger
+          if (bind_mode)
+          {
+            ppm_debug(channels);
+          }
         } break;
         // Received a beacon from the RX, complete handshake
         case TX_EVENT_BEACON_RECEIVED:

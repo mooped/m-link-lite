@@ -21,8 +21,6 @@ static const char *TAG = "m-link-ppm";
 
 #define TIMER_MAX_DELAY   0x199999
 
-#define PPM_PULSE_OFFSET  2000
-
 static ppm_callback_t ppm_cb = NULL;
 
 xQueueHandle ppm_evt_queue = NULL;
@@ -79,7 +77,7 @@ static void ppm_isr_handler(void* arg)
       // Timing a pulse
       case PPM_PULSE:
       {
-        ppm_data[ppm_channel++] = pulsewidth - PPM_PULSE_OFFSET;
+        ppm_data[ppm_channel++] = pulsewidth;
         if (ppm_channel < PPM_NUM_CHANNELS)
         {
           ppm_state = PPM_GAP;
