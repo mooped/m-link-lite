@@ -35,7 +35,7 @@
 #define ROLE_TX 0
 #define ROLE_RX 1
 
-#define ROLE ROLE_TX
+#define ROLE ROLE_RX
 
 uint16_t send_seq_num = 0;
 
@@ -150,7 +150,7 @@ void rx_led_set_state(rx_led_state_t new_state)
 void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
 {
   mlink_packet_t* packet = data;
-  ESP_LOGI(TAG, "Got some data. Type: %d Length: %d", packet->type, length);
+  ESP_LOGD(TAG, "Got some data. Type: %d Length: %d", packet->type, length);
   rx_event_t event;
 
   rssi_recv(packet->seq_num);
@@ -161,7 +161,7 @@ void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
     {
       if (packet->beacon.type & MLINK_BEACON_TX)
       {
-        ESP_LOGI(TAG, "TX beacon received.");
+        ESP_LOGD(TAG, "TX beacon received.");
         // Send an event to the RX task with the beacon MAC address
         event.type = RX_EVENT_BEACON_RECEIVED;
         event.beacon.type = packet->beacon.type;
@@ -173,7 +173,7 @@ void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
       }
       else
       {
-        ESP_LOGI(TAG, "Non-TX beacon received - ignoring.");
+        ESP_LOGD(TAG, "Non-TX beacon received - ignoring.");
       }
     } break;
     case MLINK_CONTROL:
@@ -196,7 +196,7 @@ void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
 
 void sent_cb(void)
 {
-  ESP_LOGI(TAG, "Packet Sent");
+  ESP_LOGD(TAG, "Packet Sent");
   xSemaphoreGive(rx_send_semaphore);
 }
 
@@ -216,7 +216,7 @@ void rx_bind_timer_callback(xTimerHandle xTimer)
 
   if (bind_mode == RX_BIND_WAITING)
   {
-    ESP_LOGW(TAG, "Entered bind mode.");
+    ESP_LOGI(TAG, "Entered bind mode.");
     bind_mode = RX_BIND_BINDING;
 
     // Update LEDs to binding
@@ -287,12 +287,12 @@ void rx_telemetry_task(void* args)
   for (;;)
   {
     // Report RSSI stats to console
-    ESP_LOGI(TAG, "Sequence Num: %d Packets: %d Dropped Packets: %d Sequence Errors: %d", rssi_get_seq_num(), rssi_get_packet_count(), rssi_get_dropped(), rssi_get_out_of_sequence());
+    ESP_LOGD(TAG, "Sequence Num: %d Packets: %d Dropped Packets: %d Sequence Errors: %d", rssi_get_seq_num(), rssi_get_packet_count(), rssi_get_dropped(), rssi_get_out_of_sequence());
 
     // Create and send a telemetry packet
     if (xSemaphoreTake(rx_send_semaphore, pdMS_TO_TICKS(1000)))
     {
-      ESP_LOGI(TAG, "Send telemetry packet.");
+      ESP_LOGD(TAG, "Send telemetry packet.");
       mlink_packet_t packet;
       packet.type = MLINK_TELEMETRY;
       packet.seq_num = send_seq_num++;
@@ -341,12 +341,27 @@ void rx_task(void* args)
   
             // Reset failsafe timer
             xTimerReset(rx_failsafe_timer, 0);
+
+            static uint16_t motors[3] = { 5500, 5500, 5500 };
+            for (int i = 0; i < 3; ++i)
+            {
+              // Pass small changes straight through
+              if (abs(motors[i] - controls->motors[i]) < 25)
+              {
+                motors[i] = controls->motors[i];
+              }
+              // Smooth large changes by averaging
+              else
+              {
+                motors[i] = (motors[i] * 4 + controls->motors[i]) / 5;
+              }
+            }
   
             // Update motors
             rx_pwm_set_motors(
-              motor_translate(controls->motors[0], controls->brakes[0]),
-              motor_translate(controls->motors[1], controls->brakes[1]),
-              motor_translate(controls->motors[2], controls->brakes[2])
+              motor_translate(motors[0], controls->brakes[0]),
+              motor_translate(motors[1], controls->brakes[1]),
+              motor_translate(motors[2], controls->brakes[2])
             );
             rx_pwm_update();
 
@@ -385,7 +400,6 @@ void rx_task(void* args)
               ESP_LOGI(TAG, "Writing "MACSTR" to NVS...", MAC2STR(tx_unicast_mac));
               ESP_ERROR_CHECK( nvs_set_blob(rx_nvs_handle, "tx_mac", tx_unicast_mac, ESP_NOW_ETH_ALEN) );
               ESP_ERROR_CHECK( nvs_commit(rx_nvs_handle) );
-              ESP_LOGI(TAG, "Written "MACSTR" to NVS.", MAC2STR(tx_unicast_mac));
 
               // Transmit RX beacon with bind flag
               if (xSemaphoreTake(rx_send_semaphore, pdMS_TO_TICKS(1000)))
@@ -415,7 +429,7 @@ void rx_task(void* args)
               // Acknowledge TX beacon with an RX beacon
               if (xSemaphoreTake(rx_send_semaphore, 0))
               {
-                ESP_LOGI(TAG, "Send RX beacon.");
+                ESP_LOGD(TAG, "Send RX beacon.");
                 mlink_packet_t packet;
                 packet.type = MLINK_BEACON;
                 packet.seq_num = send_seq_num++;
@@ -436,7 +450,7 @@ void rx_task(void* args)
           // TODO: Only do this if we're bound to this TX
           if (send_beacon && xSemaphoreTake(rx_send_semaphore, 0))
           {
-            ESP_LOGI(TAG, "Send RX beacon.");
+            ESP_LOGD(TAG, "Send RX beacon.");
             mlink_packet_t packet;
             packet.type = MLINK_BEACON;
             packet.seq_num = send_seq_num++;
@@ -445,7 +459,7 @@ void rx_task(void* args)
           }
           else
           {
-            ESP_LOGI(TAG, "No RX beacon packet sent.");
+            ESP_LOGW(TAG, "No RX beacon packet sent.");
           }
 
           tx_beacon_received = true;
@@ -466,6 +480,11 @@ void rx_task(void* args)
 
 void app_main()
 {
+  // Initialise PWM driver for motors, set motors off
+  rx_pwm_init();
+  rx_pwm_set_motors(0, 0, 0);
+  rx_pwm_update();
+
   // Initialize NVS
   esp_err_t err = nvs_flash_init();
   if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND)
@@ -507,11 +526,6 @@ void app_main()
   // Set LED to boot state (2 second flash)
   ESP_ERROR_CHECK( led_init(rx_led_config, RX_LED_NUM) );
   rx_led_set_state(RX_LED_WAITING);
-
-  // Initialise PWM driver for motors, set motors off
-  rx_pwm_init();
-  rx_pwm_set_motors(0, 0, 0);
-  rx_pwm_update();
 
   // TODO: Initialise servo driver
 
@@ -691,29 +705,64 @@ static void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t leng
 
 static void sent_cb(void)
 {
-  ESP_LOGI(TAG, "Packet Sent");
+  ESP_LOGD(TAG, "Packet Sent");
   xSemaphoreGive(tx_send_semaphore);
 }
 
-static void ppm_cb(uint32_t channels[PPM_NUM_CHANNELS])
+static void ppm_debug(const uint32_t channels[PPM_NUM_CHANNELS])
 {
-  static uint32_t count = 0;
+  static uint16_t min[PPM_NUM_CHANNELS] = { 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff };
+  static uint16_t max[PPM_NUM_CHANNELS] = { 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000 };
 
-  // Log every 100 frames for debugging
-  if ((count++ % 100) == 0) {
-    ESP_LOGI(TAG, "Channels %d %d %d %d %d %d %d %d %d",
-      channels[0], 
-      channels[1], 
-      channels[2], 
-      channels[3], 
-      channels[4], 
-      channels[5], 
-      channels[6], 
-      channels[7], 
-      channels[8]
-    );
+  for (size_t i = 0; i < PPM_NUM_CHANNELS; ++i)
+  {
+    if (channels[i] < min[i])
+    {
+      min[i] = channels[i];
+    }
+    if (channels[i] > max[i])
+    {
+      max[i] = channels[i];
+    }
   }
 
+  ESP_LOGI(TAG, "     Min %d %d %d %d %d %d %d %d %d",
+    min[0], 
+    min[1], 
+    min[2], 
+    min[3], 
+    min[4], 
+    min[5], 
+    min[6], 
+    min[7], 
+    min[8]
+  );
+  ESP_LOGI(TAG, "     Max %d %d %d %d %d %d %d %d %d",
+    max[0], 
+    max[1], 
+    max[2], 
+    max[3], 
+    max[4], 
+    max[5], 
+    max[6], 
+    max[7], 
+    max[8]
+  );
+  ESP_LOGI(TAG, "Channels %d %d %d %d %d %d %d %d %d",
+    channels[0], 
+    channels[1], 
+    channels[2], 
+    channels[3], 
+    channels[4], 
+    channels[5], 
+    channels[6], 
+    channels[7], 
+    channels[8]
+  );
+}
+
+static void ppm_cb(const uint32_t channels[PPM_NUM_CHANNELS])
+{
   tx_event_t event;
   event.type = TX_EVENT_CONTROL_UPDATE;
   memcpy(event.controls.channels, channels, sizeof(event.controls.channels));
@@ -758,8 +807,8 @@ void tx_telemetry_task(void* args)
   // Initialise OLED
   oled_init();
 
-  // Update telemetry display once every 500ms
-  const TickType_t interval = pdMS_TO_TICKS(500);
+  // Update telemetry display once every 1500ms
+  const TickType_t interval = pdMS_TO_TICKS(1500);
   TickType_t previous_wake_time = xTaskGetTickCount();
 
   for (;;)
@@ -880,7 +929,7 @@ void tx_task(void* args)
             }
             else
             {
-              ESP_LOGI(TAG, "No control packet sent.");
+              ESP_LOGW(TAG, "No control packet sent.");
             }
           }
           // Otherwise send a TX beacon
@@ -894,20 +943,22 @@ void tx_task(void* args)
               packet.beacon.type = MLINK_BEACON_TX;
               if (bind_mode)
               {
-                ESP_LOGI(TAG, "Send TX | BIND beacon.");
+                ESP_LOGD(TAG, "Send TX | BIND beacon.");
                 packet.beacon.type |= MLINK_BEACON_BIND;
               }
               else
               {
-                ESP_LOGI(TAG, "Send TX beacon.");
+                ESP_LOGD(TAG, "Send TX beacon.");
               }
               transport_send(mlink_broadcast_mac, &packet, sizeof(packet));
             }
             else
             {
-              ESP_LOGI(TAG, "No TX beacon sent.");
+              ESP_LOGW(TAG, "No TX beacon sent.");
             }
           }
+          // Output for debugging
+          //ppm_debug(channels);
         } break;
         // Received a beacon from the RX, complete handshake
         case TX_EVENT_BEACON_RECEIVED:
@@ -930,7 +981,7 @@ void tx_task(void* args)
     {
       if (xSemaphoreTake(tx_send_semaphore, 0))
       {
-        ESP_LOGI(TAG, "Send TX beacon (no PPM or RX beacon).");
+        ESP_LOGD(TAG, "Send TX beacon (no PPM or RX beacon).");
         mlink_packet_t packet;
         packet.type = MLINK_BEACON;
         packet.seq_num = send_seq_num++;
@@ -939,7 +990,7 @@ void tx_task(void* args)
       }
       else
       {
-        ESP_LOGI(TAG, "No control packet sent.");
+        //ESP_LOGW(TAG, "No TX beacon sent.");
       }
     }
   }

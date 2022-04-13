@@ -29,8 +29,7 @@ static void battery_task(void* pvParam)
   for (;;)
   {
     // Read battery level from the ADC
-    esp_err_t ret;
-    ret = adc_read(&data);
+    esp_err_t ret = adc_read(&data);
     if (ret == ESP_OK)
     {
       // Convert into a voltage (using 10/1 potential divider resulting in divide by 11)
@@ -39,7 +38,7 @@ static void battery_task(void* pvParam)
       // Write battery level
       battery_level = data;
 
-      ESP_LOGI(TAG, "Read battery level: %d", battery_level);
+      ESP_LOGD(TAG, "Read battery level: %d", battery_level);
     }
     else
     {

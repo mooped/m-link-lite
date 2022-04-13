@@ -29,7 +29,7 @@ static void rssi_task(void* pvParam)
 
   for (;;)
   {
-    ESP_LOGI(TAG, "Sequence Num: %d Packets: %d Dropped Packets: %d Sequence Errors: %d", recv_seq_num, recv_seq_num - recv_seq_first, dropped_packets, sequence_errors);
+    ESP_LOGD(TAG, "Sequence Num: %d Packets: %d Dropped Packets: %d Sequence Errors: %d", recv_seq_num, recv_seq_num - recv_seq_first, dropped_packets, sequence_errors);
 
     // Wait for the next interval
     vTaskDelayUntil(&previous_wake_time, interval);
