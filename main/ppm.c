@@ -19,6 +19,10 @@ static const char *TAG = "m-link-ppm";
 
 #define PPM_IO_NUM    14
 
+#define TIMER_MAX_DELAY   0x199999
+
+#define PPM_PULSE_OFFSET  2000
+
 static ppm_callback_t ppm_cb = NULL;
 
 xQueueHandle ppm_evt_queue = NULL;
@@ -39,8 +43,15 @@ static volatile uint32_t ppm_rollover = 0;
 
 static void ppm_isr_handler(void* arg)
 {
+  // If we hit the end of a gap, get out ASAP
+  if (ppm_state == PPM_GAP)
+  {
+    ppm_state = PPM_PULSE;
+    return;
+  }
+
   // Capture the current time and calculate with width of the last pulse
-  volatile uint32_t now = (0x199999 - hw_timer_get_count_data()) + (ppm_rollover << 23);
+  volatile uint32_t now = (TIMER_MAX_DELAY - hw_timer_get_count_data()) + ppm_rollover * TIMER_MAX_DELAY;
   const uint32_t pulsewidth = now - ppm_last_transition;
   ppm_last_transition = now;
 
@@ -68,7 +79,7 @@ static void ppm_isr_handler(void* arg)
       // Timing a pulse
       case PPM_PULSE:
       {
-        ppm_data[ppm_channel++] = pulsewidth;
+        ppm_data[ppm_channel++] = pulsewidth - PPM_PULSE_OFFSET;
         if (ppm_channel < PPM_NUM_CHANNELS)
         {
           ppm_state = PPM_GAP;

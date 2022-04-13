@@ -704,43 +704,6 @@ static void sent_cb(void)
 
 static void ppm_debug(const uint32_t channels[PPM_NUM_CHANNELS])
 {
-  static uint16_t min[PPM_NUM_CHANNELS] = { 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff };
-  static uint16_t max[PPM_NUM_CHANNELS] = { 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000 };
-
-  for (size_t i = 0; i < PPM_NUM_CHANNELS; ++i)
-  {
-    if (channels[i] < min[i])
-    {
-      min[i] = channels[i];
-    }
-    if (channels[i] > max[i])
-    {
-      max[i] = channels[i];
-    }
-  }
-
-  ESP_LOGI(TAG, "     Min %d %d %d %d %d %d %d %d %d",
-    min[0], 
-    min[1], 
-    min[2], 
-    min[3], 
-    min[4], 
-    min[5], 
-    min[6], 
-    min[7], 
-    min[8]
-  );
-  ESP_LOGI(TAG, "     Max %d %d %d %d %d %d %d %d %d",
-    max[0], 
-    max[1], 
-    max[2], 
-    max[3], 
-    max[4], 
-    max[5], 
-    max[6], 
-    max[7], 
-    max[8]
-  );
   ESP_LOGI(TAG, "Channels %d %d %d %d %d %d %d %d %d",
     channels[0], 
     channels[1], 
@@ -892,7 +855,13 @@ void tx_task(void* args)
         case TX_EVENT_CONTROL_UPDATE:
         {
           // Extract the channel data
-          const uint32_t* channels = event.controls.channels;
+          uint32_t* channels = event.controls.channels;
+          static uint16_t average[PPM_NUM_CHANNELS] = { 5500, 5500, 5500, 5500, 5500, 5500, 5500, 5500, 5500, };
+          for (int c = 0; c < PPM_NUM_CHANNELS; ++c)
+          {
+            average[c] = (channels[c] + average[c]) / 2;
+            channels[c] = average[c];
+          }
           // Set bind mode if requested
           bind_mode = channels[CHANNEL_BIND] >= 6000;
           // Update LED state if we're in bind mode
@@ -951,7 +920,7 @@ void tx_task(void* args)
             }
           }
           // Output for debugging
-          //ppm_debug(channels);
+          ppm_debug(channels);
         } break;
         // Received a beacon from the RX, complete handshake
         case TX_EVENT_BEACON_RECEIVED:
