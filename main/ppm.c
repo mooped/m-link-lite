@@ -5,6 +5,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "freertos/semphr.h"
 
 #include "esp_log.h"
 #include "esp_system.h"
@@ -24,6 +25,7 @@ static const char *TAG = "m-link-ppm";
 static ppm_callback_t ppm_cb = NULL;
 
 xQueueHandle ppm_evt_queue = NULL;
+xSemaphoreHandle ppm_barrier = NULL;
 
 typedef enum
 {
@@ -38,9 +40,12 @@ static uint32_t ppm_channel = 0;
 static uint32_t ppm_data[PPM_NUM_CHANNELS] = { 0 };
 
 static volatile uint32_t ppm_rollover = 0;
+static volatile uint32_t ppm_last_rollover = 0;
 
 static void ppm_isr_handler(void* arg)
 {
+  static BaseType_t xHigherPriorityTaskWoken;
+
   // If we hit the end of a gap, get out ASAP
   if (ppm_state == PPM_GAP)
   {
@@ -54,16 +59,21 @@ static void ppm_isr_handler(void* arg)
   ppm_last_transition = now;
 
   // If the counter rolled over, just throw away the frame and wait for a new sync pulse
-  if (now < ppm_last_transition)
+  if (ppm_rollover != ppm_last_rollover)
   {
     ppm_state = PPM_WAITING;
     ppm_channel = 0;
   }
   // If we get a long pulse it is a sync pulse, so reset and throw away the last frame
-  if (pulsewidth > 20000)
+  else if (pulsewidth > 20000)
   {
     ppm_state = PPM_GAP;
     ppm_channel = 0;
+    xSemaphoreGiveFromISR(ppm_barrier, &xHigherPriorityTaskWoken);
+    if (xHigherPriorityTaskWoken)
+    {
+      portYIELD_FROM_ISR();
+    }
   }
   else
   {
@@ -93,6 +103,7 @@ static void ppm_isr_handler(void* arg)
       case PPM_WAITING: break;
     }
   }
+  ppm_last_rollover = ppm_rollover;
 }
 
 static void ppm_timer_isr(void* arg)
@@ -103,15 +114,18 @@ static void ppm_timer_isr(void* arg)
 
 static void ppm_task(void* args)
 {
-  static uint32_t frame_data[PPM_NUM_CHANNELS];
+  uint32_t frame_data[PPM_NUM_CHANNELS];
 
   for (;;)
   {
-    // Wait for events from the PPM callback and hand off to the user callback
-    if (xQueueReceive(ppm_evt_queue, &frame_data, portMAX_DELAY))
-    {
-      (*ppm_cb)(frame_data);
-    }
+    // Wait for the PPM interrupt to detect a sync pulse, and then block other tasks until the frame is complete
+    xSemaphoreTake(ppm_barrier, portMAX_DELAY);
+
+    // Wait for events from the PPM interrupt
+    while (xQueueReceive(ppm_evt_queue, &frame_data, 0) == pdFALSE);
+
+    // Send the PPM callback
+    (*ppm_cb)(frame_data);
   }
 }
 
@@ -126,6 +140,7 @@ esp_err_t ppm_init(ppm_callback_t in_ppm_cb)
 
   // Create queue and task to receive messages from the PPM interrupt
   ppm_evt_queue = xQueueCreate(1, sizeof(uint32_t) * PPM_NUM_CHANNELS);
+  ppm_barrier = xSemaphoreCreateBinary();
   xTaskCreate(ppm_task, "ppm-task", 2048, NULL, 10, NULL);
 
   // Start hardware timer to count time between callbacks

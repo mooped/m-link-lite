@@ -353,26 +353,11 @@ void rx_task(void* args)
             // Reset failsafe timer
             xTimerReset(rx_failsafe_timer, 0);
 
-            static uint16_t motors[3] = { 5500, 5500, 5500 };
-            for (int i = 0; i < 3; ++i)
-            {
-              // Pass small changes straight through
-              if (abs(motors[i] - controls->motors[i]) < 25)
-              {
-                motors[i] = controls->motors[i];
-              }
-              // Smooth large changes by averaging
-              else
-              {
-                motors[i] = (motors[i] * 4 + controls->motors[i]) / 5;
-              }
-            }
-  
             // Update motors
             motor_set_all(
-              motor_translate(motors[0], controls->brakes[0]),
-              motor_translate(motors[1], controls->brakes[1]),
-              motor_translate(motors[2], controls->brakes[2])
+              motor_translate(controls->motors[0], controls->brakes[0]),
+              motor_translate(controls->motors[1], controls->brakes[1]),
+              motor_translate(controls->motors[2], controls->brakes[2])
             );
 
             // Update LEDs to active mode
@@ -429,26 +414,36 @@ void rx_task(void* args)
           }
           else
           {
+            static uint16_t rx_beacon_counter = 0;
             // If we're not in bind mode, only send a response if we're bound to this TX
             if (event.beacon.type == MLINK_BEACON_TX && memcmp(tx_unicast_mac, event.beacon.mac, ESP_NOW_ETH_ALEN) == 0)
             {
               // Acknowledge TX beacon with an RX beacon
-              if (xSemaphoreTake(rx_send_semaphore, 0))
+              if (rx_beacon_counter % 100 == 0)
               {
-                ESP_LOGD(TAG, "Send RX beacon.");
-                mlink_packet_t packet;
-                packet.type = MLINK_BEACON;
-                packet.seq_num = send_seq_num++;
-                packet.beacon.type = MLINK_BEACON_RX;
-                transport_send(tx_unicast_mac, &packet, sizeof(packet));
-
-                // Cancel bind timer
-                rx_bind_cancel();
+                if (xSemaphoreTake(rx_send_semaphore, 0))
+                {
+                  ESP_LOGD(TAG, "Send RX beacon.");
+                  mlink_packet_t packet;
+                  packet.type = MLINK_BEACON;
+                  packet.seq_num = send_seq_num++;
+                  packet.beacon.type = MLINK_BEACON_RX;
+                  transport_send(tx_unicast_mac, &packet, sizeof(packet));
+  
+                  // Cancel bind timer
+                  rx_bind_cancel();
+                }
+                else
+                {
+                  ESP_LOGW(TAG, "Failed to acknowledge TX beacon!");
+                }
               }
               else
               {
-                ESP_LOGW(TAG, "Failed to acknowledge TX beacon!");
+                ESP_LOGW(TAG, "Not acknowledging TX beacon!");
               }
+
+              ++rx_beacon_counter;
             }
           }
 
@@ -867,14 +862,16 @@ void tx_task(void* args)
         {
           // Extract the channel data
           uint32_t* channels = event.controls.channels;
+          /*
           static uint16_t average[PPM_NUM_CHANNELS] = { 5500, 5500, 5500, 5500, 5500, 5500, 5500, 5500, 5500, };
           for (int c = 0; c < PPM_NUM_CHANNELS; ++c)
           {
             average[c] = (channels[c] + average[c]) / 2;
             channels[c] = average[c];
           }
+          */
           // Set bind mode if requested
-          bind_mode = channels[CHANNEL_BIND] >= 6000;
+          bind_mode = channels[CHANNEL_BIND] >= 8000;
           // Update LED state if we're in bind mode
           if (bind_mode)
           {
@@ -992,7 +989,7 @@ void app_main()
   tx_led_set_state(TX_LED_WAITING);
 
   // Initialise TX task
-  xTaskCreate(tx_task, "tx-task", 2048, NULL, 10, NULL);
+  xTaskCreate(tx_task, "tx-task", 2048, NULL, 9, NULL);
 
   // Initialise telemetry task
   xTaskCreate(tx_telemetry_task, "tx-telemetry-task", 2048, NULL, 7, NULL);
