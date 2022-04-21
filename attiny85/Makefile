@@ -31,11 +31,10 @@ clean:
 -include $(shell mkdir -p $(OBJDIR) $(DEPDIR) 2>/dev/null) $(wildcard $(DEPDIR)/*)
 
 flash: $(TARGET).hex
-	sudo avrdude -C avrdude.conf -p $(AVRDUDE_MCU) -c avrispv2 -P /dev/ttyACM0 -U flash:w:$(TARGET).hex
+	sudo avrdude -C avrdude.conf -p $(AVRDUDE_MCU) -c atmelice_isp -U flash:w:$(TARGET).hex
 
 fuses:
 	# http://eleccelerator.com/fusecalc/fusecalc.php?chip=attiny85&LOW=E2&HIGH=DF&EXTENDED=FF&LOCKBIT=FF
 	# LFUSE disable internal clock div/8
-	sudo avrdude -C avrdude.conf -p $(AVRDUDE_MCU) -c avrispv2 -P /dev/ttyACM0
-	#-U lfuse:w:0xE2:m -U hfuse:w:0xDF:m -U efuse:w:0xFF:m -U lock:w:0xFF:m
+	sudo avrdude -C avrdude.conf -p $(AVRDUDE_MCU) -c atmelice_isp -U lfuse:w:0xE2:m -U hfuse:w:0xDF:m -U efuse:w:0xFF:m -U lock:w:0xFF:m
 
