@@ -18,8 +18,13 @@
 #include <util/delay.h>
 
 #include <stddef.h>
+#include <string.h>
+
+#include "usitwislave.h"
 
 #define PPM_NUM_CHANNELS        9
+
+#define DEVICE_ADDRESS          0x55
 
 typedef enum
 {
@@ -28,24 +33,34 @@ typedef enum
   PPM_WAITING,        	// Waiting for sync pulse to end
 } ppm_state_t;
 
+typedef struct
+{
+  // PPM data from the last frame
+  uint16_t data[PPM_NUM_CHANNELS];
+
+  // Counter to measure latency between INT out and handling by host CPU
+  uint16_t capture_time;
+
+  // Length of the last sync pulse
+  uint16_t syncwidth;
+}
+ppm_data_t;
+
 // PPM state
 ppm_state_t ppm_state = PPM_WAITING;
 
 // PPM last edge tracker
 uint16_t ppm_last_edge = 0;
 
-// PPM pulse widths and channel counter
-uint16_t ppm_data[PPM_NUM_CHANNELS] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-uint16_t ppm_syncwidth = 0;
+// PPM buffers and tracking data
 uint8_t  ppm_channel = 0;
-
-// Counter to measure latency between INT out and handling
-uint16_t ppm_capture_time = 0;
+uint8_t ppm_buffer_index = 0;
+ppm_data_t ppm_buffer[2];
 
 // Timer overflow counter
 uint8_t overflow_count = 0;
 
-void init_hardware(void)
+static void init_hardware(void)
 {
   // Disable watchdog
   MCUSR &= ~(1<<WDRF);
@@ -76,7 +91,7 @@ void init_hardware(void)
   // TODO
 }
 
-void set_interrupt(uint8_t value)
+static void set_interrupt(uint8_t value)
 {
   if (value)
   {
@@ -88,6 +103,19 @@ void set_interrupt(uint8_t value)
   }
 }
 
+static void data_cb(uint8_t input_buffer_length, const uint8_t* input_buffer, uint8_t* output_buffer_length, uint8_t* output_buffer)
+{
+  // Ignore input data
+  (void)input_buffer_length;
+  (void)input_buffer;
+
+  // We write out the double buffered PPM data
+  const uint8_t index = (ppm_buffer_index + 1) % 2;
+
+  *output_buffer_length = sizeof(ppm_data_t);
+  memcpy(output_buffer, &ppm_buffer[index], sizeof(ppm_data_t));
+}
+
 int main(void)
 {
   // Initialise everything
@@ -96,9 +124,10 @@ int main(void)
   // Enable interrupts
   sei();
 
-  set_interrupt(1);
+  // Initialise the TWI slave library
+  usi_twi_slave(DEVICE_ADDRESS, 0, data_cb, NULL);
 
-  // TODO: Sleep
+  // Should never get here - usitwislave will loop
   while (1);
 }
 
@@ -132,9 +161,13 @@ ISR(PCINT0_vect)
   // We got a long pulse, so treat it as a sync pulse and reset
   if (pulsewidth > 8000)
   {
+    // Reseet PPM state, we're in a gap
     ppm_state = PPM_GAP;
     ppm_channel = 0;
-    ppm_syncwidth = pulsewidth;
+
+    // Store sync pulse width
+    ppm_buffer[ppm_buffer_index].syncwidth = pulsewidth;
+
     // Clear interrupt - host CPU waited too long
     set_interrupt(0);
     return;
@@ -144,18 +177,27 @@ ISR(PCINT0_vect)
   if (ppm_state == PPM_PULSE)
   {
     // Record pulse
-    ppm_data[ppm_channel++] = pulsewidth;
+    ppm_buffer[ppm_buffer_index].data[ppm_channel++] = pulsewidth;
 
     // More to come, wait for the next
     if (ppm_channel < PPM_NUM_CHANNELS)
     {
+      // We were in a pulse, now we're in a gap
       ppm_state = PPM_GAP;
     }
-    // We're done - signal interrupt to host CPU and wait for next sync pulse
+    // We're done, copy to buffer then signal interrupt to host CPU and wait for next sync pulse
     else
     {
+      // We were in a pulse, now we're waiting
       ppm_state = PPM_WAITING;
-      ppm_channel = 0;
+
+      // Store the capture time
+      ppm_buffer[ppm_buffer_index].capture_time = now;
+
+      // Next frame writes to a new buffer
+      ppm_buffer_index = (ppm_buffer_index + 1) % 2;
+
+      // Signal the host CPU
       set_interrupt(1);
     }
   }

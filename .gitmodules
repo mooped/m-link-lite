@@ -1,0 +1,3 @@
+[submodule "attiny85/usitwislave"]
+	path = attiny85/usitwislave
+	url = git@github.com:eriksl/usitwislave.git
