@@ -109,9 +109,21 @@ static void data_cb(uint8_t input_buffer_length, const uint8_t* input_buffer, ui
   (void)input_buffer_length;
   (void)input_buffer;
 
-  // We write out the double buffered PPM data
+  // Capture the request time
+  const uint8_t snapshot = TCNT0;
+  const uint16_t now = ((uint16_t)overflow_count << 8) | snapshot;
+
+  // Get the buffer index
   const uint8_t index = (ppm_buffer_index + 1) % 2;
 
+  // Calculate the latency (assuming we only ever roll over once)
+  const uint16_t capture_time = ppm_buffer[index].capture_time;
+  const uint16_t latency = (now > capture_time) ? (now - capture_time) : (now + (0xffff - capture_time));
+
+  // Poke latency into the buffer on top of the stored capture time
+  ppm_buffer[index].capture_time = latency;
+
+  // Write out the double buffered PPM data
   *output_buffer_length = sizeof(ppm_data_t);
   memcpy(output_buffer, &ppm_buffer[index], sizeof(ppm_data_t));
 }
