@@ -10,48 +10,21 @@
 
 #include "driver/i2c.h"
 
+#include "twi.h"
+
 #include "oled.h"
 #include "font.h"
 
 #define OLED_ADDR (0x3c<<1)
 
-#define OLED_SDA_GPIO_NUM   13
-#define OLED_SCL_GPIO_NUM   12
-#define OLED_MASTER_NUM     0
-
-#define WRITE_BIT   0
-#define READ_BIT    1
-
-#define ACK_CHECK_EN    0x1
-#define ACK_CHECK_DIS   0x0
-#define ACK_VAL         0x0
-#define NACK_VAL        0x1
-#define LAST_NACK_VAL   0x2
-
 /*
 // Internal methods
-esp_err_t twi_ssd1306_init(void);
 esp_err_t twi_ssd1306_command(uint8_t addr, uint8_t command);
 esp_err_t twi_ssd1306_commands(uint8_t addr, const uint8_t* commands, size_t count);
 esp_err_t twi_ssd1306_send_data(uint8_t addr, const uint8_t* data, size_t count);
 esp_err_t twi_ssd1306_send_data_glyph(uint8_t addr, const uint8_t* data);
 esp_err_t twi_ssd1306_send_data_repeated(uint8_t addr, uint8_t data, size_t count);
 */
-
-esp_err_t twi_ssd1306_init(void)
-{
-  int i2c_master_port = OLED_MASTER_NUM;
-  i2c_config_t config;
-  config.mode = I2C_MODE_MASTER;
-  config.sda_io_num = OLED_SDA_GPIO_NUM;
-  config.sda_pullup_en = 1;
-  config.scl_io_num = OLED_SCL_GPIO_NUM;
-  config.scl_pullup_en = 1;
-  config.clk_stretch_tick = 300;
-  ESP_ERROR_CHECK( i2c_driver_install(i2c_master_port, config.mode) );
-  ESP_ERROR_CHECK( i2c_param_config(i2c_master_port, &config) );
-  return ESP_OK;
-}
 
 inline esp_err_t twi_write_addr(i2c_cmd_handle_t cmd, uint8_t addr)
 {
@@ -74,7 +47,7 @@ esp_err_t twi_ssd1306_command(uint8_t addr, uint8_t command)
   i2c_master_write_byte(cmd, 0x00, ACK_CHECK_EN);
   i2c_master_write_byte(cmd, command, ACK_CHECK_EN);
   i2c_master_stop(cmd);
-  ret = i2c_master_cmd_begin(OLED_MASTER_NUM, cmd, pdMS_TO_TICKS(100));
+  ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(100));
   i2c_cmd_link_delete(cmd);
   return ret;
 }
@@ -101,7 +74,7 @@ esp_err_t twi_ssd1306_commands(uint8_t addr, const uint8_t* commands, size_t cou
     i2c_master_write_byte(cmd, commands[i], ACK_CHECK_EN);
   }
   i2c_master_stop(cmd);
-  ret = i2c_master_cmd_begin(OLED_MASTER_NUM, cmd, pdMS_TO_TICKS(100));
+  ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(100));
   i2c_cmd_link_delete(cmd);
   return ret;
 }
@@ -128,7 +101,7 @@ esp_err_t twi_ssd1306_send_data(uint8_t addr, const uint8_t* data, size_t count)
     i2c_master_write_byte(cmd, data[i], ACK_CHECK_EN);
   }
   i2c_master_stop(cmd);
-  ret = i2c_master_cmd_begin(OLED_MASTER_NUM, cmd, pdMS_TO_TICKS(100));
+  ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(100));
   i2c_cmd_link_delete(cmd);
   return ret;
 }
@@ -166,7 +139,7 @@ esp_err_t twi_ssd1306_send_data_glyph(uint8_t addr, const uint8_t* data)
     }
   }
   i2c_master_stop(cmd);
-  ret = i2c_master_cmd_begin(OLED_MASTER_NUM, cmd, pdMS_TO_TICKS(100));
+  ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(100));
   i2c_cmd_link_delete(cmd);
   return ret;
 }
@@ -193,7 +166,7 @@ esp_err_t twi_ssd1306_send_data_repeated(uint8_t addr, uint8_t data, size_t coun
     i2c_master_write_byte(cmd, data, ACK_CHECK_EN);
   }
   i2c_master_stop(cmd);
-  ret = i2c_master_cmd_begin(OLED_MASTER_NUM, cmd, pdMS_TO_TICKS(100));
+  ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, pdMS_TO_TICKS(100));
   i2c_cmd_link_delete(cmd);
   return ret;
 }
@@ -205,9 +178,6 @@ const uint8_t contrast_packet[] = {
 
 void oled_init(void)
 {
-  // Initialise I2C driver
-  ESP_ERROR_CHECK( twi_ssd1306_init() );
-
   // Initialise the OLED
   ESP_ERROR_CHECK( twi_ssd1306_command(OLED_ADDR, 0xae) ); // Display off
   ESP_ERROR_CHECK( twi_ssd1306_command(OLED_ADDR, 0xd5) ); // Clock dividier

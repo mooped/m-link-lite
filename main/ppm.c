@@ -25,7 +25,6 @@ static const char *TAG = "m-link-ppm";
 static ppm_callback_t ppm_cb = NULL;
 
 xQueueHandle ppm_evt_queue = NULL;
-xSemaphoreHandle ppm_barrier = NULL;
 
 typedef enum
 {
@@ -37,15 +36,13 @@ typedef enum
 static int32_t ppm_last_transition = 0;
 static ppm_state_t ppm_state = PPM_WAITING;
 static uint32_t ppm_channel = 0;
-static uint32_t ppm_data[PPM_NUM_CHANNELS] = { 0 };
+static uint16_t ppm_data[PPM_NUM_CHANNELS] = { 0 };
 
 static volatile uint32_t ppm_rollover = 0;
 static volatile uint32_t ppm_last_rollover = 0;
 
 static void ppm_isr_handler(void* arg)
 {
-  static BaseType_t xHigherPriorityTaskWoken;
-
   // If we hit the end of a gap, get out ASAP
   if (ppm_state == PPM_GAP)
   {
@@ -69,11 +66,6 @@ static void ppm_isr_handler(void* arg)
   {
     ppm_state = PPM_GAP;
     ppm_channel = 0;
-    xSemaphoreGiveFromISR(ppm_barrier, &xHigherPriorityTaskWoken);
-    if (xHigherPriorityTaskWoken)
-    {
-      portYIELD_FROM_ISR();
-    }
   }
   else
   {
@@ -118,11 +110,8 @@ static void ppm_task(void* args)
 
   for (;;)
   {
-    // Wait for the PPM interrupt to detect a sync pulse, and then block other tasks until the frame is complete
-    xSemaphoreTake(ppm_barrier, portMAX_DELAY);
-
     // Wait for events from the PPM interrupt
-    while (xQueueReceive(ppm_evt_queue, &frame_data, 0) == pdFALSE);
+    xQueueReceive(ppm_evt_queue, &frame_data, portMAX_DELAY);
 
     // Send the PPM callback
     (*ppm_cb)(frame_data);
@@ -140,7 +129,6 @@ esp_err_t ppm_init(ppm_callback_t in_ppm_cb)
 
   // Create queue and task to receive messages from the PPM interrupt
   ppm_evt_queue = xQueueCreate(1, sizeof(uint32_t) * PPM_NUM_CHANNELS);
-  ppm_barrier = xSemaphoreCreateBinary();
   xTaskCreate(ppm_task, "ppm-task", 2048, NULL, 10, NULL);
 
   // Start hardware timer to count time between callbacks

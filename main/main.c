@@ -23,7 +23,9 @@
 #include "esp_system.h"
 #include "esp_err.h"
 
+#include "twi.h"
 #include "ppm.h"
+//#include "ppm_offload.h"
 #include "motor.h"
 #include "led.h"
 #include "battery.h"
@@ -35,7 +37,7 @@
 #define ROLE_TX 0
 #define ROLE_RX 1
 
-#define ROLE ROLE_RX
+#define ROLE ROLE_TX
 
 uint16_t send_seq_num = 0;
 
@@ -557,7 +559,7 @@ typedef struct
   {
     struct
     {
-      uint32_t channels[PPM_NUM_CHANNELS];
+      uint16_t channels[PPM_NUM_CHANNELS];
     } controls;
     struct
     {
@@ -652,6 +654,7 @@ void tx_led_set_state(tx_led_state_t new_state)
 
 mlink_telemetry_t tx_telemetry_buffer;
 SemaphoreHandle_t tx_telemetry_mutex = NULL;
+SemaphoreHandle_t tx_i2c_mutex = NULL;
 
 static void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t length)
 {
@@ -708,7 +711,7 @@ static void sent_cb(void)
   xSemaphoreGive(tx_send_semaphore);
 }
 
-static void ppm_debug(const uint32_t channels[PPM_NUM_CHANNELS])
+static void ppm_debug(const uint16_t channels[PPM_NUM_CHANNELS])
 {
   ESP_LOGI(TAG, "Channels %d %d %d %d %d %d %d %d %d",
     channels[0], 
@@ -723,11 +726,50 @@ static void ppm_debug(const uint32_t channels[PPM_NUM_CHANNELS])
   );
 }
 
-static void ppm_cb(const uint32_t channels[PPM_NUM_CHANNELS])
+bool ppm_offload_available = true;
+
+typedef struct
+{
+  uint16_t channels[PPM_NUM_CHANNELS];
+  uint16_t capture_time;
+  uint16_t syncwidth;
+} ppm_offload_t;
+
+static void ppm_cb(const uint16_t channels[PPM_NUM_CHANNELS])
 {
   tx_event_t event;
   event.type = TX_EVENT_CONTROL_UPDATE;
-  memcpy(event.controls.channels, channels, sizeof(event.controls.channels));
+
+  // Try PPM offload until it fails
+  if (ppm_offload_available)
+  {
+    if (xSemaphoreTake(tx_i2c_mutex, portMAX_DELAY))
+    {
+      ppm_offload_t packet = { 0 };
+      // Receive PPM data from the offload helper into the event
+      esp_err_t ret = twi_read_bytes(0x55, (void*)&packet, sizeof(packet));
+      xSemaphoreGive(tx_i2c_mutex);
+      if (ret == ESP_OK)
+      {
+        memcpy(event.controls.channels, packet.channels, sizeof(event.controls.channels));
+      }
+      else
+      {
+        ESP_LOGW(TAG, "No response from PPM offload, falling back to onboard PPM capture.");
+        ESP_ERROR_CHECK_WITHOUT_ABORT(ret);
+        //ppm_offload_available = false;
+      }
+    }
+  }
+
+  // Fallback to onboard capture
+  if (!ppm_offload_available)
+  {
+    // Copy the PPM data we captured into the event
+    memcpy(event.controls.channels, channels, sizeof(event.controls.channels));
+  }
+
+  // Send the event
   if (xQueueSend(tx_control_queue, &event, portMAX_DELAY) != pdTRUE)
   {
     ESP_LOGW(TAG, "Control event queue fail.");
@@ -798,47 +840,52 @@ void tx_telemetry_task(void* args)
       );
       ESP_LOGI(TAG, "RX Battery Voltage: %d", telemetry_data.battery_voltage);
 
-      // Update OLED
-      oled_at(16, 0);
-      oled_print("RX:  ");
-      oled_number_voltage(telemetry_data.battery_voltage);
-      oled_print("v    ");
-
-      oled_at(72, 0);
-      oled_print("TX:  ");
-      oled_number_voltage(battery_get_level());
-      oled_print("v     ");
-
-      oled_at(0, 0);
-      oled_glyph(glyph_battery, sizeof(glyph_battery));
-
-      oled_at(16, 1);
-      oled_print("RX:  ");
-      uint16_t sig = 0;
-      if (telemetry_data.packet_count)
+      if (xSemaphoreTake(tx_i2c_mutex, portMAX_DELAY))
       {
-        float fraction = 1.f - (float)(telemetry_data.packet_loss + telemetry_data.sequence_errors) / (float)(telemetry_data.packet_count);
-        sig = (uint16_t)(fraction * 100.f);
-      }
-      oled_number_half(sig);
-      oled_print("%     ");
+        // Update OLED
+        oled_at(16, 0);
+        oled_print("RX:  ");
+        oled_number_voltage(telemetry_data.battery_voltage);
+        oled_print("v    ");
+  
+        oled_at(72, 0);
+        oled_print("TX:  ");
+        oled_number_voltage(battery_get_level());
+        oled_print("v     ");
+  
+        oled_at(0, 0);
+        oled_glyph(glyph_battery, sizeof(glyph_battery));
+  
+        oled_at(16, 1);
+        oled_print("RX:  ");
+        uint16_t sig = 0;
+        if (telemetry_data.packet_count)
+        {
+          float fraction = 1.f - (float)(telemetry_data.packet_loss + telemetry_data.sequence_errors) / (float)(telemetry_data.packet_count);
+          sig = (uint16_t)(fraction * 100.f);
+        }
+        oled_number_half(sig);
+        oled_print("%     ");
+  
+        oled_at(72, 1);
+        oled_print("TX:  ");
+        sig = 0;
+        if (telemetry_data.packet_count)
+        {
+          float fraction = 1.f - (float)(rssi_get_dropped() + rssi_get_out_of_sequence()) / (float)(rssi_get_packet_count());
+          sig = (uint16_t)(fraction * 100.f);
+        }
+        oled_number_half(sig);
+        oled_print("%     ");
+        oled_at(0, 1);
+        oled_glyph(glyph_antenna, sizeof(glyph_antenna));
+  
+        oled_at(0, 3);
+        oled_print("RX MAC: ");
+        oled_print_mac(rx_unicast_mac);
 
-      oled_at(72, 1);
-      oled_print("TX:  ");
-      sig = 0;
-      if (telemetry_data.packet_count)
-      {
-        float fraction = 1.f - (float)(rssi_get_dropped() + rssi_get_out_of_sequence()) / (float)(rssi_get_packet_count());
-        sig = (uint16_t)(fraction * 100.f);
+        xSemaphoreGive(tx_i2c_mutex);
       }
-      oled_number_half(sig);
-      oled_print("%     ");
-      oled_at(0, 1);
-      oled_glyph(glyph_antenna, sizeof(glyph_antenna));
-
-      oled_at(0, 3);
-      oled_print("RX MAC: ");
-      oled_print_mac(rx_unicast_mac);
     }
 
     // Wait for the next interval
@@ -861,7 +908,7 @@ void tx_task(void* args)
         case TX_EVENT_CONTROL_UPDATE:
         {
           // Extract the channel data
-          uint32_t* channels = event.controls.channels;
+          uint16_t* channels = event.controls.channels;
           /*
           static uint16_t average[PPM_NUM_CHANNELS] = { 5500, 5500, 5500, 5500, 5500, 5500, 5500, 5500, 5500, };
           for (int c = 0; c < PPM_NUM_CHANNELS; ++c)
@@ -980,6 +1027,7 @@ void app_main()
 
   // Create objects for the telemetry task
   tx_telemetry_mutex = xSemaphoreCreateMutex();
+  tx_i2c_mutex = xSemaphoreCreateMutex();
 
   // Initialise M-Link ESPNOW transport
   ESP_ERROR_CHECK( transport_init(&parse_cb, &sent_cb) );
@@ -990,6 +1038,9 @@ void app_main()
 
   // Initialise TX task
   xTaskCreate(tx_task, "tx-task", 2048, NULL, 9, NULL);
+
+  // Initialise I2C driver for OLED and PPM offload
+  ESP_ERROR_CHECK( twi_init() );
 
   // Initialise telemetry task
   xTaskCreate(tx_telemetry_task, "tx-telemetry-task", 2048, NULL, 7, NULL);
