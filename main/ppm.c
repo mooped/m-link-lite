@@ -36,6 +36,7 @@ typedef enum
 static int32_t ppm_last_transition = 0;
 static ppm_state_t ppm_state = PPM_WAITING;
 static uint32_t ppm_channel = 0;
+static uint16_t ppm_gap[PPM_NUM_CHANNELS] = { 0 };
 static uint16_t ppm_data[PPM_NUM_CHANNELS] = { 0 };
 
 static volatile uint32_t ppm_rollover = 0;
@@ -43,13 +44,6 @@ static volatile uint32_t ppm_last_rollover = 0;
 
 static void ppm_isr_handler(void* arg)
 {
-  // If we hit the end of a gap, get out ASAP
-  if (ppm_state == PPM_GAP)
-  {
-    ppm_state = PPM_PULSE;
-    return;
-  }
-
   // Capture the current time and calculate with width of the last pulse
   volatile uint32_t now = (TIMER_MAX_DELAY - hw_timer_get_count_data()) + ppm_rollover * TIMER_MAX_DELAY;
   const uint32_t pulsewidth = now - ppm_last_transition;
@@ -74,12 +68,21 @@ static void ppm_isr_handler(void* arg)
       // Waiting for the next pulse
       case PPM_GAP:
       {
+        ppm_gap[ppm_channel] = pulsewidth;
         ppm_state = PPM_PULSE;
+
+        // If we got a really long or short gap, throw away the frame
+        if (ppm_gap[ppm_channel] <= 1980 || ppm_gap[ppm_channel] > 2020)
+        {
+          ppm_state = PPM_WAITING;
+          ppm_channel = 0;
+        }
       } break;
       // Timing a pulse
       case PPM_PULSE:
       {
-        ppm_data[ppm_channel++] = pulsewidth;
+        ppm_data[ppm_channel] = ppm_gap[ppm_channel] + pulsewidth;
+        ++ppm_channel;
         if (ppm_channel < PPM_NUM_CHANNELS)
         {
           ppm_state = PPM_GAP;
@@ -106,7 +109,7 @@ static void ppm_timer_isr(void* arg)
 
 static void ppm_task(void* args)
 {
-  uint32_t frame_data[PPM_NUM_CHANNELS];
+  uint16_t frame_data[PPM_NUM_CHANNELS];
 
   for (;;)
   {
@@ -115,6 +118,32 @@ static void ppm_task(void* args)
 
     // Send the PPM callback
     (*ppm_cb)(frame_data);
+
+    /*
+    // Print gaps
+    ESP_LOGI(TAG, "Gaps %d %d %d %d %d %d %d %d %d",
+      ppm_gap[0],
+      ppm_gap[1],
+      ppm_gap[2],
+      ppm_gap[3],
+      ppm_gap[4],
+      ppm_gap[5],
+      ppm_gap[6],
+      ppm_gap[7],
+      ppm_gap[8]
+    );
+    ESP_LOGI(TAG, "Channels %d %d %d %d %d %d %d %d %d",
+      frame_data[0], 
+      frame_data[1], 
+      frame_data[2], 
+      frame_data[3], 
+      frame_data[4], 
+      frame_data[5], 
+      frame_data[6], 
+      frame_data[7], 
+      frame_data[8]
+    );
+    */
   }
 }
 

@@ -765,15 +765,14 @@ static void ppm_cb(const uint16_t channels[PPM_NUM_CHANNELS])
           // Translate from microseconds to internal units
           event.controls.channels[ch] = (packet.channels[ch] - 1000) * 4 + 5500;
         }
+
         // Debug output
-        /*
-        if (event.controls.channels[8] > 7500)
+        if (0 && event.controls.channels[8] > 7500)
         {
           ppm_debug(channels);
           ppm_debug(packet.channels);
           ESP_LOGI(TAG, "Latency: %d SyncWidth: %d", packet.latency, packet.syncwidth);
         }
-        */
       }
       else
       {
