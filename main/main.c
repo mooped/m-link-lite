@@ -25,7 +25,6 @@
 
 #include "twi.h"
 #include "ppm.h"
-//#include "ppm_offload.h"
 #include "motor.h"
 #include "led.h"
 #include "battery.h"
@@ -614,6 +613,8 @@ typedef enum
 {
   TX_LED_WAITING,
   TX_LED_RX_FOUND,
+  TX_LED_PPM_ONBOARD,
+  TX_LED_PPM_OFFLOAD,
   TX_LED_BINDING,
   TX_LED_INITIAL,
 }
@@ -629,7 +630,6 @@ void tx_led_set_state(tx_led_state_t new_state)
     {
       case TX_LED_WAITING:
       {
-        led_set(0, 1, 500, 4000);
         led_set(1, 1, 1000, 2000);
         led_set(2, 0, 1000, 2000);
       } break;
@@ -642,6 +642,14 @@ void tx_led_set_state(tx_led_state_t new_state)
       {
         led_set(1, 0, 20, 200);
         led_set(1, 0, 20, 200);
+      } break;
+      case TX_LED_PPM_ONBOARD:
+      {
+        led_set(0, 0, 50, 1000);
+      } break;
+      case TX_LED_PPM_OFFLOAD:
+      {
+        led_set(0, 1, 950, 1000);
       } break;
       default:
       {
@@ -690,7 +698,7 @@ static void parse_cb(uint8_t mac_addr[ESP_NOW_ETH_ALEN], void* data, size_t leng
     } break;
     case MLINK_TELEMETRY:
     {
-      ESP_LOGI(TAG, "Telemetry packet received.");
+      //ESP_LOGI(TAG, "Telemetry packet received.");
       if (xSemaphoreTake(tx_telemetry_mutex, 0) == pdTRUE)
       {
         // Copy telemetry data into the buffer
@@ -731,7 +739,7 @@ bool ppm_offload_available = true;
 typedef struct
 {
   uint16_t channels[PPM_NUM_CHANNELS];
-  uint16_t capture_time;
+  uint16_t latency;
   uint16_t syncwidth;
 } ppm_offload_t;
 
@@ -740,7 +748,7 @@ static void ppm_cb(const uint16_t channels[PPM_NUM_CHANNELS])
   tx_event_t event;
   event.type = TX_EVENT_CONTROL_UPDATE;
 
-  // Try PPM offload until it fails
+  // Try PPM offload unless it fails
   if (ppm_offload_available)
   {
     if (xSemaphoreTake(tx_i2c_mutex, portMAX_DELAY))
@@ -751,18 +759,33 @@ static void ppm_cb(const uint16_t channels[PPM_NUM_CHANNELS])
       xSemaphoreGive(tx_i2c_mutex);
       if (ret == ESP_OK)
       {
-        memcpy(event.controls.channels, packet.channels, sizeof(event.controls.channels));
+        // Copy and translate from the offload helper packet
+        for (int ch = 0; ch < PPM_NUM_CHANNELS; ++ch)
+        {
+          // Translate from microseconds to internal units
+          event.controls.channels[ch] = (packet.channels[ch] - 1000) * 4 + 5500;
+        }
+        // Debug output
+        /*
+        if (event.controls.channels[8] > 7500)
+        {
+          ppm_debug(channels);
+          ppm_debug(packet.channels);
+          ESP_LOGI(TAG, "Latency: %d SyncWidth: %d", packet.latency, packet.syncwidth);
+        }
+        */
       }
       else
       {
         ESP_LOGW(TAG, "No response from PPM offload, falling back to onboard PPM capture.");
         ESP_ERROR_CHECK_WITHOUT_ABORT(ret);
-        //ppm_offload_available = false;
+        ppm_offload_available = false;
+        // TODO: Set a timer to try again
       }
     }
   }
 
-  // Fallback to onboard capture
+  // No offload (or it failed this try)
   if (!ppm_offload_available)
   {
     // Copy the PPM data we captured into the event
@@ -773,6 +796,16 @@ static void ppm_cb(const uint16_t channels[PPM_NUM_CHANNELS])
   if (xQueueSend(tx_control_queue, &event, portMAX_DELAY) != pdTRUE)
   {
     ESP_LOGW(TAG, "Control event queue fail.");
+  }
+
+  // Indicate offload state via LED
+  if (ppm_offload_available)
+  {
+    tx_led_set_state(TX_LED_PPM_OFFLOAD);
+  }
+  else
+  {
+    tx_led_set_state(TX_LED_PPM_ONBOARD);
   }
 }
 
@@ -880,6 +913,16 @@ void tx_telemetry_task(void* args)
         oled_at(0, 1);
         oled_glyph(glyph_antenna, sizeof(glyph_antenna));
   
+        oled_at(0, 2);
+        if (ppm_offload_available)
+        {
+          oled_print("PPM: OFFLOAD");
+        }
+        else
+        {
+          oled_print("PPM: ONBOARD");
+        }
+
         oled_at(0, 3);
         oled_print("RX MAC: ");
         oled_print_mac(rx_unicast_mac);
@@ -929,7 +972,7 @@ void tx_task(void* args)
           {
             if (!IS_BROADCAST_ADDR(rx_unicast_mac) && xSemaphoreTake(tx_send_semaphore, 0))
             {
-              ESP_LOGI(TAG, "Send control packet.");
+              //ESP_LOGI(TAG, "Send control packet.");
               // Fill out and send control packet
               mlink_packet_t packet;
               packet.type = MLINK_CONTROL;
@@ -946,7 +989,7 @@ void tx_task(void* args)
             }
             else
             {
-              ESP_LOGW(TAG, "No control packet sent.");
+              //ESP_LOGW(TAG, "No control packet sent.");
             }
           }
           // Otherwise send a TX beacon
