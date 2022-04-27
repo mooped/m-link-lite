@@ -46,8 +46,8 @@
 #define PWM_M3A_CHANNEL 4
 #define PWM_M3B_CHANNEL 5
 
-// PWM period 1000us (1Khz)
-#define PWM_PERIOD    (1000)
+// PWM period 500us (1Khz)
+#define PWM_PERIOD    (500)
 
 static const char *TAG = "m-link-motor";
 
