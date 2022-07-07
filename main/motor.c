@@ -24,12 +24,6 @@
 
 #include "motor.h"
 
-#include "motor.h"
-
-#include "motor.h"
-
-#include "motor.h"
-
 #define PWM_IO_COUNT      6
 
 #define PWM_0_OUT_IO_NUM  4   // Motor 1A

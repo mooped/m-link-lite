@@ -1,4 +1,4 @@
 set(COMPONENT_ADD_INCLUDEDIRS .)
-set(COMPONENT_SRCS "main.c" "pwm.c" "oled.c" "led.c" "battery.c" "rssi.c" "espnow.c", "twi.c")
+set(COMPONENT_SRCS "main.c" "led.c" "battery.c" "servo.c")
 
 register_component()
