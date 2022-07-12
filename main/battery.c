@@ -33,7 +33,8 @@ static void battery_task(void* pvParam)
     if (ret == ESP_OK)
     {
       // Convert into a voltage (using 10/1 potential divider resulting in divide by 11)
-      data = ((uint32_t)data * 11 * 1023) / 1000;
+      // Convert into a voltage (using 3.3/1 potential divider resulting in divide by 4.3)
+      data = (uint32_t)(((float)data * 4.3f * 1023.f) / 1000.f);
  
       // Write battery level
       battery_level = data;

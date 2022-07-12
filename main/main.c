@@ -23,9 +23,16 @@
 #include "esp_system.h"
 #include "esp_err.h"
 
+#include <esp_http_server.h>
+#include <esp_vfs.h>
+#include <esp_spiffs.h>
+
 #include "servo.h"
 #include "led.h"
 #include "battery.h"
+#include "wifi.h"
+#include "server.h"
+#include "dns.h"
 
 static const char *TAG = "m-link-lite-main";
 
@@ -162,9 +169,18 @@ void app_main()
   ESP_ERROR_CHECK( led_init(rx_led_config, RX_LED_NUM) );
   rx_led_set_state(RX_LED_WAITING);
 
+  // Initialise WiFi
+  wifi_init_sta();
+
   // Initialise RX task
   xTaskCreate(rx_task, "rx-task", 2048, NULL, 10, NULL);
 
   // Initialise RX telemetry task
   xTaskCreate(rx_telemetry_task, "rx-telemetry-task", 2048, NULL, 7, NULL);
+
+  // Start the webserver
+  server_init();
+
+  // Initialise mDNS
+  mlink_dns_init();
 }
