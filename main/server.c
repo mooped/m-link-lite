@@ -6,6 +6,7 @@
 #include "cJSON.h"
 
 #include "mount.h"
+#include "event.h"
 
 #define FILE_PATH_MAX (ESP_VFS_PATH_MAX + CONFIG_SPIFFS_OBJ_NAME_LEN)
 
@@ -99,15 +100,33 @@ static esp_err_t echo_handler(httpd_req_t *req)
 
   // Process packet
   cJSON* root = cJSON_Parse((char*)ws_pkt.payload);
-  cJSON* x_val = cJSON_GetObjectItem(root, "x");
-  cJSON* y_val = cJSON_GetObjectItem(root, "y");
-  cJSON* code_val = cJSON_GetObjectItem(root, "code");
+  cJSON* s1_val = cJSON_GetObjectItem(root, "s1");
+  cJSON* s2_val = cJSON_GetObjectItem(root, "s2");
+  cJSON* s3_val = cJSON_GetObjectItem(root, "s3");
+  cJSON* s4_val = cJSON_GetObjectItem(root, "s4");
+  cJSON* s5_val = cJSON_GetObjectItem(root, "s5");
+  cJSON* s6_val = cJSON_GetObjectItem(root, "s6");
 
-  if (x_val && y_val && code_val && x_val->type == cJSON_Number && y_val->type == cJSON_Number && code_val->type == cJSON_String)
+  if (s1_val && s2_val && s3_val && s4_val && s5_val && s6_val && s1_val->type == cJSON_Number && s2_val->type == cJSON_Number && s3_val->type == cJSON_Number && s4_val->type == cJSON_Number && s5_val->type == cJSON_Number && s6_val->type == cJSON_Number)
   {
     // Print the decoded joystick position
-    ESP_LOGI(TAG, "X: %d Y: %d Code: %s", x_val->valueint, y_val->valueint, code_val->valuestring);
+    ESP_LOGI(TAG, "S1: %d S2: %d S3: %d S4: %d S5: %d S6: %d",
+        s1_val->valueint,
+        s2_val->valueint,
+        s3_val->valueint,
+        s4_val->valueint,
+        s5_val->valueint,
+        s6_val->valueint
+    );
  
+    process_incoming_event(
+        s1_val->valueint,
+        s2_val->valueint,
+        s3_val->valueint,
+        s4_val->valueint,
+        s5_val->valueint,
+        s6_val->valueint
+    );
     /*
     if (0)
     {
@@ -354,6 +373,7 @@ static esp_err_t file_get_handler(httpd_req_t *req)
     /* Read file in chunks into the scratch buffer */
     chunksize = fread(chunk, 1, SCRATCH_BUFSIZE, fd);
 
+    ESP_LOGI(TAG, "Send chunk of %d", chunksize);
     if (chunksize > 0)
     {
       /* Send the buffer contents as HTTP response chunk */

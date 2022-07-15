@@ -5,10 +5,8 @@
     <script type='application/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js'></script>
     <script type='application/javascript'>
       $(document).ready(function() {
-        var code = window.location.hash.replace('#', '');
-        $('#code').val(code);
-
-        websocket = 'ws://' + location.host + '/ws';
+        //websocket = 'ws://' + location.host + '/ws';
+        websocket = 'ws://192.168.0.39/ws';
         if (window.WebSocket) {
           ws = new WebSocket(websocket);
         }
@@ -35,9 +33,12 @@
           ws.send(
             JSON.stringify(
               {
-                x: 0,
-                y: 0,
-                code: code,
+                s1: 1500,
+                s2: 1500,
+                s3: 1500,
+                s4: 1500,
+                s5: 1500,
+                s6: 1500,
               }
             )
           );
@@ -87,7 +88,6 @@
 
       <form action='#' id='chatform' method='get'>
         <span style="display: none;">
-          <label for='code'>Code: </label><input type='text' id='code' />
           <label for='send'>Send: </label><input type='text' id='send' />
           <label for='wsresponse'>Socket response: </label><input type='text' id='wsresponse' />
         </span>
@@ -105,10 +105,15 @@
         stickRadius: 100
       });
       setInterval(function(){
+        const x = Math.round(joystick.deltaX() * 5);
+        const y = Math.round(joystick.deltaY() * 5);
         $msg = JSON.stringify({
-          x: Math.round(joystick.deltaX()),
-          y: Math.round(joystick.deltaY()),
-          code: $("#code").val(),
+          s1: parseInt(1500 + -y),
+          s2: parseInt(1500 + x),
+          s3: 1500,
+          s4: 1500,
+          s5: 1500,
+          s6: 1500,
         });
         if ($('#send').val() != $msg) {
           $('#send').val($msg);

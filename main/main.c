@@ -33,6 +33,7 @@
 #include "wifi.h"
 #include "server.h"
 #include "dns.h"
+#include "event.h"
 
 static const char *TAG = "m-link-lite-main";
 
@@ -114,6 +115,23 @@ void rx_telemetry_task(void* args)
   }
 }
 
+static int _s1 = 1500;
+static int _s2 = 1500;
+static int _s3 = 1500;
+static int _s4 = 1500;
+static int _s5 = 1500;
+static int _s6 = 1500;
+
+void process_incoming_event(int s1, int s2, int s3, int s4, int s5, int s6)
+{
+  _s1 = s1;
+  _s2 = s2;
+  _s3 = s3;
+  _s4 = s4;
+  _s5 = s5;
+  _s6 = s6;
+}
+
 void rx_task(void* args)
 {
   ESP_LOGI(TAG, "Started servo task");
@@ -128,20 +146,9 @@ void rx_task(void* args)
   const TickType_t interval = pdMS_TO_TICKS(20);
   TickType_t previous_wake_time = xTaskGetTickCount();
 
-  int ms[] = { 1000, 1250, 1500, 1750, 2000, 1000 };
-
   for (;;)
   {
-    // Update servo pulse lengths
-    for (int i = 0; i < 6; ++i)
-    {
-      ++ms[i];
-      if (ms[i] > 2000)
-      {
-        ms[i] = 1000;
-      }
-    }
-    servo_set_all(ms[0], ms[1], ms[2], ms[3], ms[4], ms[5]);
+    servo_set_all(_s1, _s2, _s3, _s4, _s5, _s6);
 
     // Wait for the next interval
     vTaskDelayUntil(&previous_wake_time, interval);
