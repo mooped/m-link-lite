@@ -143,6 +143,8 @@ static esp_err_t echo_handler(httpd_req_t *req)
     cJSON_Delete(root);
   }
 
+  // TODO: Respond with battery level and failsafe status
+
   ret = httpd_ws_send_frame(req, &ws_pkt);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "httpd_ws_send_frame failed with %d", ret);
@@ -180,6 +182,18 @@ static esp_err_t index_html_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+/* Handler to respond with info.html embedded in flash.
+ * This can be overridden by uploading file with same name */
+static esp_err_t info_html_get_handler(httpd_req_t *req)
+{
+    extern const unsigned char info_html_start[] asm("_binary_info_html_start");
+    extern const unsigned char info_html_end[]   asm("_binary_info_html_end");
+    const size_t info_html_size = (info_html_end - info_html_start);
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, (const char *)info_html_start, info_html_size);
+    return ESP_OK;
+}
+
 /* Handler to respond with joystick.html embedded in flash.
  * This can be overridden by uploading file with same name */
 static esp_err_t joystick_html_get_handler(httpd_req_t *req)
@@ -189,6 +203,18 @@ static esp_err_t joystick_html_get_handler(httpd_req_t *req)
     const size_t joystick_html_size = (joystick_html_end - joystick_html_start);
     httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, (const char *)joystick_html_start, joystick_html_size);
+    return ESP_OK;
+}
+
+/* Handler to respond with jquery.min.js embedded in flash.
+ * This can be overridden by uploading file with same name */
+static esp_err_t jquery_min_js_get_handler(httpd_req_t *req)
+{
+    extern const unsigned char jquery_min_js_start[] asm("_binary_jquery_min_js_start");
+    extern const unsigned char jquery_min_js_end[]   asm("_binary_jquery_min_js_end");
+    const size_t jquery_min_js_size = (jquery_min_js_end - jquery_min_js_start);
+    httpd_resp_set_type(req, "text/javascript");
+    httpd_resp_send(req, (const char *)jquery_min_js_start, jquery_min_js_size);
     return ESP_OK;
 }
 
@@ -389,6 +415,11 @@ static esp_err_t file_get_handler(httpd_req_t *req)
   {
     return joystick_html_get_handler(req);
   }
+  /* If file name is '/info' respond with the info page */
+  if (strcmp(filename, "/info") == 0)
+  {
+    return info_html_get_handler(req);
+  }
 
   /* If name has trailing '/', respond with directory contents */
   if (filename[strlen(filename) - 1] == '/')
@@ -403,6 +434,10 @@ static esp_err_t file_get_handler(httpd_req_t *req)
     if (strcmp(filename, "/index.html") == 0)
     {
       return index_html_get_handler(req);
+    }
+    else if (strcmp(filename, "/jquery.min.js") == 0)
+    {
+      return jquery_min_js_get_handler(req);
     }
     else if (strcmp(filename, "/virtualjoystick.js") == 0)
     {

@@ -17,9 +17,12 @@
    If you'd rather not, just change the below entries to strings with
    the config you want - ie #define MLINK_WIFI_SSID "mywifissid"
 */
-#define MLINK_ESP_WIFI_SSID      CONFIG_ESP_WIFI_SSID
-#define MLINK_ESP_WIFI_PASS      CONFIG_ESP_WIFI_PASSWORD
-#define MLINK_ESP_MAXIMUM_RETRY  CONFIG_ESP_MAXIMUM_RETRY
+#define MLINK_ESP_WIFI_SSID        CONFIG_ESP_WIFI_SSID
+#define MLINK_ESP_WIFI_PASS        CONFIG_ESP_WIFI_PASSWORD
+#define MLINK_ESP_MAXIMUM_RETRY    CONFIG_ESP_MAXIMUM_RETRY
+#define MLINK_WIFI_AP_SSID_PREFIX  CONFIG_WIFI_AP_SSID_PREFIX
+#define MLINK_WIFI_AP_PASSWORD     CONFIG_WIFI_AP_PASSWORD
+#define MLINK_MAX_STA_CONN        CONFIG_ESP_MAX_STA_CONN
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
@@ -30,7 +33,7 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
 
-static const char *TAG = "wifi-sta";
+static const char *TAG = "wifi-apsta";
 
 static int s_retry_num = 0;
 
@@ -50,14 +53,14 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         ESP_LOGI(TAG,"connect to the AP fail");
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "got ip:%s",
+        ESP_LOGI(TAG, "got ip: %s",
                  ip4addr_ntoa(&event->ip_info.ip));
         s_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }
 }
 
-void wifi_init_station(void)
+void wifi_init_apsta_impl(void)
 {
     s_wifi_event_group = xEventGroupCreate();
 
@@ -69,26 +72,48 @@ void wifi_init_station(void)
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
 
-    wifi_config_t wifi_config = {
+    wifi_config_t wifi_config_sta = {
         .sta = {
-            .ssid = MLINK_ESP_WIFI_SSID,
-            .password = MLINK_ESP_WIFI_PASS
-        },
+            .ssid = MLINK_WIFI_AP_SSID_PREFIX,
+            .password = MLINK_WIFI_AP_PASSWORD,
+        }
+    };
+    wifi_config_t wifi_config_ap = {
+        .ap = {
+            .ssid = MLINK_AP_SSID,
+            .password = MLINK_AP_PASS,
+            .max_connection = MLINK_MAX_STA_CONN,
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK,
+        }
     };
 
     /* Setting a password implies station will connect to all security modes including WEP/WPA.
         * However these modes are deprecated and not advisable to be used. Incase your Access point
         * doesn't support WPA2, these mode can be enabled by commenting below line */
 
-    if (strlen((char *)wifi_config.sta.password)) {
-        wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+    if (strlen((char *)wifi_config_sta.sta.password)) {
+        wifi_config_sta.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
     }
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA) );
+    esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config_ap);
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config_sta));
     ESP_ERROR_CHECK(esp_wifi_start() );
 
-    ESP_LOGI(TAG, "wifi_init_sta finished.");
+    ESP_LOGI(TAG, "wifi_init_apsta finished.");
+
+    tcpip_adapter_ip_info_t ap_ip;
+    ESP_ERROR_CHECK( tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ap_ip) );
+    
+    uint32_t ip = (uint32_t)(ap_ip.ip.addr);
+    ESP_LOGI(TAG, "tcpip_adapter AP ip: %d.%d.%d.%d",
+        (ip) & 0xff,
+        (ip >> 8) & 0xff,
+        (ip >> 16) & 0xff,
+        (ip >> 24) & 0xff
+    );
+
+    return;
 
     /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
      * number of re-tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above) */
@@ -110,13 +135,23 @@ void wifi_init_station(void)
         ESP_LOGE(TAG, "UNEXPECTED EVENT");
     }
 
+    ESP_ERROR_CHECK( tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ap_ip) );
+    
+    ip = (uint32_t)(ap_ip.ip.addr);
+    ESP_LOGI(TAG, "tcpip_adapter STA ip: %d.%d.%d.%d",
+        (ip) & 0xff,
+        (ip >> 8) & 0xff,
+        (ip >> 16) & 0xff,
+        (ip >> 24) & 0xff
+    );
+
     ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler));
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler));
     vEventGroupDelete(s_wifi_event_group);
 }
 
-void wifi_init_sta(void)
+void wifi_init_apsta(void)
 {
-    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
-    wifi_init_station();
+    ESP_LOGI(TAG, "ESP_WIFI_MODE_APSTA");
+    wifi_init_apsta_impl();
 }
