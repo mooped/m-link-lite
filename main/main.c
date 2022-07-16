@@ -76,7 +76,7 @@ void rx_led_set_state(rx_led_state_t new_state)
       } break;
       case RX_LED_FAILSAFE:
       {
-        led_set(0, 1, 500, 1000);
+        led_set(0, 1, 100, 500);
       } break;
       default:
       {
@@ -126,12 +126,13 @@ void process_servo_event(int channel, int pulsewidth_ms)
     xTimerReset(rx_failsafe_timer, 0);
     if (failsafe_elapsed)
     {
+      // Log the first time we reset
       ESP_LOGW(TAG, "Failsafe disengaged.");
+
+      // Set LED state to active
+      rx_led_set_state(RX_LED_ACTIVE);
     }
     failsafe_elapsed = false;
-
-    // Set LED state to active
-    rx_led_set_state(RX_LED_ACTIVE);
   }
   else
   {
@@ -158,6 +159,9 @@ void rx_failsafe_callback(xTimerHandle xTimer)
   if (!failsafe_elapsed)
   {
     ESP_LOGW(TAG, "Failsafe engaged - send an update to disengage!");
+
+    // Set LED to indicate failsafe
+    rx_led_set_state(RX_LED_FAILSAFE);
   }
 
   // Stop servo updates from rx_task
@@ -174,9 +178,6 @@ void rx_failsafe_callback(xTimerHandle xTimer)
     }
   }
   servo_refresh();
-
-  // Set LED to indicate failsafe
-  rx_led_set_state(RX_LED_FAILSAFE);
 }
 
 void rx_task(void* args)
