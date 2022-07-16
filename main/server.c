@@ -74,7 +74,7 @@ static esp_err_t echo_handler(httpd_req_t *req)
     ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
     return ret;
   }
-  ESP_LOGI(TAG, "frame len is %d", ws_pkt.len);
+  //ESP_LOGI(TAG, "frame len is %d", ws_pkt.len);
   if (ws_pkt.len) {
     /* ws_pkt.len + 1 is for NULL termination as we are expecting a string */
     buf = calloc(1, ws_pkt.len + 1);
@@ -90,9 +90,9 @@ static esp_err_t echo_handler(httpd_req_t *req)
       free(buf);
       return ret;
     }
-    ESP_LOGI(TAG, "Got packet number %d with message: %s", ++packet_count, ws_pkt.payload);
+    ESP_LOGI(TAG, "Packet %d Message: %s", ++packet_count, ws_pkt.payload);
   }
-  ESP_LOGI(TAG, "Packet type: %d", ws_pkt.type);
+  //ESP_LOGI(TAG, "Packet type: %d", ws_pkt.type);
   if (ws_pkt.type == HTTPD_WS_TYPE_TEXT &&
     strcmp((char*)ws_pkt.payload,"Trigger async") == 0) {
     free(buf);
@@ -101,52 +101,42 @@ static esp_err_t echo_handler(httpd_req_t *req)
 
   // Process packet
   cJSON* root = cJSON_Parse((char*)ws_pkt.payload);
-  cJSON* s1_val = cJSON_GetObjectItem(root, "s1");
-  cJSON* s2_val = cJSON_GetObjectItem(root, "s2");
-  cJSON* s3_val = cJSON_GetObjectItem(root, "s3");
-  cJSON* s4_val = cJSON_GetObjectItem(root, "s4");
-  cJSON* s5_val = cJSON_GetObjectItem(root, "s5");
-  cJSON* s6_val = cJSON_GetObjectItem(root, "s6");
-
-  if (s1_val && s2_val && s3_val && s4_val && s5_val && s6_val && s1_val->type == cJSON_Number && s2_val->type == cJSON_Number && s3_val->type == cJSON_Number && s4_val->type == cJSON_Number && s5_val->type == cJSON_Number && s6_val->type == cJSON_Number)
+  if (root)
   {
-    // Print the decoded joystick position
-    ESP_LOGI(TAG, "S1: %d S2: %d S3: %d S4: %d S5: %d S6: %d",
-        s1_val->valueint,
-        s2_val->valueint,
-        s3_val->valueint,
-        s4_val->valueint,
-        s5_val->valueint,
-        s6_val->valueint
-    );
- 
-    process_incoming_event(
-        s1_val->valueint,
-        s2_val->valueint,
-        s3_val->valueint,
-        s4_val->valueint,
-        s5_val->valueint,
-        s6_val->valueint
-    );
-    /*
-    if (0)
+    // Extract servo data
+    cJSON* servos = cJSON_GetObjectItem(root, "servos");
+    cJSON* servo = NULL;
+    if (cJSON_IsArray(servos))
     {
-      // Turn on the LED to indicate that a message was received
-      led_set(1);
-  
-      // Set motor speeds
-      motor_set_all(y_val->valueint + x_val->valueint, y_val->valueint - x_val->valueint);
-      ESP_LOGI(TAG, "A: %d B: %d", y_val->valueint + x_val->valueint, y_val->valueint - x_val->valueint);
+      // Process servo data
+      int index = 0;
+      cJSON_ArrayForEach(servo, servos)
+      {
+        if (cJSON_IsNumber(servo))
+        {
+          process_servo_event(index++, servo->valueint);
+        }
+      }
     }
 
-    // Reset failsafe timer
-    if (xTimerStart(xFailsafeTimer, 0) != pdPASS)
+    // Extract failsafe data
+    cJSON* failsafes = cJSON_GetObjectItem(root, "failsafes");
+    cJSON* failsafe = NULL;
+    if (cJSON_IsArray(failsafes))
     {
-      ESP_LOGW(TAG, "Failed to reset failsafe timer!");
+      // Process failsafe data
+      int index = 0;
+      cJSON_ArrayForEach(failsafe, failsafes)
+      {
+        if (cJSON_IsNumber(failsafe))
+        {
+          process_failsafe_event(index, failsafe->valueint);
+        }
+      }
     }
-    */
+
+    cJSON_Delete(root);
   }
-  cJSON_Delete(root);
 
   ret = httpd_ws_send_frame(req, &ws_pkt);
   if (ret != ESP_OK) {

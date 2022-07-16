@@ -33,12 +33,22 @@
           ws.send(
             JSON.stringify(
               {
-                s1: 1500,
-                s2: 1500,
-                s3: 1500,
-                s4: 1500,
-                s5: 1500,
-                s6: 1500,
+                servos: [
+                  1500,
+                  1500,
+                  1500,
+                  1500,
+                  1500,
+                  1500
+                ],
+                failsafes: [
+                  1500,
+                  1500,
+                  1500,
+                  1500,
+                  1500,
+                  1500
+                ]
               }
             )
           );
@@ -104,18 +114,22 @@
         limitStickTravel: true,
         stickRadius: 100
       });
+      const keepalive = 5;
+      var counter = 0;
       setInterval(function(){
         const x = Math.round(joystick.deltaX() * 5);
         const y = Math.round(joystick.deltaY() * 5);
         $msg = JSON.stringify({
-          s1: parseInt(1500 + -y),
-          s2: parseInt(1500 + x),
-          s3: 1500,
-          s4: 1500,
-          s5: 1500,
-          s6: 1500,
+          servos: [
+            parseInt(1500 - y),
+            parseInt(1500 + x),
+            1500,
+            1500,
+            1500,
+            1500,
+          ]
         });
-        if ($('#send').val() != $msg) {
+        if ($('#send').val() != $msg || (++counter % keepalive) === 0) {
           $('#send').val($msg);
           ws.send($msg);
         }

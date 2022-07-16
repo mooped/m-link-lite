@@ -103,6 +103,12 @@ void servo_set(int channel, int pulsewidth_ms)
   }
 }
 
+void servo_refresh(void)
+{
+  pwm_set_duties(duties);
+  pwm_start();
+}
+
 void servo_set_all(int s1, int s2, int s3, int s4, int s5, int s6)
 {
   servo_set(0, s1);
@@ -112,7 +118,6 @@ void servo_set_all(int s1, int s2, int s3, int s4, int s5, int s6)
   servo_set(4, s5);
   servo_set(5, s6);
 
-  pwm_set_duties(duties);
-  pwm_start();
+  servo_refresh();
 }
 

@@ -37,8 +37,6 @@
 
 static const char *TAG = "m-link-lite-main";
 
-nvs_handle_t rx_nvs_handle;
-
 #define RX_LED_NUM  1
 
 static led_config_t rx_led_config[RX_LED_NUM] = {
@@ -54,7 +52,6 @@ static led_config_t rx_led_config[RX_LED_NUM] = {
 typedef enum
 {
   RX_LED_WAITING,
-  RX_LED_BIND,
   RX_LED_ACTIVE,
   RX_LED_FAILSAFE,
   RX_LED_INITIAL,
@@ -72,10 +69,6 @@ void rx_led_set_state(rx_led_state_t new_state)
       case RX_LED_WAITING:
       {
         led_set(0, 1, 1000, 2000);
-      } break;
-      case RX_LED_BIND:
-      {
-        led_set(0, 1, 180, 200);
       } break;
       case RX_LED_ACTIVE:
       {
@@ -115,21 +108,75 @@ void rx_telemetry_task(void* args)
   }
 }
 
-static int _s1 = 1500;
-static int _s2 = 1500;
-static int _s3 = 1500;
-static int _s4 = 1500;
-static int _s5 = 1500;
-static int _s6 = 1500;
+xTimerHandle rx_failsafe_timer = NULL;
+bool failsafe_elapsed = false;
 
-void process_incoming_event(int s1, int s2, int s3, int s4, int s5, int s6)
+#define SERVO_NUM   6
+static int servos[SERVO_NUM] = { 1500, 1500, 1500, 1500, 1500, 1500 };
+static int failsafes[SERVO_NUM] = { 1500, 1500, 1500, 1500, 1500, 1500 };
+
+void process_servo_event(int channel, int pulsewidth_ms)
 {
-  _s1 = s1;
-  _s2 = s2;
-  _s3 = s3;
-  _s4 = s4;
-  _s5 = s5;
-  _s6 = s6;
+  if (channel >= 0 && channel < SERVO_NUM)
+  {
+    // Update the channel
+    servos[channel] = pulsewidth_ms;
+    
+    // Reset failsafe
+    xTimerReset(rx_failsafe_timer, 0);
+    if (failsafe_elapsed)
+    {
+      ESP_LOGW(TAG, "Failsafe disengaged.");
+    }
+    failsafe_elapsed = false;
+
+    // Set LED state to active
+    rx_led_set_state(RX_LED_ACTIVE);
+  }
+  else
+  {
+    ESP_LOGW(TAG, "Ignoring request to set out of range servo %d to %d ms.", channel, pulsewidth_ms);
+  }
+}
+
+void process_failsafe_event(int channel, int pulsewidth_ms)
+{
+  if (channel >= 0 && channel < SERVO_NUM)
+  {
+    // Update the failsafe
+    failsafes[channel] = pulsewidth_ms;
+  }
+  else
+  {
+    ESP_LOGW(TAG, "Ignoring request to set out of range failsafe value %d to %d ms.", channel, pulsewidth_ms);
+  }
+}
+
+void rx_failsafe_callback(xTimerHandle xTimer)
+{
+  // Print a message when failsafe elapses
+  if (!failsafe_elapsed)
+  {
+    ESP_LOGW(TAG, "Failsafe engaged - send an update to disengage!");
+  }
+
+  // Stop servo updates from rx_task
+  failsafe_elapsed = true;
+
+  // Set failsafe values to the servos
+  for (int channel = 0; channel < SERVO_NUM; ++channel)
+  {
+    // Negative failsafe values indicate that the channel should be held
+    // Positive values are the pulsewidth to set
+    if (failsafes[channel] >= 0)
+    {
+      servo_set(channel, failsafes[channel]);
+    }
+  }
+  servo_refresh();
+
+  // Set LED to indicate failsafe
+  rx_led_set_state(RX_LED_FAILSAFE);
 }
 
 void rx_task(void* args)
@@ -148,7 +195,15 @@ void rx_task(void* args)
 
   for (;;)
   {
-    servo_set_all(_s1, _s2, _s3, _s4, _s5, _s6);
+    if (!failsafe_elapsed)
+    {
+      // Update the servo driver if not in failsafe mode
+      for (int channel = 0; channel < SERVO_NUM; ++channel)
+      {
+        servo_set(channel, servos[channel]);
+      }
+      servo_refresh();
+    }
 
     // Wait for the next interval
     vTaskDelayUntil(&previous_wake_time, interval);
@@ -190,4 +245,8 @@ void app_main()
 
   // Initialise mDNS
   mlink_dns_init();
+
+  // Start failsafe timer
+  rx_failsafe_timer = xTimerCreate("rx-failsafe-timer", pdMS_TO_TICKS(500), pdTRUE, NULL, rx_failsafe_callback);
+  xTimerStart(rx_failsafe_timer, 0);
 }

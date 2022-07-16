@@ -1,3 +1,7 @@
 #pragma once
 
-void process_incoming_event(int s1, int s2, int s3, int s4, int s5, int s6);
+// Update the desired pulsewidth for a servo
+void process_servo_event(int channel, int pulsewidth_ms);
+
+// Update the desired failsafe pulsewidth for a servo
+void process_failsafe_event(int channel, int pulsewidth_ms);
