@@ -5,8 +5,7 @@
     <script type='application/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js'></script>
     <script type='application/javascript'>
       $(document).ready(function() {
-        //websocket = 'ws://' + location.host + '/ws';
-        websocket = 'ws://192.168.0.39/ws';
+        websocket = 'ws://' + location.host + '/ws';
         if (window.WebSocket) {
           ws = new WebSocket(websocket);
         }
@@ -19,7 +18,7 @@
         }
 
         window.onbeforeunload = function(e) {
-          $('#wsresponse').val('Bye bye...\n');
+          $('#wsresponse').val('Closing Socket...\n');
           ws.close(1000, 'Bye');
 
           if(!e) e = window.event;
@@ -103,7 +102,9 @@
         </span>
       </form>
 
+      <h1>M-Link Lite Robot Controller</h1>
       <span id="result"></span>
+      <a href="/files/">File Manager</a>
     </div> 
     <script src="virtualjoystick.js"></script>
     <script>
