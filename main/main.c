@@ -213,7 +213,7 @@ void rx_task(void* args)
 
 void app_main()
 {
-  // Initialise and immediately disable servo module as soon as possible
+  // Initialise and immediately disable servo module as soon as possible to avoid glitches
   servo_init();
   servo_disable();
 
