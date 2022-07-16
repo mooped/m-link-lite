@@ -59,6 +59,7 @@ static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
  */
 static esp_err_t echo_handler(httpd_req_t *req)
 {
+  static int packet_count = 0;
   if (req->method == HTTP_GET) {
     ESP_LOGI(TAG, "Handshake done, the new connection was opened");
     return ESP_OK;
@@ -89,7 +90,7 @@ static esp_err_t echo_handler(httpd_req_t *req)
       free(buf);
       return ret;
     }
-    ESP_LOGI(TAG, "Got packet with message: %s", ws_pkt.payload);
+    ESP_LOGI(TAG, "Got packet number %d with message: %s", ++packet_count, ws_pkt.payload);
   }
   ESP_LOGI(TAG, "Packet type: %d", ws_pkt.type);
   if (ws_pkt.type == HTTPD_WS_TYPE_TEXT &&
@@ -145,6 +146,7 @@ static esp_err_t echo_handler(httpd_req_t *req)
     }
     */
   }
+  cJSON_Delete(root);
 
   ret = httpd_ws_send_frame(req, &ws_pkt);
   if (ret != ESP_OK) {
