@@ -11,18 +11,9 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-static const char* TAG = "mdns";
+#include "hostname.h"
 
-static char* generate_hostname()
-{
-    uint8_t mac[6];
-    char   *hostname;
-    esp_read_mac(mac, ESP_MAC_WIFI_STA);
-    if (-1 == asprintf(&hostname, "%s-%02X%02X%02X", "m-link", mac[3], mac[4], mac[5])) {
-        abort();
-    }
-    return hostname;
-}
+static const char* TAG = "mdns";
 
 static void initialise_mdns(void)
 {
@@ -36,6 +27,11 @@ static void initialise_mdns(void)
     ESP_ERROR_CHECK( mdns_instance_name_set("M-Link Lite mDNS") );
 
     ESP_ERROR_CHECK( mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0) );
+
+    tcpip_adapter_dhcp_status_t status;
+    tcpip_adapter_dhcps_get_status(TCPIP_ADAPTER_IF_AP, &status);
+    ESP_LOGI(TAG, "DHCPS Status: %d", status);
+    tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP);
 
     free(hostname);
 }

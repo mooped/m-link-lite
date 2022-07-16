@@ -18,11 +18,11 @@ menu "M-Link Configuration"
         help
             Maximum number of STA connections to the AP.
 
-    config ESP_WIFI_AP_SSID_PREFIX
-        string "SoftAP Mode SSID Prefix"
-        default "m-link-"
+    config HOSTNAME_PREFIX
+        string "Hostname prefix."
+        default "m-link"
         help
-            SSID (network name) prefix when in SoftAP mode.
+            Prefix for hostname and SoftAP mode SSID.
 
     config ESP_WIFI_AP_PASSWORD
         string "SoftAP Mode Password"

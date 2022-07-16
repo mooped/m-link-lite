@@ -13,16 +13,17 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
+#include "hostname.h"
+
 /* The examples use WiFi configuration that you can set via project configuration menu
    If you'd rather not, just change the below entries to strings with
    the config you want - ie #define MLINK_WIFI_SSID "mywifissid"
 */
 #define MLINK_ESP_WIFI_SSID        CONFIG_ESP_WIFI_SSID
-#define MLINK_ESP_WIFI_PASS        CONFIG_ESP_WIFI_PASSWORD
+#define MLINK_ESP_WIFI_PASSWORD    CONFIG_ESP_WIFI_PASSWORD
 #define MLINK_ESP_MAXIMUM_RETRY    CONFIG_ESP_MAXIMUM_RETRY
-#define MLINK_WIFI_AP_SSID_PREFIX  CONFIG_WIFI_AP_SSID_PREFIX
-#define MLINK_WIFI_AP_PASSWORD     CONFIG_WIFI_AP_PASSWORD
-#define MLINK_MAX_STA_CONN        CONFIG_ESP_MAX_STA_CONN
+#define MLINK_WIFI_AP_PASSWORD     CONFIG_ESP_WIFI_AP_PASSWORD
+#define MLINK_MAX_STA_CONN         CONFIG_ESP_MAX_STA_CONN
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
@@ -74,18 +75,20 @@ void wifi_init_apsta_impl(void)
 
     wifi_config_t wifi_config_sta = {
         .sta = {
-            .ssid = MLINK_WIFI_AP_SSID_PREFIX,
-            .password = MLINK_WIFI_AP_PASSWORD,
+            .ssid = MLINK_ESP_WIFI_SSID,
+            .password = MLINK_ESP_WIFI_PASSWORD,
         }
     };
     wifi_config_t wifi_config_ap = {
         .ap = {
-            .ssid = MLINK_AP_SSID,
-            .password = MLINK_AP_PASS,
+            .password = MLINK_WIFI_AP_PASSWORD,
             .max_connection = MLINK_MAX_STA_CONN,
             .authmode = WIFI_AUTH_WPA_WPA2_PSK,
         }
     };
+
+    // Set SSID from MAC address
+    strcpy((char*)wifi_config_ap.ap.ssid, generate_hostname());
 
     /* Setting a password implies station will connect to all security modes including WEP/WPA.
         * However these modes are deprecated and not advisable to be used. Incase your Access point
@@ -127,10 +130,10 @@ void wifi_init_apsta_impl(void)
      * happened. */
     if (bits & WIFI_CONNECTED_BIT) {
         ESP_LOGI(TAG, "connected to ap SSID:%s password:%s",
-                 MLINK_ESP_WIFI_SSID, MLINK_ESP_WIFI_PASS);
+                 MLINK_ESP_WIFI_SSID, MLINK_ESP_WIFI_PASSWORD);
     } else if (bits & WIFI_FAIL_BIT) {
         ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s",
-                 MLINK_ESP_WIFI_SSID, MLINK_ESP_WIFI_PASS);
+                 MLINK_ESP_WIFI_SSID, MLINK_ESP_WIFI_PASSWORD);
     } else {
         ESP_LOGE(TAG, "UNEXPECTED EVENT");
     }
