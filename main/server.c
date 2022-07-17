@@ -5,8 +5,9 @@
 #include "esp_spiffs.h"
 #include "cJSON.h"
 
-#include "mount.h"
 #include "event.h"
+#include "mount.h"
+#include "settings.h"
 
 #define FILE_PATH_MAX (ESP_VFS_PATH_MAX + CONFIG_SPIFFS_OBJ_NAME_LEN)
 
@@ -182,6 +183,14 @@ static esp_err_t index_html_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+/* Handler to respond with 204 No Content */
+static esp_err_t code_204_handler(httpd_req_t *req)
+{
+    httpd_resp_set_status(req, "204 No Content");
+    httpd_resp_send(req, NULL, 0);  // Response body can be empty
+    return ESP_OK;
+}
+
 /* Handler to respond with info.html embedded in flash.
  * This can be overridden by uploading file with same name */
 static esp_err_t info_html_get_handler(httpd_req_t *req)
@@ -191,6 +200,18 @@ static esp_err_t info_html_get_handler(httpd_req_t *req)
     const size_t info_html_size = (info_html_end - info_html_start);
     httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, (const char *)info_html_start, info_html_size);
+    return ESP_OK;
+}
+
+/* Handler to respond with settings.html embedded in flash.
+ * This can be overridden by uploading file with same name */
+static esp_err_t settings_html_get_handler(httpd_req_t *req)
+{
+    extern const unsigned char settings_html_start[] asm("_binary_settings_html_start");
+    extern const unsigned char settings_html_end[]   asm("_binary_settings_html_end");
+    const size_t settings_html_size = (settings_html_end - settings_html_start);
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, (const char *)settings_html_start, settings_html_size);
     return ESP_OK;
 }
 
@@ -415,11 +436,24 @@ static esp_err_t file_get_handler(httpd_req_t *req)
   {
     return joystick_html_get_handler(req);
   }
+  /* If file name is 'generate_204' or 'gen_204' respond with 204 No Content */
+  /* to avoid triggering 'No Internet' detection on Android */
+  if (strcmp(filename, "/generate_204") == 0 || strcmp(filename, "/gen_204") == 0)
+  {
+    return code_204_handler(req);
+  }
   /* If file name is '/info' respond with the info page */
   if (strcmp(filename, "/info") == 0)
   {
     return info_html_get_handler(req);
   }
+  /* If file name is '/settings' respond with the settings page */
+  /*
+  if (strcmp(filename, "/settings") == 0)
+  {
+    return settings_html_get_handler(req);
+  }
+  */
 
   /* If name has trailing '/', respond with directory contents */
   if (filename[strlen(filename) - 1] == '/')
@@ -631,6 +665,7 @@ static esp_err_t delete_post_handler(httpd_req_t *req)
     /* Note sizeof() counts NULL termination hence the -1 */
     const char *filename = get_path_from_uri(filepath, ((file_server_data*)req->user_ctx)->base_path,
                                              req->uri  + sizeof("/delete/files") - 1, sizeof(filepath));
+
     if (!filename) {
         /* Respond with 500 Internal Server Error */
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Filename too long");
@@ -665,6 +700,79 @@ static esp_err_t delete_post_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+/* Handler to generate the settings form */
+static esp_err_t settings_get_handler(httpd_req_t *req)
+{
+  /* Send HTML file header */
+  httpd_resp_sendstr_chunk(req, "<!DOCTYPE html><html><head><meta charset='utf-8'><title>M-Link Lite Settings</title><body>");
+
+  /* Send settings form header */
+  httpd_resp_sendstr_chunk(req,
+    "<h1>M-Link Lite Settings</h1>"
+    "<form action='/settings' method='POST'>");
+
+  /* Bot Name setting */
+  httpd_resp_sendstr_chunk(req,
+    "<label for='name'>Bot Name:</label><input type='text' id='name' name='name' maxlength=32 value='");
+  httpd_resp_sendstr_chunk(req, settings_get_name());
+  httpd_resp_sendstr_chunk(req, "' /><br/>");
+
+  /* SSID setting */
+  httpd_resp_sendstr_chunk(req,
+    "<label for='ssid'>SSID:</label><input type='text' id='ssid' name='ssid' maxlength=32 value='");
+  httpd_resp_sendstr_chunk(req, settings_get_ssid());
+  httpd_resp_sendstr_chunk(req, "' /><br/>");
+
+  /* Password setting */
+  httpd_resp_sendstr_chunk(req,
+    "<label for='password'>Password:</label><input type='text' id='password' name='password' minlength=8 maxlength=63 value='");
+  httpd_resp_sendstr_chunk(req, settings_get_password());
+  httpd_resp_sendstr_chunk(req, "'/><br/>");
+
+  /* Finish the settings form */
+  httpd_resp_sendstr_chunk(req, "<input type='submit'></input></form>");
+
+  /* Send remaining chunk of HTML file to complete it */
+  httpd_resp_sendstr_chunk(req, "</body></html>");
+
+  /* Send empty chunk to signal HTTP response completion */
+  httpd_resp_sendstr_chunk(req, NULL);
+  return ESP_OK;
+}
+
+/* Handler to update the settings */
+static esp_err_t settings_post_handler(httpd_req_t *req)
+{
+  char content[128];
+  size_t recv_size = MIN(req->content_len, sizeof(content));
+
+  int ret = httpd_req_recv(req, content, recv_size);
+  if (ret < 0)
+  {
+    /* Check if timeout occurred */
+    if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+      /* In case of timeout one can choose to retry calling
+      * httpd_req_recv(), but to keep it simple, here we
+      * respond with an HTTP 408 (Request Timeout) error */
+      httpd_resp_send_408(req);
+    }
+
+    /* In case of error, returning ESP_FAIL will
+    * ensure that the underlying socket is closed */
+    return ESP_FAIL;
+  }
+
+  ESP_LOGI(TAG, "Settings data: %s", content);
+
+  /* Redirect to /settings to see the updated settings */
+  httpd_resp_set_status(req, "303 See Other");
+  httpd_resp_set_hdr(req, "Location", "/settings");
+#ifdef CONFIG_EXAMPLE_HTTPD_CONN_CLOSE_HEADER
+  httpd_resp_set_hdr(req, "Connection", "close");
+#endif
+  httpd_resp_sendstr(req, "Settings updated successfully");
+  return ESP_OK;
+}
 static const httpd_uri_t file_download = {
     .uri       = "/*",  // Match all URIs of type /path/to/file
     .method    = HTTP_GET,
@@ -679,11 +787,25 @@ static const httpd_uri_t file_upload = {
     .user_ctx  = &server_data,
 };
 
-httpd_uri_t file_delete = {
+static const httpd_uri_t file_delete = {
    .uri       = "/delete/*",   // Match all URIs of type /delete/path/to/file
    .method    = HTTP_POST,
    .handler   = delete_post_handler,
    .user_ctx  = &server_data,
+};
+
+static const httpd_uri_t get_settings = {
+    .uri       = "/settings",
+    .method    = HTTP_GET,
+    .handler   = settings_get_handler,
+    .user_ctx  = &server_data,
+};
+
+static const httpd_uri_t update_settings = {
+    .uri       = "/settings",
+    .method    = HTTP_POST,
+    .handler   = settings_post_handler,
+    .user_ctx  = &server_data,
 };
 
 typedef struct
@@ -716,9 +838,11 @@ static httpd_handle_t start_webserver(void)
     // Registering the ws handler
     ESP_LOGI(TAG, "Registering URI handlers");
     httpd_register_uri_handler(server, &ws);
-    httpd_register_uri_handler(server, &file_download);
     httpd_register_uri_handler(server, &file_upload);
     httpd_register_uri_handler(server, &file_delete);
+    httpd_register_uri_handler(server, &get_settings);
+    httpd_register_uri_handler(server, &update_settings);
+    httpd_register_uri_handler(server, &file_download);
     return server;
   }
 

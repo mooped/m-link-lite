@@ -1,5 +1,11 @@
 menu "M-Link Configuration"
 
+    config BOT_NAME
+        string "Robot Name"
+        default "My Robot"
+        help
+            Robot name for display purposes.
+
     config ESP_WIFI_SSID
         string "WiFi SSID"
         default "myssid"
@@ -26,7 +32,7 @@ menu "M-Link Configuration"
 
     config ESP_WIFI_AP_PASSWORD
         string "SoftAP Mode Password"
-        default "m-link"
+        default "password"
         help
             SSID (network name) prefix when in SoftAP mode.
 

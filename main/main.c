@@ -28,12 +28,15 @@
 #include <esp_spiffs.h>
 #include <esp_vfs.h>
 
+#include "captDns.h"
+
 #include "battery.h"
 #include "dns.h"
 #include "event.h"
 #include "led.h"
 #include "server.h"
 #include "servo.h"
+#include "settings.h"
 #include "wifi.h"
 
 static const char *TAG = "m-link-lite-main";
@@ -237,6 +240,9 @@ void app_main()
   }
   ESP_ERROR_CHECK(err);
 
+  // Initialise settings
+  settings_init();
+
   // Set LED to boot state (2 second flash)
   ESP_ERROR_CHECK( led_init(rx_led_config, RX_LED_NUM) );
   rx_led_set_state(RX_LED_WAITING);
@@ -258,6 +264,9 @@ void app_main()
 
   // Initialise mDNS
   mlink_dns_init();
+
+  // Captive DNS
+  captdnsInit();
 
   // Start failsafe timer
   rx_failsafe_timer = xTimerCreate("rx-failsafe-timer", pdMS_TO_TICKS(500), pdTRUE, NULL, rx_failsafe_callback);
