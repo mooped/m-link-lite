@@ -151,18 +151,26 @@ static esp_err_t ws_handler(httpd_req_t *req)
       // Querying battery level?
       if (strcmp(query->valuestring, "battery") == 0)
       {
-        cJSON* battery_voltage = cJSON_CreateNumber(query_battery_voltage());
-        cJSON_AddItemToObject(response, "battery", battery_voltage);
+        // TODO: Figure out why cJSON_Print crashes on numbers!
+        char voltage_buffer[16];
+        snprintf(voltage_buffer, 15, "%d", query_battery_voltage());
+        voltage_buffer[15] = '\0';
+        cJSON* voltage = cJSON_CreateString(voltage_buffer);
+        cJSON_AddItemToObject(response, "battery", voltage);
       }
 
       // Querying failsafe?
       if (strcmp(query->valuestring, "failsafes") == 0)
       {
+        // TODO: Figure out why cJSON_Print crashes on numbers!
+        char failsafe_buffer[16];
         cJSON* failsafes = cJSON_CreateArray();
         const int num_channels = query_supported_channels();
         for (int i = 0; i < num_channels; ++i)
         {
-          cJSON* failsafe = cJSON_CreateNumber(query_failsafe(i));
+          snprintf(failsafe_buffer, 15, "%d", query_failsafe(i));
+          failsafe_buffer[15] = '\0';
+          cJSON* failsafe = cJSON_CreateString(failsafe_buffer);
           cJSON_AddItemToArray(failsafes, failsafe);
         }
         cJSON_AddItemToObject(response, "failsafes", failsafes);
