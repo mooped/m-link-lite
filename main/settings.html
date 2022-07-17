@@ -9,8 +9,7 @@
       let mlink = {}
 
       $(document).ready(function() {
-        //websocket = 'ws://' + location.host + '/ws';
-        websocket = 'ws://192.168.0.39/ws';
+        websocket = 'ws://' + location.host + '/ws';
         if (window.WebSocket) {
           ws = new WebSocket(websocket);
         }
@@ -22,14 +21,6 @@
           return;
         }
 
-        window.onbeforeunload = function(e) {
-          console.log('Closing Socket...\n');
-          ws.close(1000, 'Bye');
-
-          if(!e) e = window.event;
-          e.stopPropagation();
-          e.preventDefault();
-        };
         ws.onmessage = function (evt) {
           console.log('Packet received: ' + evt.data);
           const obj = JSON.parse(evt.data);
@@ -93,36 +84,36 @@
     </script>
   </head>
   <body>
-    <h1>M-Link Lite Settings</h1>
-    <br/>
-    <span><a href="/">Back</a></span>
-    <br /><br />
-    <span id="result"></span>
-    <br/>
-    <form action='javascript:void(0);'>
-      <table class="fixed" border="0">
-        <col width="150" /><col width="600px" />
-        <tr><td>
-          <label for="name">Bot Name:</label>
-        </td><td>
-          <input type='text' id='name' name='name' maxlength=32 autocomplete='off' data-lpignore='true' size='64' />
-        </td></tr>
-        <tr><td>
-          <label for="ssid">Connect to SSID:</label>
-        </td><td>
-          <input type='text' id='ssid' name='ssid' maxlength=32 autocomplete='off' data-lpignore='true' size='64' />
-        </td></tr>
-        <tr><td>
-          <label for="password">Password:</label>
-        </td><td>
-          <input type='text' id='password' name='password' minlength=8 maxlength=63 autocomplete='off' data-lpignore='true' size='64' />
-        </td></tr>
-        <tr>
-          <td></td>
-          <td>
-            <input type='submit' id='submit' value='Update Settings' disabled></input>
-          </td>
-        </tr>
-    </form>
+    <div id="info">
+      <h1>M-Link Lite Settings</h1>
+      <form action='javascript:void(0);'>
+        <table id="settings" class="fixed" border="0">
+          <col width="150px" /><col width="auto" />
+          <tr><td>
+            <label for="name">Bot Name:</label>
+          </td><td>
+            <input type='text' id='name' name='name' maxlength=32 autocomplete='off' data-lpignore='true' size='64' />
+          </td></tr>
+          <tr><td>
+            <label for="ssid">Connect to SSID:</label>
+          </td><td>
+            <input type='text' id='ssid' name='ssid' maxlength=32 autocomplete='off' data-lpignore='true' size='64' />
+          </td></tr>
+          <tr><td>
+            <label for="password">Password:</label>
+          </td><td>
+            <input type='text' id='password' name='password' minlength=8 maxlength=63 autocomplete='off' data-lpignore='true' size='64' />
+          </td></tr>
+          <tr>
+            <td></td>
+            <td>
+              <input type='submit' id='submit' value='Update Settings' disabled></input>
+            </td>
+          </tr>
+        </table>
+      </form>
+      <br/>
+      <span><a href="/">Back</a></span>
+    </div>
   </body>
 </html>

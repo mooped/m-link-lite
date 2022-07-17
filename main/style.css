@@ -8,6 +8,10 @@ body {
 table {
   border-collapse: collapse;
 }
+table#settings {
+  margin-left: auto;
+  margin-right: auto;
+}
 #info {
   position  : absolute;
   top    : 0px;
@@ -21,6 +25,11 @@ table {
 }
 #info a:hover {
   text-decoration  : underline;
+}
+#hamburger {
+  position  : absolute;
+  top : 5;
+  right : 16;
 }
 #container {
   width    : 100%;

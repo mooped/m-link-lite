@@ -12,6 +12,9 @@ void process_failsafe_event(int channel, int pulsewidth_ms);
 // Query the desired failsafe
 int query_failsafe(int channel);
 
+// Query if failsafe is active
+bool query_failsafe_engaged();
+
 // Query battery voltage
 int query_battery_voltage(void);
 

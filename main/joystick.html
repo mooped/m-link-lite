@@ -21,14 +21,6 @@
           return;
         }
 
-        window.onbeforeunload = function(e) {
-          $('#wsresponse').val('Closing Socket...\n');
-          ws.close(1000, 'Bye');
-
-          if(!e) e = window.event;
-          e.stopPropagation();
-          e.preventDefault();
-        };
         ws.onmessage = function (evt) {
           $('#wsresponse').val(evt.data);
           obj = JSON.parse(evt.data);
@@ -67,6 +59,14 @@
         ws.onclose = function(evt) {
            $('#wsresponse').val('Connection closed by server: ' + evt.code + ' "' + evt.reason + '"\n');
         };
+        // Menu toggle
+        $('#hamburger').click(function (evt) {
+          $('#menu').toggle();
+        });
+        // Debug toggle
+        $('#debug').click(function (evt) {
+          $('#result').toggle();
+        });
         // Expose the websocket
         mlink.ws = ws;
       });
@@ -85,8 +85,9 @@
       </form>
 
       <h1 id="name">M-Link Lite Robot Controller</h1>
+      <span id="menu">[<a href="/files/">File Manager</a>] - [<a href="/info">Information</a>] - [<a href="javascript:void(0);" id="debug">Toggle Debug</a>] - [<a href="/settings">Settings</a>]</span><br/>
       <span id="result"></span>
-      <span>[<a href="/files/">File Manager</a>] - [<a href="/info">Information</a>] - [<a href="/settings">Settings</a>]</span>
+      <div id="hamburger" class="menu"><img src="hamburger.svg" alt="Menu Button" /></div>
     </div> 
     <script src="virtualjoystick.js"></script>
     <script>
@@ -96,7 +97,7 @@
         mouseSupport: true,
         limitStickTravel: true,
         stickRadius: 100,
-        strokeStyle: '#ee7b34',
+        strokeStyle: '#195905',
       });
       const keepalive = 5;
       var counter = 0;

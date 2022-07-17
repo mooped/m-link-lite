@@ -3,5 +3,5 @@
 #
 # (Uses default behaviour of compiling all source files in directory, adding 'include' to include path.)
 
-COMPONENT_EMBED_FILES := joystick.html info.html settings.html upload_script.html virtualjoystick.js jquery.min.js favicon.ico style.css
+COMPONENT_EMBED_FILES := joystick.html info.html settings.html upload_script.html virtualjoystick.js jquery.min.js favicon.ico hamburger.svg style.css
 

@@ -208,6 +208,10 @@ static esp_err_t ws_handler(httpd_req_t *req)
     cJSON_Delete(root);
   }
 
+  // Failsafe status
+  cJSON* status = cJSON_CreateString(query_failsafe_engaged() ? "failsafe" : "ok");
+  cJSON_AddItemToObject(response, "status", status);
+
   char response_buffer[256];
   cJSON_PrintPreallocated(response, response_buffer, sizeof(response_buffer), false);
   ESP_LOGI(TAG, "WS Response: %s", response_buffer);
@@ -335,6 +339,18 @@ static esp_err_t favicon_get_handler(httpd_req_t *req)
     const size_t favicon_ico_size = (favicon_ico_end - favicon_ico_start);
     httpd_resp_set_type(req, "image/x-icon");
     httpd_resp_send(req, (const char *)favicon_ico_start, favicon_ico_size);
+    return ESP_OK;
+}
+
+/* Handler to respond with an icon file embedded in flash.
+ * This can be overridden by uploading file with same name */
+static esp_err_t hamburger_svg_get_handler(httpd_req_t *req)
+{
+    extern const unsigned char hamburger_svg_start[] asm("_binary_hamburger_svg_start");
+    extern const unsigned char hamburger_svg_end[]   asm("_binary_hamburger_svg_end");
+    const size_t hamburger_svg_size = (hamburger_svg_end - hamburger_svg_start);
+    httpd_resp_set_type(req, "image/svg+xml");
+    httpd_resp_send(req, (const char *)hamburger_svg_start, hamburger_svg_size);
     return ESP_OK;
 }
 
@@ -489,8 +505,18 @@ static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filena
         return httpd_resp_set_type(req, "application/pdf");
     } else if (IS_FILE_EXT(filename, ".html")) {
         return httpd_resp_set_type(req, "text/html");
+    } else if (IS_FILE_EXT(filename, ".css")) {
+        return httpd_resp_set_type(req, "text/css");
+    } else if (IS_FILE_EXT(filename, ".js")) {
+        return httpd_resp_set_type(req, "text/javascript");
     } else if (IS_FILE_EXT(filename, ".jpeg")) {
         return httpd_resp_set_type(req, "image/jpeg");
+    } else if (IS_FILE_EXT(filename, ".png")) {
+        return httpd_resp_set_type(req, "image/png");
+    } else if (IS_FILE_EXT(filename, ".webp")) {
+        return httpd_resp_set_type(req, "image/webp");
+    } else if (IS_FILE_EXT(filename, ".svg")) {
+        return httpd_resp_set_type(req, "image/svg+xml");
     } else if (IS_FILE_EXT(filename, ".ico")) {
         return httpd_resp_set_type(req, "image/x-icon");
     }
@@ -566,6 +592,10 @@ static esp_err_t file_get_handler(httpd_req_t *req)
     else if (strcmp(filename, "/favicon.ico") == 0)
     {
       return favicon_get_handler(req);
+    }
+    else if (strcmp(filename, "/hamburger.svg") == 0)
+    {
+      return hamburger_svg_get_handler(req);
     }
     else if (strcmp(filename, "/style.css") == 0)
     {

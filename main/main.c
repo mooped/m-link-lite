@@ -180,6 +180,11 @@ int query_failsafe(int channel)
   }
 }
 
+bool query_failsafe_engaged(void)
+{
+    return failsafe_elapsed;
+}
+
 void rx_failsafe_callback(xTimerHandle xTimer)
 {
   // Print a message when failsafe elapses
