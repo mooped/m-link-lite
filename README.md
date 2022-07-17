@@ -1,58 +1,11 @@
-# M-Link ESPNOW
+# M-Link Lite
 
-M-Link is a receiver and transmitter firmware for combat robotics based on the ESP8266 microcontroller and the ESPNOW 2.4Ghz protocol.
+M-Link Lite is a receiver for combat robotics based on the ESP8266 microcontroller. It acts as a WiFi access point and can be controlled from a WebSocket.
 
-The M-Link hardware currently consists of a receiver and triple ESC PCB with two auxiliary servo outputs, and a transmitter module with a form factor to fit the Hitec Aurora 9 radio handset.
+M-Link Lite hosts a web server with a basic page for controlling a simple combat robot.
 
-Channel assignments:
+Additional files can be uploaded to control more complex robots with up to 6 channels.
 
-Channels 1, 2, and 3 control motor outputs 1, 2, and 3.
-Channels 4, and 5 control the auxiliary servo outputs 4, and 5.
-Channels 6, 7, and 8 set the respective motors into brake mode.
-Channel 9 is used by the transmitter to enter bind mode.
+The servo pulsewidth data sent to the WebSocket is passed straight through to the outputs to avoid limiting possibilities.
 
-The M-Link protocol follows the following flow:
-
-Transmitter:
-
-                             Start
-                               |<-----------------------------------------
-        ---------------------->|<--------------------------------         |
-       |                       V                                 |        |
-       |                  Bind Switch?               Broadcast TX Beacon  |
-       |    Y <----------------|----------------> N              |        |
-       |    |                                     |              |        |
-       |    V                                     V              |        |
- Broadcast TX | BIND Beacon        Y <-- Received RX Beacon? --> N        |
-                                   |                                      |
-                                   V                                      |
-                         Unicast Control Data ----------------------------
-
-Receiver:
-
-                              Start
-                                |<-----------------------------------
-    --------------------------->|<------------------------           |
-   |                            V                         |          |
-   |                 Unicast Packet Received?             |          |
-   |         N <----------------|-----------------> Y     |          |
-   |         |                                      |     |          |
-   |         V                                      V     |          |
-   |    10s Elapsed?                     Process Control Inputs      |
-   N <-------|-------> Y                                             |
-         ------------->|                                             |
-        |              |                                             |
-        |              V                                             |
-        |     TX Beacon Received?                                    |
-        N <------------|-----------> Y                               |
-                                     |                               |
-                                     V                               |
-                               Store TX MAC                          |
-                                     |                               |
-                                     V                               |
-                           Send RX | BIND Beacon                     |
-                                     |                               |
-                                     --------------------------------
-
-RX MAC: 30:83:98:9a:bf:79
-TX MAC: a0:20:a6:17:b2:e4
+M-Link Lite has a configurable failsafe so if no updates are received for 500ms the outputs will be put into a safe state.
