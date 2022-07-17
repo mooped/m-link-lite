@@ -271,7 +271,7 @@ void app_main()
   ESP_ERROR_CHECK(esp_event_loop_create_default());
 
   // Initialise WiFi
-  wifi_init_apsta();
+  wifi_init_ap();
 
   // Start the webserver
   server_init();
