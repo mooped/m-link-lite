@@ -5,6 +5,8 @@
     <title>M-Link Lite Robot Controller</title>
     <script type='application/javascript' src='jquery.min.js'></script>
     <script type='application/javascript'>
+      let mlink = {}
+
       $(document).ready(function() {
         websocket = 'ws://' + location.host + '/ws';
         if (window.WebSocket) {
@@ -27,7 +29,14 @@
           e.preventDefault();
         };
         ws.onmessage = function (evt) {
-           $('#wsresponse').val(evt.data);
+          $('#wsresponse').val(evt.data);
+          obj = JSON.parse(evt.data);
+          // Update name from settings
+          if (obj && obj.settings && obj.settings.name)
+          {
+            $('#name').html(obj.settings.name);
+            document.title = obj.settings.name;
+          }
         };
         ws.onopen = function() {
           ws.send(
@@ -48,7 +57,8 @@
                   1500,
                   1500,
                   1500
-                ]
+                ],
+                query: "settings"
               }
             )
           );
@@ -56,6 +66,8 @@
         ws.onclose = function(evt) {
            $('#wsresponse').val('Connection closed by server: ' + evt.code + ' "' + evt.reason + '"\n');
         };
+        // Expose the websocket
+        mlink.ws = ws;
       });
     </script>
 
@@ -103,11 +115,9 @@
         </span>
       </form>
 
-      <h1>M-Link Lite Robot Controller</h1>
+      <h1 id="name">M-Link Lite Robot Controller</h1>
       <span id="result"></span>
-      <a href="/files/">File Manager</a>
-      <a href="/info">Information</a>
-      <a href="/settings">Settings</a>
+      <span>[<a href="/files/">File Manager</a>] - [<a href="/info">Information</a>] - [<a href="/settings">Settings</a>]</span>
     </div> 
     <script src="virtualjoystick.js"></script>
     <script>

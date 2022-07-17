@@ -23,47 +23,9 @@
 static const char* TAG = "m-link-http-server";
 
 /*
- * Structure holding server handle
- * and internal socket fd in order
- * to use out of request send
+ * M-Link WebSocket handler
  */
-struct async_resp_arg {
-  httpd_handle_t hd;
-  int fd;
-};
-
-/*
- * async send function, which we put into the httpd work queue
- */
-static void ws_async_send(void *arg)
-{
-  static const char * data = "Async data";
-  struct async_resp_arg *resp_arg = arg;
-  httpd_handle_t hd = resp_arg->hd;
-  int fd = resp_arg->fd;
-  httpd_ws_frame_t ws_pkt;
-  memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
-  ws_pkt.payload = (uint8_t*)data;
-  ws_pkt.len = strlen(data);
-  ws_pkt.type = HTTPD_WS_TYPE_TEXT;
-
-  httpd_ws_send_frame_async(hd, fd, &ws_pkt);
-  free(resp_arg);
-}
-
-static esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
-{
-  struct async_resp_arg *resp_arg = malloc(sizeof(struct async_resp_arg));
-  resp_arg->hd = req->handle;
-  resp_arg->fd = httpd_req_to_sockfd(req);
-  return httpd_queue_work(handle, ws_async_send, resp_arg);
-}
-
-/*
- * This handler echos back the received ws data
- * and triggers an async send if certain message received
- */
-static esp_err_t echo_handler(httpd_req_t *req)
+static esp_err_t ws_handler(httpd_req_t *req)
 {
   static int packet_count = 0;
   if (req->method == HTTP_GET) {
@@ -98,12 +60,9 @@ static esp_err_t echo_handler(httpd_req_t *req)
     }
     ESP_LOGI(TAG, "Packet %d Message: %s", ++packet_count, ws_pkt.payload);
   }
-  //ESP_LOGI(TAG, "Packet type: %d", ws_pkt.type);
-  if (ws_pkt.type == HTTPD_WS_TYPE_TEXT &&
-    strcmp((char*)ws_pkt.payload,"Trigger async") == 0) {
-    free(buf);
-    return trigger_async_send(req->handle, req);
-  }
+
+  // Build response
+  cJSON* response = cJSON_CreateObject();
 
   // Process packet
   cJSON* root = cJSON_Parse((char*)ws_pkt.payload);
@@ -141,12 +100,119 @@ static esp_err_t echo_handler(httpd_req_t *req)
       }
     }
 
+    // Apply settings?
+    cJSON* settings = cJSON_GetObjectItem(root, "settings");
+    if (settings)
+    {
+      bool any_updates = false;
+      cJSON* name = cJSON_GetObjectItem(settings, "name");
+      if (cJSON_IsString(name))
+      {
+        ESP_LOGI(TAG, "Set name to %s", name->valuestring);
+        settings_set_name(name->valuestring);
+        any_updates = true;
+      }
+      cJSON* ssid = cJSON_GetObjectItem(settings, "ssid");
+      if (cJSON_IsString(ssid))
+      {
+        ESP_LOGI(TAG, "Set SSID to %s", ssid->valuestring);
+        settings_set_ssid(ssid->valuestring);
+        any_updates = true;
+      }
+      cJSON* password = cJSON_GetObjectItem(settings, "password");
+      if (cJSON_IsString(password))
+      {
+        ESP_LOGI(TAG, "Set password to %s", password->valuestring);
+        settings_set_password(password->valuestring);
+        any_updates = true;
+      }
+      if (any_updates)
+      {
+        ESP_LOGI(TAG, "Writing settings");
+        settings_write();
+      }
+    }
+
+    // Reset settings
+    cJSON* reset_settings = cJSON_GetObjectItem(root, "reset_settings");
+    if (reset_settings)
+    {
+      if (cJSON_IsString(reset_settings) && strcmp(reset_settings->valuestring,  "sgnittes_teser") == 0)
+      {
+        ESP_LOGI(TAG, "Restoring default settings");
+        settings_reset_defaults();
+      }
+    }
+
+    // Handle queries
+    cJSON* query= cJSON_GetObjectItem(root, "query");
+    if (cJSON_IsString(query))
+    {
+      // Querying battery level?
+      if (strcmp(query->valuestring, "battery") == 0)
+      {
+        cJSON* battery_voltage = cJSON_CreateNumber(query_battery_voltage());
+        cJSON_AddItemToObject(response, "battery", battery_voltage);
+      }
+
+      // Querying failsafe?
+      if (strcmp(query->valuestring, "failsafes") == 0)
+      {
+        cJSON* failsafes = cJSON_CreateArray();
+        const int num_channels = query_supported_channels();
+        for (int i = 0; i < num_channels; ++i)
+        {
+          cJSON* failsafe = cJSON_CreateNumber(query_failsafe(i));
+          cJSON_AddItemToArray(failsafes, failsafe);
+        }
+        cJSON_AddItemToObject(response, "failsafes", failsafes);
+      }
+
+      // Querying settings?
+      if (strcmp(query->valuestring, "settings") == 0)
+      {
+        cJSON* settings = cJSON_CreateObject();
+        {
+          cJSON* name = cJSON_CreateString(settings_get_name());
+          if (name)
+          {
+            cJSON_AddItemToObject(settings, "name", name);
+          }
+        }
+        {
+          cJSON* ssid = cJSON_CreateString(settings_get_ssid());
+          if (ssid)
+          {
+            cJSON_AddItemToObject(settings, "ssid", ssid);
+          }
+        }
+        {
+          cJSON* password = cJSON_CreateString(settings_get_password());
+          if (password)
+          {
+            cJSON_AddItemToObject(settings, "password", password);
+          }
+        }
+        cJSON_AddItemToObject(response, "settings", settings);
+      }
+    }
+
     cJSON_Delete(root);
   }
 
-  // TODO: Respond with battery level and failsafe status
+  char response_buffer[256];
+  cJSON_PrintPreallocated(response, response_buffer, sizeof(response_buffer), false);
+  ESP_LOGI(TAG, "WS Response: %s", response_buffer);
+  cJSON_Delete(response);
+  httpd_ws_frame_t response_pkt = {
+    .final = false,
+    .fragmented = false,
+    .type = HTTPD_WS_TYPE_TEXT,
+    .payload = (unsigned char*)response_buffer,
+    .len = strlen((char*)response_buffer)
+  };
 
-  ret = httpd_ws_send_frame(req, &ws_pkt);
+  ret = httpd_ws_send_frame(req, &response_pkt);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "httpd_ws_send_frame failed with %d", ret);
   }
@@ -157,7 +223,7 @@ static esp_err_t echo_handler(httpd_req_t *req)
 static const httpd_uri_t ws = {
     .uri    = "/ws",
     .method   = HTTP_GET,
-    .handler  = echo_handler,
+    .handler  = ws_handler,
     .user_ctx   = NULL,
     .is_websocket = true,
 };
@@ -382,6 +448,9 @@ static esp_err_t http_resp_dir_html(httpd_req_t *req, const char *dirpath)
 
   /* Finish the file list table */
   httpd_resp_sendstr_chunk(req, "</tbody></table>");
+
+  /* Link back to main page */
+  httpd_resp_sendstr_chunk(req, "<br /><br /><a href=\"/\">Back</a>");
 
   /* Send remaining chunk of HTML file to complete it */
   httpd_resp_sendstr_chunk(req, "</body></html>");

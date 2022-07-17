@@ -35,8 +35,12 @@
     </style>
     <script type='application/javascript' src='jquery.min.js'></script>
     <script type='application/javascript'>
+      // Global M-Link object
+      let mlink = {}
+
       $(document).ready(function() {
-        websocket = 'ws://' + location.host + '/ws';
+        //websocket = 'ws://' + location.host + '/ws';
+        websocket = 'ws://192.168.0.39/ws';
         if (window.WebSocket) {
           ws = new WebSocket(websocket);
         }
@@ -49,7 +53,7 @@
         }
 
         window.onbeforeunload = function(e) {
-          $('#result').val('Closing Socket...\n');
+          console.log('Closing Socket...\n');
           ws.close(1000, 'Bye');
 
           if(!e) e = window.event;
@@ -57,30 +61,98 @@
           e.preventDefault();
         };
         ws.onmessage = function (evt) {
-           $('#result').val(evt.data);
+          console.log('Packet received: ' + evt.data);
+          const obj = JSON.parse(evt.data);
+          console.log(evt.data);
+          console.log(obj);
+          if (obj && obj.settings)
+          {
+            if (obj.settings.name)
+            {
+              $('#name').val(obj.settings.name);
+            }
+            if (obj.settings.ssid)
+            {
+              $('#ssid').val(obj.settings.ssid);
+            }
+            if (obj.settings.password)
+            {
+              $('#password').val(obj.settings.password);
+            }
+            $('#submit').prop('disabled', false)
+            $('#submit').click(function (clickEvent) {
+              ws.send(
+                JSON.stringify(
+                  {
+                    "settings" : {
+                      name: $('#name').val(),
+                      ssid: $('#ssid').val(),
+                      password: $('#password').val()
+                    }
+                  }
+                )
+              )
+            });
+          }
         };
         ws.onopen = function() {
           ws.send(
             JSON.stringify(
               {
-                querysettings: true
+                query: "settings"
               }
-            );
+            )
+          );
         };
         ws.onclose = function(evt) {
-           $('#result').val('Connection closed by server: ' + evt.code + ' "' + evt.reason + '"\n');
+           console.log('Connection closed by server: ' + evt.code + ' "' + evt.reason + '"\n');
         };
+        // Create a hidden method for resetting settings
+        mlink.reset_settings = function () {
+          ws.send(
+            JSON.stringify(
+              {
+                reset_settings: "sgnittes_teser"
+              }
+            )
+          );
+        }
+        // Expose the websocket
+        mlink.ws = ws;
       });
     </script>
   </head>
   <body>
     <h1>M-Link Lite Settings</h1>
-    <form action='/settings' method='post'>
-      <label for="name">Bot Name:</label><input type='text' id='name' name='name' maxlength=32 /><br/>
-      <label for="ssid">Connect to SSID:</label><input type='text' id='ssid' name='ssid' maxlength=32 /><br/>
-      <label for="password">Password:</label><input type='text' id='password' name='password' minlength=8 maxlength=63 /><br/>
-      <input type="submit"></input>
-    </form>
+    <br/>
+    <span><a href="/">Back</a></span>
+    <br /><br />
     <span id="result"></span>
+    <br/>
+    <form action='javascript:void(0);'>
+      <table class="fixed" border="0">
+        <col width="150" /><col width="600px" />
+        <tr><td>
+          <label for="name">Bot Name:</label>
+        </td><td>
+          <input type='text' id='name' name='name' maxlength=32 autocomplete='off' data-lpignore='true' size='64' />
+        </td></tr>
+        <tr><td>
+          <label for="ssid">Connect to SSID:</label>
+        </td><td>
+          <input type='text' id='ssid' name='ssid' maxlength=32 autocomplete='off' data-lpignore='true' size='64' />
+        </td></tr>
+        <tr><td>
+          <label for="password">Password:</label>
+        </td><td>
+          <input type='text' id='password' name='password' minlength=8 maxlength=63 autocomplete='off' data-lpignore='true' size='64' />
+        </td></tr>
+        <tr>
+          <td></td>
+          <td>
+            <input type='submit' id='submit' value='Update Settings' disabled></input>
+          </td>
+        </tr>
+    </form>
   </body>
 </html>

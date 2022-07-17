@@ -123,6 +123,11 @@ bool failsafe_elapsed = false;
 static int servos[SERVO_NUM] = { 1500, 1500, 1500, 1500, 1500, 1500 };
 static int failsafes[SERVO_NUM] = { 1500, 1500, 1500, 1500, 1500, 1500 };
 
+int query_supported_channels(void)
+{
+  return SERVO_NUM;
+}
+
 void process_servo_event(int channel, int pulsewidth_ms)
 {
   if (channel >= 0 && channel < SERVO_NUM)
@@ -158,6 +163,20 @@ void process_failsafe_event(int channel, int pulsewidth_ms)
   else
   {
     ESP_LOGW(TAG, "Ignoring request to set out of range failsafe value %d to %d ms.", channel, pulsewidth_ms);
+  }
+}
+
+int query_failsafe(int channel)
+{
+  if (channel >= 0 && channel < SERVO_NUM)
+  {
+    // Update the failsafe
+    return failsafes[channel];
+  }
+  else
+  {
+    ESP_LOGW(TAG, "Ignoring request to query of range failsafe value %d.", channel);
+    return -1;
   }
 }
 
