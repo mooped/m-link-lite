@@ -6,6 +6,7 @@
 #include "cJSON.h"
 
 #include "event.h"
+#include "hostname.h"
 #include "mount.h"
 #include "settings.h"
 
@@ -144,6 +145,17 @@ static esp_err_t ws_handler(httpd_req_t *req)
       }
     }
 
+    // Reboot
+    cJSON* reboot = cJSON_GetObjectItem(root, "reboot");
+    if (reboot)
+    {
+      if (cJSON_IsString(reboot) && strcmp(reboot->valuestring,  "toober") == 0)
+      {
+        ESP_LOGI(TAG, "Rebooting");
+        esp_restart();
+      }
+    }
+
     // Handle queries
     cJSON* query= cJSON_GetObjectItem(root, "query");
     if (cJSON_IsString(query))
@@ -185,6 +197,13 @@ static esp_err_t ws_handler(httpd_req_t *req)
           if (name)
           {
             cJSON_AddItemToObject(settings, "name", name);
+          }
+        }
+        {
+          cJSON* ap_ssid = cJSON_CreateString(generate_hostname());
+          if (ap_ssid)
+          {
+            cJSON_AddItemToObject(settings, "ap_ssid", ap_ssid);
           }
         }
         {

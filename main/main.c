@@ -286,7 +286,7 @@ void app_main()
   mlink_dns_init();
 
   // Captive DNS
-  captdnsInit();
+  //captdnsInit();
 
   // Start failsafe timer
   rx_failsafe_timer = xTimerCreate("rx-failsafe-timer", pdMS_TO_TICKS(500), pdTRUE, NULL, rx_failsafe_callback);

@@ -95,16 +95,31 @@ void wifi_init_apsta_impl(void)
         * However these modes are deprecated and not advisable to be used. Incase your Access point
         * doesn't support WPA2, these mode can be enabled by commenting below line */
 
-    if (strlen((char *)wifi_config_sta.sta.password)) {
+    if (strlen((char *)wifi_config_sta.sta.password))
+    {
         wifi_config_sta.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
     }
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA) );
+    // Start STA only if we have an SSID
+    const bool use_sta = strlen((char*)wifi_config_sta.sta.ssid) > 0;
+
+    if (use_sta)
+    {
+      ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA) );
+    }
+    else
+    {
+      ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP) );
+    }
+
     esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config_ap);
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config_sta));
+    if (use_sta)
+    {
+      ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config_sta));
+    }
     ESP_ERROR_CHECK(esp_wifi_start() );
 
-    ESP_LOGI(TAG, "wifi_init_apsta finished.");
+    ESP_LOGI(TAG, "wifi_init_ap%s finished.", use_sta ? "sta" : "");
 
     tcpip_adapter_ip_info_t ap_ip;
     ESP_ERROR_CHECK( tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ap_ip) );
@@ -116,6 +131,12 @@ void wifi_init_apsta_impl(void)
         (ip >> 16) & 0xff,
         (ip >> 24) & 0xff
     );
+
+    // STA not configured, we are done
+    if (!use_sta)
+    {
+      return;
+    }
 
     /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
      * number of re-tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above) */
