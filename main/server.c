@@ -338,6 +338,17 @@ static esp_err_t favicon_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+/* Handler to respond with a stylesheet embedded in flash.
+ * This can be overridden by uploading file with same name */
+static esp_err_t style_css_get_handler(httpd_req_t *req)
+{
+    extern const unsigned char style_css_start[] asm("_binary_style_css_start");
+    extern const unsigned char style_css_end[]   asm("_binary_style_css_end");
+    const size_t style_css_size = (style_css_end - style_css_start);
+    httpd_resp_set_type(req, "text/css");
+    httpd_resp_send(req, (const char *)style_css_start, style_css_size);
+    return ESP_OK;
+}
 /* Copies the full path into destination buffer and returns
  * pointer to path (skipping the preceding base path) */
 static const char* get_path_from_uri(char *dest, const char *base_path, const char *uri, size_t destsize)
@@ -399,7 +410,7 @@ static esp_err_t http_resp_dir_html(httpd_req_t *req, const char *dirpath)
   }
 
   /* Send HTML file header */
-  httpd_resp_sendstr_chunk(req, "<!DOCTYPE html><html><body>");
+  httpd_resp_sendstr_chunk(req, "<!DOCTYPE html><html><head><title>M-Link File Manager</title><link rel=\"stylesheet\" href=\"/style.css\"></head><body>");
 
   /* Get handle to embedded file upload script */
   extern const unsigned char upload_script_start[] asm("_binary_upload_script_html_start");
@@ -555,6 +566,10 @@ static esp_err_t file_get_handler(httpd_req_t *req)
     else if (strcmp(filename, "/favicon.ico") == 0)
     {
       return favicon_get_handler(req);
+    }
+    else if (strcmp(filename, "/style.css") == 0)
+    {
+      return style_css_get_handler(req);
     }
     ESP_LOGE(TAG, "Failed to stat file : %s", filepath);
 
