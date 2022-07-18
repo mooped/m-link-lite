@@ -11,3 +11,7 @@ The servo pulsewidth data sent to the WebSocket is passed straight through to th
 M-Link Lite has a configurable failsafe so if no updates are received for 500ms the outputs will be put into a safe state.
 
 When turned on M-Link will create a WiFi Access Point named m-link-XXXXXX where XXXXXX is a unique set of digits that identifies the device. The device should be labelled with this ID. A single user can connect to this access point and the controller page should be accessible by navigating to http://m-link-XXXXXXX.local or if wildcard DNS is enabled to any url e.g. http://m-link/ .
+
+When connected to the access point the device will always be available at http://192.168.4.1 . If you are having trouble when using the access point from a mobile device, turning off mobile internet so WiFi is the only option may help.
+
+Once configured via the access point you can enter details for your own access point and the device will connect to it from then on.
