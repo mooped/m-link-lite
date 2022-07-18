@@ -288,6 +288,18 @@ static esp_err_t code_204_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+/* Handler to respond with menu.html embedded in flash.
+ * This can be overridden by uploading file with same name */
+static esp_err_t menu_html_get_handler(httpd_req_t *req)
+{
+    extern const unsigned char menu_html_start[] asm("_binary_menu_html_start");
+    extern const unsigned char menu_html_end[]   asm("_binary_menu_html_end");
+    const size_t menu_html_size = (menu_html_end - menu_html_start);
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, (const char *)menu_html_start, menu_html_size);
+    return ESP_OK;
+}
+
 /* Handler to respond with info.html embedded in flash.
  * This can be overridden by uploading file with same name */
 static esp_err_t info_html_get_handler(httpd_req_t *req)
@@ -457,7 +469,7 @@ static esp_err_t http_resp_dir_html(httpd_req_t *req, const char *dirpath)
 
   /* Send file-list table definition and column labels */
   httpd_resp_sendstr_chunk(req,
-    "<table class=\"fixed\" border=\"1\">"
+    "<table class=\"filemanager\" border=\"1\">"
     "<col width=\"800px\" /><col width=\"300px\" /><col width=\"300px\" /><col width=\"100px\" />"
     "<thead><tr><th>Name</th><th>Type</th><th>Size (Bytes)</th><th>Delete</th></tr></thead>"
     "<tbody>");
@@ -566,6 +578,10 @@ static esp_err_t file_get_handler(httpd_req_t *req)
 
   /* If file name is '/' respond with the main application page */
   if (strcmp(filename, "/") == 0)
+  {
+    return menu_html_get_handler(req);
+  }
+  if (strcmp(filename, "/drive") == 0)
   {
     return joystick_html_get_handler(req);
   }

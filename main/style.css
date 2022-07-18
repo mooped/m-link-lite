@@ -4,13 +4,30 @@ body {
   margin    : 0;
   background-color: #BBB;
   font-family: Lato,proxima-nova,Helvetica Neue,Arial,sans-serif;
+  font-size: 2rem;
 }
 table {
   border-collapse: collapse;
 }
-table#settings {
+table.filemanager {
+  font-size: 1rem;
+}
+table.settings {
   margin-left: auto;
   margin-right: auto;
+  font-size: 2rem;
+}
+input {
+  font-size: 2rem;
+}
+.small {
+  font-size: 1rem;
+}
+table.filemanager input {
+  font-size: 1rem;
+}
+li.menu {
+  list-style: none;
 }
 #info {
   position  : absolute;

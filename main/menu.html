@@ -1,0 +1,62 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>M-Link Lite Robot Controller</title>
+    <link rel="stylesheet" href="style.css">
+    <script type='application/javascript' src='jquery.min.js'></script>
+    <script type='application/javascript'>
+      let mlink = {}
+
+      $(document).ready(function() {
+        websocket = 'ws://' + location.host + '/ws';
+        if (window.WebSocket) {
+          ws = new WebSocket(websocket);
+        }
+        else if (window.MozWebSocket) {
+          ws = MozWebSocket(websocket);
+        }
+        else {
+          console.log('WebSocket Not Supported');
+          return;
+        }
+
+        ws.onmessage = function (evt) {
+          console.log('Packet received: ' + evt.data);
+          obj = JSON.parse(evt.data);
+          // Update name from settings
+          if (obj && obj.settings && obj.settings.name)
+          {
+            $('#name').html(obj.settings.name);
+            document.title = obj.settings.name;
+          }
+        };
+        ws.onopen = function() {
+          ws.send(
+            JSON.stringify(
+              {
+                query: "settings"
+              }
+            )
+          );
+        };
+        ws.onclose = function(evt) {
+           console.log('Connection closed by server: ' + evt.code + ' "' + evt.reason + '"\n');
+        };
+        // Expose the websocket
+        mlink.ws = ws;
+      });
+    </script>
+  </head>
+  <body>
+    <div id="info">
+      <h1 id="name">M-Link Lite Robot Controller</h1>
+      <ul>
+        <li class="menu"><a href="/drive">Drive</a></li>
+        <li class="menu"><a href="/info">Information</a></li>
+        <li class="menu"><a href="/files/">File Manager</a></li>
+        <li class="menu"><a href="/settings">Settings</a></li>
+      </ul>
+    </div>
+  </body>
+</html>

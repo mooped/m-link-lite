@@ -2,3 +2,5 @@ build/*
 sdkconfig
 sdkconfig.bak
 sdkconfig.old
+hardware/fp-info-cache
+hardware/*-backups/

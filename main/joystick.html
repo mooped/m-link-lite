@@ -22,14 +22,18 @@
         }
 
         ws.onmessage = function (evt) {
-          $('#wsresponse').val(evt.data);
           obj = JSON.parse(evt.data);
           // Update name from settings
-          if (obj && obj.settings && obj.settings.name)
+          if (obj && obj.settings)
           {
-            $('#name').html(obj.settings.name);
-            document.title = obj.settings.name;
+            if (obj.settings.name)
+            {
+              $('#name').html(obj.settings.name);
+              document.title = obj.settings.name;
+            }
+            delete obj.settings;
           }
+          $('#wsresponse').val(JSON.stringify(obj));
         };
         ws.onopen = function() {
           ws.send(
@@ -57,15 +61,11 @@
           );
         };
         ws.onclose = function(evt) {
-           $('#wsresponse').val('Connection closed by server: ' + evt.code + ' "' + evt.reason + '"\n');
+           $('#result').val('Connection closed by server: ' + evt.code + ' "' + evt.reason + '"\n');
         };
-        // Menu toggle
+        // Return to menu
         $('#hamburger').click(function (evt) {
-          $('#menu').toggle();
-        });
-        // Debug toggle
-        $('#debug').click(function (evt) {
-          $('#result').toggle();
+          window.location = '/'
         });
         // Expose the websocket
         mlink.ws = ws;
@@ -84,9 +84,8 @@
         </span>
       </form>
 
-      <h1 id="name">M-Link Lite Robot Controller</h1>
-      <span id="menu">[<a href="/files/">File Manager</a>] - [<a href="/info">Information</a>] - [<a href="javascript:void(0);" id="debug">Toggle Debug</a>] - [<a href="/settings">Settings</a>]</span><br/>
-      <span id="result"></span>
+      <h1 class="small" id="name">M-Link Lite Robot Controller</h1>
+      <span class="small" id="result"></span>
       <div id="hamburger" class="menu"><img src="hamburger.svg" alt="Menu Button" /></div>
     </div> 
     <script src="virtualjoystick.js"></script>
