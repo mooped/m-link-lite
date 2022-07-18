@@ -11,33 +11,39 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include "captDns.h"
+
 #include "hostname.h"
 
 static const char* TAG = "mdns";
 
 static void initialise_mdns(void)
 {
-    char* hostname = generate_hostname();
-    //initialize mDNS
-    ESP_ERROR_CHECK( mdns_init() );
-    //set mDNS hostname (required if you want to advertise services)
-    ESP_ERROR_CHECK( mdns_hostname_set(hostname) );
-    ESP_LOGI(TAG, "mdns hostname set to: [%s]", hostname);
-    //set default mDNS instance name
-    ESP_ERROR_CHECK( mdns_instance_name_set("M-Link Lite mDNS") );
+  // Get hostname (prefix + 4 bytes of MAC address)
+  char* hostname = generate_hostname();
 
-    ESP_ERROR_CHECK( mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0) );
+  // Initialize mDNS
+  ESP_ERROR_CHECK( mdns_init() );
 
-    tcpip_adapter_dhcp_status_t status;
-    tcpip_adapter_dhcps_get_status(TCPIP_ADAPTER_IF_AP, &status);
-    ESP_LOGI(TAG, "DHCPS Status: %d", status);
-    tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP);
+  // Set mDNS hostname so we can advertise services
+  ESP_ERROR_CHECK( mdns_hostname_set(hostname) );
+  ESP_LOGI(TAG, "mdns hostname set to: [%s]", hostname);
 
-    free(hostname);
+  // Set mDNS instance name
+  ESP_ERROR_CHECK( mdns_instance_name_set("M-Link Lite mDNS") );
+
+  // Add a HTTP service
+  ESP_ERROR_CHECK( mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0) );
+
+  free(hostname);
 }
 
 void mlink_dns_init(void)
 {
+  // Initialise multicast DNS
   initialise_mdns();
+
+  // Initialise captive DNS also
+  captdnsInit();
 }
 

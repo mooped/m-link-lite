@@ -24,8 +24,6 @@
 #include <esp_spiffs.h>
 #include <esp_vfs.h>
 
-#include "captDns.h"
-
 #include "battery.h"
 #include "dns.h"
 #include "event.h"
@@ -284,9 +282,6 @@ void app_main()
 
   // Initialise mDNS
   mlink_dns_init();
-
-  // Captive DNS
-  //captdnsInit();
 
   // Start failsafe timer
   rx_failsafe_timer = xTimerCreate("rx-failsafe-timer", pdMS_TO_TICKS(500), pdTRUE, NULL, rx_failsafe_callback);
