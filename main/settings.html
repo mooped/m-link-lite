@@ -24,8 +24,6 @@
         ws.onmessage = function (evt) {
           console.log('Packet received: ' + evt.data);
           const obj = JSON.parse(evt.data);
-          console.log(evt.data);
-          console.log(obj);
           if (obj && obj.settings)
           {
             if (obj.settings.name)
