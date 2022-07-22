@@ -1,0 +1,165 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>M-Link Lite Robot Controller</title>
+    <link rel="stylesheet" href="style.css">
+    <script type='application/javascript' src='jquery.min.js'></script>
+    <script type='application/javascript'>
+      let mlink = {}
+
+      $(document).ready(function() {
+        websocket = 'ws://' + location.host + '/ws';
+        if (window.WebSocket) {
+          ws = new WebSocket(websocket);
+        }
+        else if (window.MozWebSocket) {
+          ws = MozWebSocket(websocket);
+        }
+        else {
+          console.log('WebSocket Not Supported');
+          return;
+        }
+
+        ws.onmessage = function (evt) {
+          obj = JSON.parse(evt.data);
+          // Update name from settings
+          if (obj && obj.settings)
+          {
+            if (obj.settings.name)
+            {
+              $('#name').html(obj.settings.name);
+              document.title = obj.settings.name;
+            }
+            delete obj.settings;
+          }
+          $('#wsresponse').val(JSON.stringify(obj));
+        };
+        ws.onopen = function() {
+          ws.send(
+            JSON.stringify(
+              {
+                servos: [
+                  1500,
+                  1500,
+                  1500,
+                  1500,
+                  1500,
+                  1500
+                ],
+                failsafes: [
+                  1500,
+                  1500,
+                  1500,
+                  1500,
+                  1500,
+                  1500
+                ],
+                query: "settings"
+              }
+            )
+          );
+        };
+        ws.onclose = function(evt) {
+           $('#result').val('Connection closed by server: ' + evt.code + ' "' + evt.reason + '"\n');
+        };
+        // Return to menu
+        $('#hamburger').click(function (evt) {
+          window.location = '/'
+        });
+        // Expose the websocket
+        mlink.ws = ws;
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="container"></div>
+    <div id="info">
+
+      <form action='#' id='chatform' method='get'>
+        <span style="display: none;">
+          <label for='send'>Send: </label><input type='text' id='send' />
+          <label for='wsresponse'>Socket response: </label><input type='text' id='wsresponse' />
+        </span>
+      </form>
+
+      <h1 class="small" id="name">M-Link Lite Robot Controller</h1>
+      <span class="small" id="result"></span>
+      <div id="hamburger" class="menu"><img src="hamburger.svg" alt="Menu Button" /></div>
+    </div> 
+    <script src="virtualjoystick.js"></script>
+    <script>
+      console.log("touchscreen is", VirtualJoystick.touchScreenAvailable() ? "available" : "not available");
+      // Top
+      var joystick1  = new VirtualJoystick({
+        container: document.getElementById('container'),
+        mouseSupport: true,
+        limitStickTravel: true,
+        stickRadius: 100,
+        strokeStyle: '#195905',
+      });
+      joystick1.addEventListener('touchStartValidation', function(event) {
+        var touch = event.changedTouches[0];
+        if (touch.pageY > window.innerHeight/2) return false;
+        return true;
+      });
+      // Bottom Left
+      var joystick2  = new VirtualJoystick({
+        container: document.getElementById('container'),
+        mouseSupport: true,
+        limitStickTravel: true,
+        stickRadius: 100,
+        strokeStyle: '#055919',
+      });
+      joystick2.addEventListener('touchStartValidation', function(event) {
+        var touch = event.changedTouches[0];
+        if (touch.pageY <= window.innerHeight/2) return false;
+        if (touch.pageX > window.innerWidth/2) return false;
+        return true;
+      });
+      // Bottom Right
+      var joystick3  = new VirtualJoystick({
+        container: document.getElementById('container'),
+        mouseSupport: true,
+        limitStickTravel: true,
+        stickRadius: 100,
+        strokeStyle: '#055919',
+      });
+      joystick3.addEventListener('touchStartValidation', function(event) {
+        var touch = event.changedTouches[0];
+        if (touch.pageY <= window.innerHeight/2) return false;
+        if (touch.pageX <= window.innerWidth/2) return false;
+        return true;
+      });
+      const keepalive = 5;
+      var counter = 0;
+      setInterval(function(){
+        const x = Math.round(joystick1.deltaX() * 5);
+        const y = Math.round(joystick1.deltaY() * 5);
+        const z = Math.round(joystick2.deltaX() * 5);
+        const w = Math.round(joystick2.deltaY() * 5);
+        const u = Math.round(joystick3.deltaX() * 5);
+        const v = Math.round(joystick3.deltaY() * 5);
+        $msg = JSON.stringify({
+          servos: [
+            parseInt(1500 - y),
+            parseInt(1500 + x),
+            parseInt(1500 - z),
+            parseInt(1500 + w),
+            parseInt(1500 - u),
+            parseInt(1500 + v),
+          ]
+        });
+        if ($('#send').val() != $msg || (++counter % keepalive) === 0) {
+          $('#send').val($msg);
+          ws.send($msg);
+        }
+
+        var outputEl  = document.getElementById('result');
+        outputEl.innerHTML = $('#wsresponse').val();
+
+      }, 1/30 * 1000);
+    </script>
+  </body>
+</html>

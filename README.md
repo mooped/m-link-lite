@@ -22,9 +22,11 @@ The default Drive page on the M-Link Lite device provides a single virtual joyst
 
 If you wish to use all 6 channels or other features you can upload additional files through the File Manager page that make use of these features.
 
-As a starting point it is recommended to download the default 'Drive' page from [main/joystick.html](main/joystick.html), modify it, and upload to the file manager. For quick tests you can change `websocket = 'ws://' + location.host + '/ws';` on line 12 to `websocket = 'ws://m-link-XXXXXX.local/ws'; where m-link-XXXXXX is the ID if your device, then load the page directly in your browser without uploading to the device.
+As a starting point it is recommended to download the default 'Drive' page from [main/joystick.html](main/joystick.html), modify it. You can use the File Manager page on the device to upload and test the modified version.
 
 The on-screen Joystick is implemented with [jeromeetienne/virtualjoystick.js](https://github.com/jeromeetienne/virtualjoystick.js) which has its own documentation and examples for adding additional joysticks.
+
+Some examples are provided for implementing [one](examples/joystick.html), [two](examples/two_stick.html), or [three](examples/three_stick.html) on-screen joysticks in the [examples folder](examples) of the project.
 
 The page talks to the M-Link Lite by sending JSON messages over a websocket and the device will send JSON messages back in response.
 
