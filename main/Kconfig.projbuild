@@ -34,7 +34,13 @@ menu "M-Link Configuration"
         string "SoftAP Mode Password"
         default "password"
         help
-            SSID (network name) prefix when in SoftAP mode.
+            Password, or password secret key for SoftAP mode.
+
+    config ESP_WIFI_AP_GENERATE_PASSWORD
+        boolean "SoftAP Generate Password"
+        default false
+        help
+            When off the SoftAP Mode Password is used directly as a password, otherwise it is used as a secret key to generate a unique password.
 
     config ESP_MAXIMUM_RETRY
         int "Maximum Retry"
