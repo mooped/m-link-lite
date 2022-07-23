@@ -222,3 +222,12 @@ The device will respond to a `settings` query with an object containing the curr
 M-Link Lite is designed as a simple device to make it easy to get started and because of this it has been designed to be simple and robust at the expense of some security features.
 
 To avoid users locking themselves out of the device its Access Point has a fixed password, and when connected to a shared Access Point there is no authentication to prevent other users from taking control of the device. For this reason we do not recommend using this device for any robot with spinning weapons or any other weapons that would be dangerous if activated unexpectedly.
+
+## Building The Project
+
+This project is based on the ESP8266 FreeRTOS SDK, which is the ESP8266 equivalent of the ESP32's ESP-IDF project.
+
+You can find instructions for installing and setting this up in their [Getting Started Guide](https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/get-started/index.html).
+
+This project uses a version of the ESP8266 FreeRTOS SDK that I modified to include the ESP32 version's web server. You will need to check out [my ESP8266_RTOS_SDK_ESP32TTTPD project](https://github.com/mooped/ESP8266_RTOS_SDK_ESP32HTTPD) instead of the official version.
+
