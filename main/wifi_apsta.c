@@ -92,7 +92,7 @@ void wifi_init_apsta_impl(void)
     // Generate AP password if configured
     if (MLINK_WIFI_AP_GENERATE_PASSWORD)
     {
-      
+      strcpy((char*)wifi_config_ap.ap.password, generate_password());
     }
 
     // Set SSID from MAC address
@@ -127,6 +127,8 @@ void wifi_init_apsta_impl(void)
     ESP_ERROR_CHECK(esp_wifi_start() );
 
     ESP_LOGI(TAG, "wifi_init_ap%s finished.", use_sta ? "sta" : "");
+
+    ESP_LOGI(TAG, "AP SSID:%s, password:%s", wifi_config_ap.ap.ssid, wifi_config_ap.ap.password);
 
     tcpip_adapter_ip_info_t ap_ip;
     ESP_ERROR_CHECK( tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ap_ip) );

@@ -1,9 +1,12 @@
-#include "hostname.h"
+#include <string.h>
 
 #include "esp_netif.h"
 
+#include "hostname.h"
+
 #define HOSTNAME_PREFIX         CONFIG_HOSTNAME_PREFIX
 #define PASSWORD_ONETIMEPAD     CONFIG_ESP_WIFI_AP_PASSWORD
+#define LENGTH 8
 
 char* generate_hostname()
 {
@@ -16,14 +19,41 @@ char* generate_hostname()
     return hostname;
 }
 
+char* hex = "0123456789abcdef";
+
+int hexlookup(char h)
+{
+  for (int i = 0; i < 16; ++i)
+  {
+    if (hex[i] == h)
+    {
+      return i;
+    }
+  }
+  return 0;
+}
+
 char* generate_password()
 {
-  uint8_t mac[8];
-  uint8_t password[8];
-  uint8_t secret[8];
-  static char* password;
-  memset(mac, 0, 8);
-  memset(password, 0, 8);
-  memset(secret, 0, 8);
-  esp_read_mac(mac, ESP_MAC_WIFI_STA);
+  uint8_t raw_mac[6];
+  esp_read_mac(raw_mac, ESP_MAC_WIFI_STA);
+
+  char mac[LENGTH + 1];
+  static char password[LENGTH + 1];
+  char secret[LENGTH + 1];
+
+  memset(mac, 0, LENGTH);
+  sprintf(mac, "%02X%02X%02X00", raw_mac[3], raw_mac[4], raw_mac[5]);
+
+  memset(secret, 0, LENGTH);
+  memcpy(secret, PASSWORD_ONETIMEPAD, LENGTH);
+  memset(password, 0, LENGTH);
+
+  for (int i = 0; i < LENGTH; ++i)
+  {
+    password[i] = hex[hexlookup(mac[i]) ^ hexlookup(secret[i])];
+  }
+
+  return password;
 }
+
