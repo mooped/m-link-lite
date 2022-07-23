@@ -22,6 +22,7 @@
 */
 #define MLINK_ESP_MAXIMUM_RETRY    CONFIG_ESP_MAXIMUM_RETRY
 #define MLINK_WIFI_AP_PASSWORD     CONFIG_ESP_WIFI_AP_PASSWORD
+#define MLINK_WIFI_AP_GENERATE_PASSWORD  CONFIG_ESP_WIFI_AP_GENERATE_PASSWORD
 #define MLINK_MAX_STA_CONN         CONFIG_ESP_MAX_STA_CONN
 
 /* FreeRTOS event group to signal when we are connected*/
@@ -87,6 +88,12 @@ void wifi_init_apsta_impl(void)
     // Set STA SSID and password from settings
     strcpy((char*)wifi_config_sta.sta.ssid, settings_get_ssid());
     strcpy((char*)wifi_config_sta.sta.password, settings_get_password());
+
+    // Generate AP password if configured
+    if (MLINK_WIFI_AP_GENERATE_PASSWORD)
+    {
+      
+    }
 
     // Set SSID from MAC address
     strcpy((char*)wifi_config_ap.ap.ssid, generate_hostname());
