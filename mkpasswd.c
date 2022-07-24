@@ -3,10 +3,7 @@
 
 #include "build/include/sdkconfig.h"
 
-#define LENGTH 8
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
-
-char secret[LENGTH];
 
 char* hex = "0123456789abcdef";
 
@@ -22,31 +19,32 @@ int hexlookup(char h)
   return 0;
 }
 
-char buffer[LENGTH + 1];
+#define LENGTH 8
 
 int main(int argc, char* argv[])
 {
-  if (argc != 2)
+  char mac[LENGTH + 1];
+  char password[LENGTH + 1];
+  char secret[LENGTH + 1];
+
+  if (argc < 2)
   {
     return -1;
   }
 
+  memset(secret, 0, sizeof(secret));
   memcpy(secret, CONFIG_ESP_WIFI_AP_PASSWORD, LENGTH);
 
   for (int password_idx = 1; password_idx < argc; ++password_idx)
   {
-    memset(buffer, 0, sizeof(buffer));
-    strncpy(buffer, argv[password_idx], LENGTH);
+    strncpy(mac, argv[password_idx], LENGTH);
 
+    memset(password, 0, sizeof(password));
     for (int i = 0; i < LENGTH; ++i)
     {
-      int in = hexlookup(argv[password_idx][i]);
-      int sec = hexlookup(secret[i]);
-      int out = in ^ sec;
-
-      printf("%x", out);
+      password[i] = hex[hexlookup(mac[i]) ^ hexlookup(secret[i])];
     }
 
-    printf("\n");
+    printf("MAC: %s Password: %s\n", mac, password);
   }
 }

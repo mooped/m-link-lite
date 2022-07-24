@@ -42,12 +42,12 @@ char* generate_password()
   static char password[LENGTH + 1];
   char secret[LENGTH + 1];
 
-  memset(mac, 0, LENGTH);
+  memset(mac, 0, sizeof(mac));
   sprintf(mac, "%02X%02X%02X00", raw_mac[3], raw_mac[4], raw_mac[5]);
 
-  memset(secret, 0, LENGTH);
+  memset(secret, 0, sizeof(secret));
   memcpy(secret, PASSWORD_ONETIMEPAD, LENGTH);
-  memset(password, 0, LENGTH);
+  memset(password, 0, sizeof(password));
 
   for (int i = 0; i < LENGTH; ++i)
   {
