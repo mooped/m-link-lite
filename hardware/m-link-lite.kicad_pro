@@ -347,7 +347,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "foobot_v3.kicad_pro",
+    "filename": "m-link-lite.kicad_pro",
     "version": 1
   },
   "net_settings": {
@@ -380,7 +380,6 @@
         "microvia_drill": 0.1,
         "name": "Power",
         "nets": [
-          "/VCC",
           "GND"
         ],
         "pcb_color": "rgba(0, 0, 0, 0.000)",
