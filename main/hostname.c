@@ -23,9 +23,10 @@ char* hex = "0123456789abcdef";
 
 int hexlookup(char h)
 {
+  const char lower = tolower(h);
   for (int i = 0; i < 16; ++i)
   {
-    if (hex[i] == h)
+    if (hex[i] == lower)
     {
       return i;
     }
