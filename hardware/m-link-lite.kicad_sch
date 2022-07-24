@@ -2630,7 +2630,7 @@
     (property "Reference" "SW1" (id 0) (at 267.843 60.1253 90)
       (effects (font (size 1.27 1.27)) (justify right))
     )
-    (property "Value" "DTR" (id 1) (at 267.843 62.6622 90)
+    (property "Value" "RESTORE SETTINGS" (id 1) (at 267.843 62.6622 90)
       (effects (font (size 1.27 1.27)) (justify right))
     )
     (property "Footprint" "new_moop_items:SW_SPST_PTS810" (id 2) (at 261.62 60.96 0)
@@ -2844,7 +2844,7 @@
       (reference "R10") (unit 1) (value "100") (footprint "Resistor_SMD:R_0603_1608Metric")
     )
     (path "/c91f3a05-92b7-4af6-9fa5-e9872bd4952c"
-      (reference "SW1") (unit 1) (value "DTR") (footprint "new_moop_items:SW_SPST_PTS810")
+      (reference "SW1") (unit 1) (value "RESTORE SETTINGS") (footprint "new_moop_items:SW_SPST_PTS810")
     )
     (path "/67b22c72-045a-4f97-be2d-4eb7aa530e09"
       (reference "U1") (unit 1) (value "AP1117-33") (footprint "Package_TO_SOT_SMD:SOT-223-3_TabPin2")
