@@ -7,6 +7,7 @@ class MLink {
     this.onopen = undefined
     this.onclose = undefined
     this._status = 'waiting'
+    this._awaiting = []
 
     if (options.onmesage) {
       this.onmessage = options.onmessage
@@ -35,6 +36,13 @@ class MLink {
         localthis._status = obj.status
       }
 
+      // If we queued up a function handle this response then call it
+      const resolve = localthis._awaiting.shift()
+      if (resolve)
+      {
+        resolve(obj)
+      }
+
       if (localthis.onmessage) {
         localthis.onmessage(obj)
       }
@@ -58,12 +66,10 @@ class MLink {
    */
   begin() {
     // Send initial settings query
-    this._ws.send(
-      JSON.stringify(
-        {
-          query: "settings"
-        }
-      )
+    this._send(
+      {
+        query: "settings"
+      }
     )
   }
 
@@ -76,67 +82,78 @@ class MLink {
   }
 
   /*
+   * Wrapper around WebSocket send
+   * Returns only once a response is received
+   */
+  async _send (msg) {
+    const localthis = this
+    const promise = new Promise((resolve, reject) => {
+      // Send the message whose response will resolve this promise
+      localthis._ws.send(JSON.stringify(msg))
+
+      // onmessage will call resolve when the relevant response comes in
+      localthis._awaiting.push(resolve)
+ 
+      // Reject if there is no response after 300 ms
+      setTimeout(() => reject({status: 'timed out'}), 300)
+    })
+
+    // Wait for the promise to be resolved or rejected
+    return await promise
+  }
+
+  /*
    * Set the failsafes for each channel
    */
-  setFailsafes (failsafes) {
-    this._ws.send(
-      JSON.stringify(
-        {
-          failsafes: failsafes
-        }
-      )
+  async setFailsafes (failsafes) {
+    return await this._send(
+      {
+        failsafes: failsafes
+      }
     )
   }
 
   /*
    * Set the pulsewidth for each servo
    */
-  setServos (servos) {
-    this._ws.send(
-      JSON.stringify(
-        {
-          servos: servos
-        }
-      )
+  async setServos (servos) {
+    return await this._send(
+      {
+        servos: servos
+      }
     )
   }
 
   /*
    * Update settings
    */
-  updateSettings (settings) {
-    this._ws.send(
-      JSON.stringify(
-        {
-          "settings" : settings
-        }
-      )
+  async updateSettings (settings) {
+    return await this._send(
+      {
+        "settings" : settings
+      }
     )
   }
 
   /*
    * Reset default settings
    */
-  resetSettings () {
-    this._ws.send(
-      JSON.stringify(
-        {
-          reset_settings : "sgnittes_teser"
-        }
-      )
+  async resetSettings () {
+    return await this._send(
+      {
+        reset_settings : "sgnittes_teser"
+      }
     )
   }
 
   /*
    * Reboot
    */
-  reboot () {
-    this._ws.send(
-      JSON.stringify(
-        {
-          reboot : "toober"
-        }
-      )
+  async reboot () {
+    return await this._send(
+      {
+        reboot : "toober"
+      }
     )
   }
 
@@ -144,42 +161,33 @@ class MLink {
    * Query Battery
    */
   async getBatteryVoltage () {
-    this._ws.send(
-      JSON.stringify(
-        {
-          query : "battery"
-        }
-      )
+    return await this._send(
+      {
+        query : "battery"
+      }
     )
-    // TODO: Await response and return
   }
 
   /*
    * Query Failsafes
    */
   async getFailsafes () {
-    this._ws.send(
-      JSON.stringify(
-        {
-          query : "failsafes"
-        }
-      )
+    return await this._send(
+      {
+        query : "failsafes"
+      }
     )
-    // TODO: Await response and return
   }
 
   /*
    * Query Settings
    */
   async getSettings () {
-    this._ws.send(
-      JSON.stringify(
-        {
-          query : "settings"
-        }
-      )
+    return await this._send(
+      {
+        query : "settings"
+      }
     )
-    // TODO: Await response and return
   }
 }
 
