@@ -6,6 +6,7 @@ class MLink {
     this.onmessage = undefined
     this.onopen = undefined
     this.onclose = undefined
+    this._status = 'waiting'
 
     if (options.onmesage) {
       this.onmessage = options.onmessage
@@ -26,26 +27,38 @@ class MLink {
       return
     }
 
+    const localthis = this
     this._ws.onmessage = function (evt) {
       let obj = JSON.parse(evt.data)
 
-      if (this.onmessage) {
-        this.onmessage(obj)
+      if (obj.status) {
+        localthis._status = obj.status
       }
-    }
-    ws.onopen = function () {
-      if (this.onopen) {
-        this.onopen()
-      }
-    }
-    ws.onclose = function (evt) {
-      if (this.onclose) {
-        this.onclose(evt.code, evt.reason)
-      }
-    }
 
+      if (localthis.onmessage) {
+        localthis.onmessage(obj)
+      }
+    }
+    this._ws.onopen = function () {
+      localthis._status = open
+      if (localthis.onopen) {
+        localthis.onopen()
+      }
+    }
+    this._ws.onclose = function (evt) {
+      localthis._status = closed
+      if (localthis.onclose) {
+        localthis.onclose(evt.code, evt.reason)
+      }
+    }
+  }
+
+  /*
+   * Open the WebSocket connection
+   */
+  begin() {
     // Send initial settings query
-    this.ws.send(
+    this._ws.send(
       JSON.stringify(
         {
           query: "settings"
@@ -55,10 +68,18 @@ class MLink {
   }
 
   /*
+   * Get the status of the connection
+   */
+  get status() {
+    // TODO: Implement this
+    return this._status
+  }
+
+  /*
    * Set the failsafes for each channel
    */
   setFailsafes (failsafes) {
-    this.ws.send(
+    this._ws.send(
       JSON.stringify(
         {
           failsafes: failsafes
@@ -71,7 +92,7 @@ class MLink {
    * Set the pulsewidth for each servo
    */
   setServos (servos) {
-    this.ws.send(
+    this._ws.send(
       JSON.stringify(
         {
           servos: servos
@@ -84,7 +105,7 @@ class MLink {
    * Update settings
    */
   updateSettings (settings) {
-    this.ws.send(
+    this._ws.send(
       JSON.stringify(
         {
           "settings" : settings
@@ -97,7 +118,7 @@ class MLink {
    * Reset default settings
    */
   resetSettings () {
-    this.ws.send(
+    this._ws.send(
       JSON.stringify(
         {
           reset_settings : "sgnittes_teser"
@@ -110,7 +131,7 @@ class MLink {
    * Reboot
    */
   reboot () {
-    this.ws.send(
+    this._ws.send(
       JSON.stringify(
         {
           reboot : "toober"
@@ -123,7 +144,7 @@ class MLink {
    * Query Battery
    */
   async getBatteryVoltage () {
-    this.ws.send(
+    this._ws.send(
       JSON.stringify(
         {
           query : "battery"
@@ -137,7 +158,7 @@ class MLink {
    * Query Failsafes
    */
   async getFailsafes () {
-    this.ws.send(
+    this._ws.send(
       JSON.stringify(
         {
           query : "failsafes"
@@ -151,7 +172,7 @@ class MLink {
    * Query Settings
    */
   async getSettings () {
-    this.ws.send(
+    this._ws.send(
       JSON.stringify(
         {
           query : "settings"

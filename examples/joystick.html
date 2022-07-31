@@ -4,72 +4,57 @@
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <title>M-Link Lite Robot Controller</title>
     <link rel="stylesheet" href="style.css">
+    <script type='application/javascript' src='m-link.js'></script>
     <script type='application/javascript' src='jquery.min.js'></script>
     <script type='application/javascript'>
-      let mlink = {}
+      let mlink = undefined;
 
       $(document).ready(function() {
-        websocket = 'ws://' + location.host + '/ws';
-        if (window.WebSocket) {
-          ws = new WebSocket(websocket);
-        }
-        else if (window.MozWebSocket) {
-          ws = MozWebSocket(websocket);
-        }
-        else {
-          console.log('WebSocket Not Supported');
-          return;
-        }
-
-        ws.onmessage = function (evt) {
-          obj = JSON.parse(evt.data);
-          // Update name from settings
-          if (obj && obj.settings)
-          {
-            if (obj.settings.name)
+        mlink = new MLink('ws://192.168.0.39/ws',
+        {
+          onmessage: function(message) {
+            obj = JSON.parse(message)
+            // Update name from settings
+            if (obj && obj.settings)
             {
-              $('#name').html(obj.settings.name);
-              document.title = obj.settings.name;
-            }
-            delete obj.settings;
-          }
-          $('#wsresponse').val(JSON.stringify(obj));
-        };
-        ws.onopen = function() {
-          ws.send(
-            JSON.stringify(
+              if (obj.settings.name)
               {
-                servos: [
-                  1500,
-                  1500,
-                  1500,
-                  1500,
-                  1500,
-                  1500
-                ],
-                failsafes: [
-                  1500,
-                  1500,
-                  1500,
-                  1500,
-                  1500,
-                  1500
-                ],
-                query: "settings"
+                $('#name').html(obj.settings.name)
+                document.title = obj.settings.name
               }
-            )
-          );
-        };
-        ws.onclose = function(evt) {
-           $('#result').val('Connection closed by server: ' + evt.code + ' "' + evt.reason + '"\n');
-        };
-        // Return to menu
+              delete obj.settings
+            }
+            $('#wsresponse').val(JSON.stringify(obj))
+          },
+          onopen: function() {
+            mlink.setServos([
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500
+            ])
+            mlink.setFailsafes([
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500
+            ])
+          },
+          onclose: function(code, reason) {
+            $('#result').val('Connection closed by server: ' + code + ' "' + reason + '"\n');
+          }
+        })
+        mlink.begin()
+
+        // Register listener for menu button
         $('#hamburger').click(function (evt) {
           window.location = '/'
-        });
-        // Expose the websocket
-        mlink.ws = ws;
-      });
+        })
+      })
     </script>
   </head>
 
@@ -90,38 +75,37 @@
     </div> 
     <script src="virtualjoystick.js"></script>
     <script>
-      console.log("touchscreen is", VirtualJoystick.touchScreenAvailable() ? "available" : "not available");
+      console.log("touchscreen is", VirtualJoystick.touchScreenAvailable() ? "available" : "not available")
       var joystick  = new VirtualJoystick({
         container: document.getElementById('container'),
         mouseSupport: true,
         limitStickTravel: true,
         stickRadius: 100,
         strokeStyle: '#195905',
-      });
-      const keepalive = 5;
-      var counter = 0;
+      })
+      const keepalive = 5
+      var counter = 0
       setInterval(function(){
-        const x = Math.round(joystick.deltaX() * 5);
-        const y = Math.round(joystick.deltaY() * 5);
-        $msg = JSON.stringify({
-          servos: [
+        var status = 'waiting'
+        if (mlink) {
+          const x = Math.round(joystick.deltaX() * 5)
+          const y = Math.round(joystick.deltaY() * 5)
+          mlink.setServos([
             parseInt(1500 - y),
             parseInt(1500 + x),
             1500,
             1500,
             1500,
-            1500,
-          ]
-        });
-        if ($('#send').val() != $msg || (++counter % keepalive) === 0) {
-          $('#send').val($msg);
-          ws.send($msg);
+            1500
+          ])
+
+          status = mlink.status
         }
 
-        var outputEl  = document.getElementById('result');
-        outputEl.innerHTML = $('#wsresponse').val();
+        var outputEl = document.getElementById('result');
+        outputEl.innerHTML = status
 
-      }, 1/30 * 1000);
+      }, 1/15 * 1000);
     </script>
   </body>
 </html>
