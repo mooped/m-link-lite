@@ -85,12 +85,12 @@
       })
       const keepalive = 5
       var counter = 0
-      setInterval(function(){
+      setInterval(async function(){
         var status = 'waiting'
         if (mlink) {
           const x = Math.round(joystick.deltaX() * 5)
           const y = Math.round(joystick.deltaY() * 5)
-          mlink.setServos([
+          await mlink.setServos([
             parseInt(1500 - y),
             parseInt(1500 + x),
             1500,
