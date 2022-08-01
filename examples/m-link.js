@@ -18,6 +18,9 @@ class MLink {
     if (options.onclose) {
       this.onclose = options.onclose
     }
+    if (options.failsafes) {
+      this._failsafes = options.failsafes
+    }
 
     if (window.WebSocket) {
       this._ws = new WebSocket(uri)
@@ -64,13 +67,22 @@ class MLink {
   /*
    * Open the WebSocket connection
    */
-  begin() {
+  async begin() {
     // Send initial settings query
-    this._send(
-      {
-        query: "settings"
+    const settings = await this.getSettings()
+
+    if (this._failsafes) {
+      await this.setFailsafes(this._failsafes)
+    } else {
+      // Once we know (or guess) the number of channels, set sensible failsafes
+      let channels = 6
+      if (settings && settings.channels) {
+        channels = parseInt(settings.channels)
       }
-    )
+      const failsafes = new Array(channels)
+      failsafes.fill(1500)
+      await this.setFailsafes(failsafes)
+    }
   }
 
   /*
@@ -150,44 +162,59 @@ class MLink {
    * Reboot
    */
   async reboot () {
-    return await this._send(
+    this._send(
       {
         reboot : "toober"
       }
     )
+    return {
+      status: 'rebooting'
+    }
   }
 
   /*
    * Query Battery
    */
   async getBatteryVoltage () {
-    return await this._send(
+    const result = await this._send(
       {
         query : "battery"
       }
     )
+    if (result && result.status && result.status === 'ok') {
+      return parseInt(result.battery)
+    }
+    return 0
   }
 
   /*
    * Query Failsafes
    */
   async getFailsafes () {
-    return await this._send(
+    const result = await this._send(
       {
         query : "failsafes"
       }
     )
+    if (result && result.status && result.status === 'ok') {
+      return result.failsafes.map(pw => parseInt(pw))
+    }
+    return []
   }
 
   /*
    * Query Settings
    */
   async getSettings () {
-    return await this._send(
+    const result = await this._send(
       {
         query : "settings"
       }
     )
+    if (result && result.status && result.status === 'ok') {
+      return result.settings
+    }
+    return {}
   }
 }
 

@@ -27,22 +27,7 @@
             $('#wsresponse').val(JSON.stringify(obj))
           },
           onopen: function() {
-            mlink.setServos([
-              1500,
-              1500,
-              1500,
-              1500,
-              1500,
-              1500
-            ])
-            mlink.setFailsafes([
-              1500,
-              1500,
-              1500,
-              1500,
-              1500,
-              1500
-            ])
+            $('#result').val('Connected');
           },
           onclose: function(code, reason) {
             $('#result').val('Connection closed by server: ' + code + ' "' + reason + '"\n');
