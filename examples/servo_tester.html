@@ -1,0 +1,70 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>M-Link Lite Robot Controller</title>
+    <link rel="stylesheet" href="style.css">
+    <script type='application/javascript' src='m-link.js'></script>
+    <script type='application/javascript' src='jquery.min.js'></script>
+    <script type='application/javascript'>
+      let mlink = undefined
+
+      $(document).ready(function() {
+        mlink = new MLink('ws://' + location.host + '/ws',
+        {
+          onopen: async function() {
+            $('#result').val('Connected')
+          },
+          onclose: function(code, reason) {
+            $('#result').val('Connection closed by server: ' + code + ' "' + reason + '"\n')
+          }
+        })
+        mlink.begin()
+
+        // Register listener for menu button
+        $('#hamburger').click(function (evt) {
+          window.location = '/'
+        })
+      })
+    </script>
+  </head>
+
+  <body>
+    <div id="container"></div>
+    <div id="info">
+      <h1 class="small"><span id="name">M-Link Lite</span> Servo Tester</h1>
+      <span class="small" id="result"></span>
+      <div id="hamburger" class="menu"><img src="hamburger.svg" alt="Menu Button" /></div>
+      <br/><br/>
+      <form>
+        <input type="range" id="channel1" name="channel1" value="1500" min="1000" max="2000" orient="vertical"/>
+        <input type="range" id="channel2" name="channel2" value="1500" min="1000" max="2000" orient="vertical"/>
+        <input type="range" id="channel3" name="channel3" value="1500" min="1000" max="2000" orient="vertical"/>
+        <input type="range" id="channel4" name="channel4" value="1500" min="1000" max="2000" orient="vertical"/>
+        <input type="range" id="channel5" name="channel5" value="1500" min="1000" max="2000" orient="vertical"/>
+        <input type="range" id="channel6" name="channel6" value="1500" min="1000" max="2000" orient="vertical"/>
+      </form>
+    </div> 
+    <script>
+      setInterval(async function(){
+        var status = 'waiting'
+        if (mlink) {
+          await mlink.setServos([
+            parseInt(document.getElementById('channel1').value),
+            parseInt(document.getElementById('channel2').value),
+            parseInt(document.getElementById('channel3').value),
+            parseInt(document.getElementById('channel4').value),
+            parseInt(document.getElementById('channel5').value),
+            parseInt(document.getElementById('channel6').value)
+          ])
+
+          status = mlink.status
+        }
+
+        var outputEl = document.getElementById('result')
+        outputEl.innerHTML = status
+
+      }, 1/15 * 1000)
+    </script>
+  </body>
+</html>
