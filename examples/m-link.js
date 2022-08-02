@@ -7,9 +7,10 @@ class MLink {
     this.onopen = undefined
     this.onclose = undefined
     this._status = 'waiting'
+    this._channels = 6
     this._awaiting = []
 
-    if (options.onmesage) {
+    if (options.onmessage) {
       this.onmessage = options.onmessage
     }
     if (options.onopen) {
@@ -75,11 +76,10 @@ class MLink {
       await this.setFailsafes(this._failsafes)
     } else {
       // Once we know (or guess) the number of channels, set sensible failsafes
-      let channels = 6
       if (settings && settings.channels) {
-        channels = parseInt(settings.channels)
+        this._channels = parseInt(settings.channels)
       }
-      const failsafes = new Array(channels)
+      const failsafes = new Array(this.channels)
       failsafes.fill(1500)
       await this.setFailsafes(failsafes)
     }
@@ -89,8 +89,14 @@ class MLink {
    * Get the status of the connection
    */
   get status() {
-    // TODO: Implement this
     return this._status
+  }
+
+  /*
+   * Get the supported number of channels
+   */
+  get channels() {
+    return this._channels
   }
 
   /*
