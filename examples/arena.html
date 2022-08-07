@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
@@ -42,8 +43,21 @@
         font-size: 128px;
         line-height: 161px;
         text-align: center;
+        display: grid;
+        grid-template-columns: auto repeat(2, 115px) .125fr repeat(2, 115px) .125fr repeat(2, 115px) 200px;
+        grid-template-rows: 100%;
+      }
+      .button-container {
+        margin-left: auto;
+        margin-right: auto;
       }
       .button {
+        border: none;
+        background-color: inherit;
+        color: inherit;
+        cursor: pointer;
+        display: inline-block;
+        font-family: inherit;
         font-style: normal;
         font-weight: 480;
         font-size: 48px;
@@ -88,30 +102,264 @@
   <body>
     <div id="arena">
       <div class="clock" id="main-clock">
-        2:59:30
+        <div></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div></div>
       </div>
-      <div class="clock" id="aux1-clock"></div>
-      <div class="clock" id="aux2-clock"></div>
-      <div class="clock" id="aux3-clock"></div>
-      <div class="clock" id="aux4-clock"></div>
-      <div class="button" id="button-l">
-        Start
+      <div class="clock countout" id="aux1-clock">
+        <div></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="button-container">
+          <button class="button countout-stop" data-countout="1">Clear</button>
+        </div>
       </div>
-      <div class="button" id="button-m">
-        Stop
+      <div class="clock countout" id="aux2-clock">
+        <div></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="button-container">
+          <button class="button countout-stop" data-countout="2">Clear</button>
+        </div>
       </div>
-      <div class="button" id="button-r">
-        Countout
+      <div class="clock countout" id="aux3-clock">
+        <div></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="button-container">
+          <button class="button countout-stop" data-countout="3">Clear</button>
+        </div>
+      </div>
+      <div class="clock countout" id="aux4-clock">
+        <div></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="digit"></div>
+        <div class="button-container">
+          <button class="button countout-stop" data-countout="4">Clear</button>
+        </div>
+      </div>
+      <div class="button-container" id="button-l">
+        <button id="start" class="button">Start</button>
+        <button id="resume" class="button">Resume</button>
+      </div>
+      <div class="button-container" id="button-m">
+        <button id="pause" class="button">Pause</button>
+      </div>
+      <div class="button-container" id="button-r">
+        <button id="reset" class="button">Reset</button>
+        <button id="countout" class="button">Countout</button>
       </div>
     </div>
     <script>
-      setInterval(async function(){
-        var status = 'waiting'
+      // M-Link control
+      let status = 'waiting'
+      const servos = [1500, 1500, 1500, 1500, 1500, 1500]
+      const setServo = async function (channel, value) {
         if (mlink) {
-          // Do some stuff here
-
+          servos[channel] = value
+          await mlink.setServos(servos)
           status = mlink.status
         }
+      }
+
+      // Button utilities
+      const showCountoutButtons = function () {
+        $('.countout-stop').each((index, element) => {
+          if (ac.aux[index] !== -1)
+          {
+            $(element).show()
+          }
+        })
+      }
+      const updateButtons = function (state) {
+        // Disable all buttons
+        $('.button').hide()
+        // Enable the relevant buttons
+        switch (state) {
+          case ac.states.idle:
+          {
+            $('#start').show()
+          }
+          break
+          case ac.states.counting:
+          {
+            $('#pause').show()
+            $('#countout').show()
+            showCountoutButtons()
+          }
+          break
+          case ac.states.paused:
+          {
+            $('#resume').show()
+            $('#reset').show()
+            showCountoutButtons()
+          }
+          break
+          case ac.states.complete:
+          {
+            $('#reset').show()
+          }
+          break
+        }
+      }
+
+      // Clock utilities
+      const zeroPad = function (value) {
+        const str = value.toString()
+        if (str.length == 0) {
+          return '00'
+        } else if (str.length == 1) {
+          return '0' + str
+        } else {
+          return str
+        }
+      }
+      const updateClockDisplay = function (selector, value, noMinutes) {
+        if (value === -1)
+        {
+          $(selector).each((index, element) => {
+            $(element).html('')
+          })
+          return
+        }
+        const minutes = zeroPad(Math.floor(value / 60000))
+        const seconds = zeroPad(Math.floor((value / 1000) % 60))
+        const hundredths = zeroPad(Math.floor((value % 1000) / 10))
+        let timeRemaining = `${minutes}:${seconds}.${hundredths}`
+        if (noMinutes) {
+          timeRemaining = `   ${seconds}.${hundredths}`
+        }
+        let index = 0
+        $(selector).each((index, element) => {
+          $(element).html(timeRemaining[index])
+        })
+      }
+      const updateCounter = function (value, deltaTime) {
+        if (value < 0) {
+          return value
+        }
+        let output = value - deltaTime
+        if (output < 0) {
+          output = 0
+        }
+        return output
+      }
+
+      // Countdown state machine
+      const ac = {
+        unusedTime: -1,
+        roundTime: 180 * 1000,
+        countoutTime: 10 * 1000,
+      }
+      ac.states = {
+        idle: "IDLE",
+        counting: "COUNTING",
+        paused: "PAUSED",
+        complete: "COMPLETE",
+      }
+      ac.state = ac.states.idle
+      ac.lastState = ac.state
+      ac.lastUpdateTime = new Date().getTime()
+      const resetCounters = function () {
+        ac.counter = ac.roundTime
+        ac.aux = [ac.unusedTime, ac.unusedTime, ac.unusedTime, ac.unusedTime]
+      }
+      const startCountout = function () {
+        for (let i = 0; i < ac.aux.length; ++i) {
+          if (ac.aux[i] === -1) {
+            ac.aux[i] = ac.countoutTime
+            showCountoutButtons()
+            return
+          }
+        }
+      }
+      resetCounters()
+      // Button Handlers
+      $('#start').click(function (evt) {
+        resetCounters()
+        ac.state = ac.states.counting
+      })
+      $('#resume').click(function (evt) {
+        ac.state = ac.states.counting
+      })
+      $('#pause').click(function (evt) {
+        ac.state = ac.states.paused
+      })
+      $('#countout').click(function (evt) {
+        startCountout()
+      })
+      $('#stop').click(function (evt) {
+        ac.state = ac.states.complete
+      })
+      $('#reset').click(function (evt) {
+        resetCounters()
+        ac.state = ac.states.idle
+      })
+      $('.countout-stop').click(function (evt) {
+        const index = parseInt($(this).data('countout')) - 1
+        ac.aux[index] = -1
+        updateButtons(ac.state)
+      })
+      // Initialise the button state
+      updateButtons(ac.state)
+      // Update at 30fps
+      setInterval(async function() {
+        // Update buttons if we've changed state
+        if (ac.state !== ac.lastState) {
+          updateButtons(ac.state)
+          ac.lastState = ac.state
+        }
+        // Update countdown with time since last update
+        const now = new Date().getTime()
+        const deltaTime = now - ac.lastUpdateTime
+        ac.lastUpdateTime = now
+        if (ac.state == ac.states.counting) {
+          ac.counter = updateCounter(ac.counter, deltaTime)
+          ac.aux[0] = updateCounter(ac.aux[0], deltaTime)
+          ac.aux[1] = updateCounter(ac.aux[1], deltaTime)
+          ac.aux[2] = updateCounter(ac.aux[2], deltaTime)
+          ac.aux[3] = updateCounter(ac.aux[3], deltaTime)
+          if (ac.counter === 0) {
+            ac.state = ac.states.complete
+          }
+        }
+        // Refresh countdown clocks
+        updateClockDisplay('#main-clock .digit', ac.counter)
+        updateClockDisplay('#aux1-clock .digit', ac.aux[0], true)
+        updateClockDisplay('#aux2-clock .digit', ac.aux[1], true)
+        updateClockDisplay('#aux3-clock .digit', ac.aux[2], true)
+        updateClockDisplay('#aux4-clock .digit', ac.aux[3], true)
       }, 1/30 * 1000)
     </script>
   </body>
