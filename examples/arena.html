@@ -14,8 +14,13 @@
       let mlink = undefined
 
       $(document).ready(function() {
-        //mlink = new MLink('ws://' + location.host + '/ws',
-        mlink = new MLink('ws://192.168.0.39/ws',
+        const hashArgs = decodeURIComponent(location.hash.substr(1)).split('&').map(v => v.split('=')).reduce( (pre, [key, value]) => ({ ...pre, [key]: value }), {})
+
+        let host = location.host
+        if (hashArgs.host) {
+          host = hashArgs.host
+        }
+        mlink = new MLink(`ws://${host}/ws`,
         {
           onopen: async function() {
             $('#result').val('Connected')
