@@ -222,5 +222,16 @@ class MLink {
     }
     return {}
   }
+
+  /*
+   * Get default host from location.host or # params
+   */
+  static get defaultHost() {
+    const hashArgs = decodeURIComponent(location.hash.substr(1)).split('&').map(v => v.split('=')).reduce( (pre, [key, value]) => ({ ...pre, [key]: value }), {})
+    if (hashArgs.host) {
+      return hashArgs.host
+    }
+    return location.host
+  }
 }
 
