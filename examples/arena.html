@@ -190,11 +190,7 @@
       let status = 'waiting'
       const servos = [1000, 1000, 1000, 1000, 1000, 1000]
       const setServo = async function (channel, value) {
-        if (mlink) {
-          servos[channel] = value
-          await mlink.setServos(servos)
-          status = mlink.status
-        }
+        servos[channel] = value
       }
       // Set servos to the reset position
       const resetServos = function () {
@@ -208,6 +204,14 @@
           setServo(i, 2000);
         }
       }
+      // Send regular servo updates to avoid failsafe
+      setInterval(async function() {
+        if (mlink) {
+          await mlink.setServos(servos)
+          status = mlink.status
+        }
+      }, 1/15 * 1000)
+
 
       // Button utilities
       const showCountoutButtons = function (state) {

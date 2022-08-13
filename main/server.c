@@ -288,114 +288,29 @@ static esp_err_t code_204_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-/* Handler to respond with menu.html embedded in flash.
- * This can be overridden by uploading file with same name */
-static esp_err_t menu_html_get_handler(httpd_req_t *req)
-{
-    extern const unsigned char menu_html_start[] asm("_binary_menu_html_start");
-    extern const unsigned char menu_html_end[]   asm("_binary_menu_html_end");
-    const size_t menu_html_size = (menu_html_end - menu_html_start);
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, (const char *)menu_html_start, menu_html_size);
-    return ESP_OK;
+/* Macro to declare a handler for a specific file embedded in Flash */
+#define DEFINE_EMBEDDED_FILE_HANDLER(filename, mime_type) \
+static esp_err_t filename ## _get_handler(httpd_req_t *req) \
+{ \
+    extern const unsigned char filename ## _start[] asm("_binary_" #filename "_start"); \
+    extern const unsigned char filename ## _end[]   asm("_binary_" #filename "_end"); \
+    const size_t file_size = (filename ## _end - filename ## _start); \
+    httpd_resp_set_type(req, mime_type); \
+    httpd_resp_send(req, (const char *)filename ## _start, file_size); \
+    return ESP_OK; \
 }
 
-/* Handler to respond with info.html embedded in flash.
- * This can be overridden by uploading file with same name */
-static esp_err_t info_html_get_handler(httpd_req_t *req)
-{
-    extern const unsigned char info_html_start[] asm("_binary_info_html_start");
-    extern const unsigned char info_html_end[]   asm("_binary_info_html_end");
-    const size_t info_html_size = (info_html_end - info_html_start);
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, (const char *)info_html_start, info_html_size);
-    return ESP_OK;
-}
+DEFINE_EMBEDDED_FILE_HANDLER(menu_html, "text/html");
+DEFINE_EMBEDDED_FILE_HANDLER(info_html, "text/html");
+DEFINE_EMBEDDED_FILE_HANDLER(settings_html, "text/html");
+DEFINE_EMBEDDED_FILE_HANDLER(joystick_html, "text/html");
+DEFINE_EMBEDDED_FILE_HANDLER(m_link_js, "text/javascript");
+DEFINE_EMBEDDED_FILE_HANDLER(virtualjoystick_js, "text/javascript");
+DEFINE_EMBEDDED_FILE_HANDLER(jquery_min_js, "text/javascript");
+DEFINE_EMBEDDED_FILE_HANDLER(favicon_ico, "image/x-icon");
+DEFINE_EMBEDDED_FILE_HANDLER(hamburger_svg, "image/svg+xml");
+DEFINE_EMBEDDED_FILE_HANDLER(style_css, "text/css");
 
-/* Handler to respond with settings.html embedded in flash.
- * This can be overridden by uploading file with same name */
-static esp_err_t settings_html_get_handler(httpd_req_t *req)
-{
-    extern const unsigned char settings_html_start[] asm("_binary_settings_html_start");
-    extern const unsigned char settings_html_end[]   asm("_binary_settings_html_end");
-    const size_t settings_html_size = (settings_html_end - settings_html_start);
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, (const char *)settings_html_start, settings_html_size);
-    return ESP_OK;
-}
-
-/* Handler to respond with joystick.html embedded in flash.
- * This can be overridden by uploading file with same name */
-static esp_err_t joystick_html_get_handler(httpd_req_t *req)
-{
-    extern const unsigned char joystick_html_start[] asm("_binary_joystick_html_start");
-    extern const unsigned char joystick_html_end[]   asm("_binary_joystick_html_end");
-    const size_t joystick_html_size = (joystick_html_end - joystick_html_start);
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, (const char *)joystick_html_start, joystick_html_size);
-    return ESP_OK;
-}
-
-/* Handler to respond with jquery.min.js embedded in flash.
- * This can be overridden by uploading file with same name */
-static esp_err_t jquery_min_js_get_handler(httpd_req_t *req)
-{
-    extern const unsigned char jquery_min_js_start[] asm("_binary_jquery_min_js_start");
-    extern const unsigned char jquery_min_js_end[]   asm("_binary_jquery_min_js_end");
-    const size_t jquery_min_js_size = (jquery_min_js_end - jquery_min_js_start);
-    httpd_resp_set_type(req, "text/javascript");
-    httpd_resp_send(req, (const char *)jquery_min_js_start, jquery_min_js_size);
-    return ESP_OK;
-}
-
-/* Handler to respond with virtualjoystick.js embedded in flash.
- * This can be overridden by uploading file with same name */
-static esp_err_t virtualjoystick_js_get_handler(httpd_req_t *req)
-{
-    extern const unsigned char virtualjoystick_js_start[] asm("_binary_virtualjoystick_js_start");
-    extern const unsigned char virtualjoystick_js_end[]   asm("_binary_virtualjoystick_js_end");
-    const size_t virtualjoystick_js_size = (virtualjoystick_js_end - virtualjoystick_js_start);
-    httpd_resp_set_type(req, "text/javascript");
-    httpd_resp_send(req, (const char *)virtualjoystick_js_start, virtualjoystick_js_size);
-    return ESP_OK;
-}
-
-/* Handler to respond with an icon file embedded in flash.
- * Browsers expect to GET website icon at URI /favicon.ico.
- * This can be overridden by uploading file with same name */
-static esp_err_t favicon_get_handler(httpd_req_t *req)
-{
-    extern const unsigned char favicon_ico_start[] asm("_binary_favicon_ico_start");
-    extern const unsigned char favicon_ico_end[]   asm("_binary_favicon_ico_end");
-    const size_t favicon_ico_size = (favicon_ico_end - favicon_ico_start);
-    httpd_resp_set_type(req, "image/x-icon");
-    httpd_resp_send(req, (const char *)favicon_ico_start, favicon_ico_size);
-    return ESP_OK;
-}
-
-/* Handler to respond with an icon file embedded in flash.
- * This can be overridden by uploading file with same name */
-static esp_err_t hamburger_svg_get_handler(httpd_req_t *req)
-{
-    extern const unsigned char hamburger_svg_start[] asm("_binary_hamburger_svg_start");
-    extern const unsigned char hamburger_svg_end[]   asm("_binary_hamburger_svg_end");
-    const size_t hamburger_svg_size = (hamburger_svg_end - hamburger_svg_start);
-    httpd_resp_set_type(req, "image/svg+xml");
-    httpd_resp_send(req, (const char *)hamburger_svg_start, hamburger_svg_size);
-    return ESP_OK;
-}
-
-/* Handler to respond with a stylesheet embedded in flash.
- * This can be overridden by uploading file with same name */
-static esp_err_t style_css_get_handler(httpd_req_t *req)
-{
-    extern const unsigned char style_css_start[] asm("_binary_style_css_start");
-    extern const unsigned char style_css_end[]   asm("_binary_style_css_end");
-    const size_t style_css_size = (style_css_end - style_css_start);
-    httpd_resp_set_type(req, "text/css");
-    httpd_resp_send(req, (const char *)style_css_start, style_css_size);
-    return ESP_OK;
-}
 /* Copies the full path into destination buffer and returns
  * pointer to path (skipping the preceding base path) */
 static const char* get_path_from_uri(char *dest, const char *base_path, const char *uri, size_t destsize)
@@ -620,13 +535,17 @@ static esp_err_t file_get_handler(httpd_req_t *req)
     {
       return jquery_min_js_get_handler(req);
     }
+    else if (strcmp(filename, "/m-link.js") == 0)
+    {
+      return m_link_js_get_handler(req);
+    }
     else if (strcmp(filename, "/virtualjoystick.js") == 0)
     {
       return virtualjoystick_js_get_handler(req);
     }
     else if (strcmp(filename, "/favicon.ico") == 0)
     {
-      return favicon_get_handler(req);
+      return favicon_ico_get_handler(req);
     }
     else if (strcmp(filename, "/hamburger.svg") == 0)
     {
