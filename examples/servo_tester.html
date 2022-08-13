@@ -10,7 +10,7 @@
       let mlink = undefined
 
       $(document).ready(function() {
-        mlink = new MLink('ws://' + location.host + '/ws',
+        mlink = new MLink(`ws://${MLink.defaultHost}/ws`,
         {
           onopen: async function() {
             $('#result').val('Connected')
