@@ -6,7 +6,7 @@ class Counter {
     // Default event handlers to undefined
     this.oncomplete = undefined
     this.onreset = undefined
-    this.events = {}
+    this.events = []
 
     // Set event handlers from options
     if (options.oncomplete) {
@@ -53,9 +53,28 @@ class Counter {
    */
   update (deltaTime) {
     if (this._remainingTime > 0) {
-      this._remainingTime = this._remainingTime - deltaTime
+      // Decrement counter
+      const previousTime = this._remainingTime
+      this._remainingTime = previousTime - deltaTime
+
+      // Check for events that need to be processed
+      this.events.forEach((value, index, array) => {
+        if (value.time >= this._remainingTime && value.time < previousTime) {
+          console.log("Event fired: " + JSON.stringify(value))
+          if (value.handler) {
+            try {
+              value.handler(value)
+            } catch (err) {
+              console.error(err.message)
+            }
+          }
+        }
+      })
+
+      // Handle hitting zero
       if (this._remainingTime <= 0) {
         this._remainingTime = 0
+        // Send oncomplete hook if defined
         if (this.oncomplete) {
           this.oncomplete(this)
         }
