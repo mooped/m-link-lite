@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>M-Link Lite Robot Controller</title>
+    <link rel="stylesheet" href="style.css">
+    <script type='application/javascript' src='m-link.js'></script>
+    <script type='application/javascript' src='jquery.min.js'></script>
+    <style>
+      #container {
+        display: grid;
+        grid-template-columns: auto;
+        grid-template-rows: 5vh 80vh 15vh;
+      }
+
+      #info {
+        grid-row: 1;
+      }
+
+      #button-container {
+        grid-row: 3;
+      }
+
+      .button {
+        border: none;
+        background-color: #195905;
+        color: white;
+        cursor: pointer;
+        display: inline-block;
+        font-size: 48px;
+        height: 100%;
+        text-align: center;
+        width: 100%;
+      }
+    </style>
+    <script type='application/javascript'>
+      let mlink = undefined
+      let flipperState = false
+
+      $(document).ready(function() {
+        mlink = new MLink(`ws://${MLink.defaultHost}/ws`,
+        {
+          onmessage: function(obj) {
+            // Update name from settings
+            if (obj && obj.settings)
+            {
+              if (obj.settings.name)
+              {
+                $('#name').html(obj.settings.name)
+                document.title = obj.settings.name
+              }
+              delete obj.settings
+            }
+          },
+          onopen: function() {
+            $('#result').val('Connected')
+          },
+          onclose: function(code, reason) {
+            $('#result').val('Connection closed by server: ' + code + ' "' + reason + '"\n')
+          }
+        })
+        mlink.begin()
+
+        // Register listener for menu button
+        $('#hamburger').click(function (evt) {
+          window.location = '/'
+        })
+
+        $('#flipper').mousedown(function (evt) {
+          flipperState = true
+        })
+        $(document).mouseup(function (evt) {
+          flipperState = false
+        })
+      })
+    </script>
+  </head>
+
+  <body>
+    <div id="container">
+      <div id="info">
+        <h1 class="small" id="name">M-Link Lite Robot Controller</h1>
+        <span class="small" id="result"></span>
+        <div id="hamburger" class="menu"><img src="hamburger.svg" alt="Menu Button" /></div>
+      </div> 
+      <div id="button-container">
+        <button id="flipper" class="button">Flipper</button>
+      </div>
+    </div>
+    <script src="virtualjoystick.js"></script>
+    <script>
+      console.log("touchscreen is", VirtualJoystick.touchScreenAvailable() ? "available" : "not available")
+      var joystick  = new VirtualJoystick({
+        container: document.getElementById('container'),
+        mouseSupport: true,
+        limitStickTravel: true,
+        stickRadius: 100,
+        strokeStyle: '#195905',
+      })
+      setInterval(async function(){
+        var status = 'waiting'
+        if (mlink) {
+          const x = Math.round(joystick.deltaX() * 5)
+          const y = Math.round(joystick.deltaY() * 5)
+          await mlink.setServos([
+            parseInt(1500 - y),
+            parseInt(1500 + x),
+            flipperState ? 2000 : 1000,
+            flipperState ? 2000 : 1000,
+            flipperState ? 2000 : 1000,
+            flipperState ? 2000 : 1000,
+          ])
+
+          status = mlink.status
+        }
+
+        var outputEl = document.getElementById('result')
+        outputEl.innerHTML = status
+
+      }, 1/15 * 1000)
+    </script>
+  </body>
+</html>
