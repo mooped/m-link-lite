@@ -12,8 +12,7 @@
       $(document).ready(function() {
         mlink = new MLink(`ws://${MLink.defaultHost}/ws`,
         {
-          onmessage: function(message) {
-            obj = JSON.parse(message)
+          onmessage: function(obj) {
             // Update name from settings
             if (obj && obj.settings)
             {
