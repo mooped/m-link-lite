@@ -25,6 +25,7 @@
 #include <esp_vfs.h>
 
 #include "battery.h"
+#include "button.h"
 #include "dns.h"
 #include "event.h"
 #include "led.h"
@@ -264,6 +265,9 @@ void app_main()
   // Set LED to boot state (2 second flash)
   ESP_ERROR_CHECK( led_init(rx_led_config, RX_LED_NUM) );
   rx_led_set_state(RX_LED_WAITING);
+
+  // Initialise button handler
+  button_init();
 
   // Create event loop
   ESP_ERROR_CHECK(esp_event_loop_create_default());
