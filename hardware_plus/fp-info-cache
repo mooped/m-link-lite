@@ -1,4 +1,4 @@
-20574912423322966
+20576581403372681
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -86393,6 +86393,13 @@ Through hole pin header THT 1x05 2.54mm single row
 0
 5
 5
+new_moop_items
+PS5 Stick
+
+
+0
+14
+9
 new_moop_items
 Pico
 40-lead though-hole mounted DIP package, row spacing 26.67 mm (1050 mils), SMDSocket, LongPads
