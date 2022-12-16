@@ -24,6 +24,7 @@
 #include <esp_spiffs.h>
 #include <esp_vfs.h>
 
+#include "twi.h"
 #include "battery.h"
 #include "button.h"
 #include "dns.h"
@@ -244,6 +245,11 @@ void rx_task(void* args)
 
 void app_main()
 {
+#if 1
+  // Initialise I2C driver
+  ESP_ERROR_CHECK( twi_init() );
+#endif
+
   // Initialise and immediately disable servo module as soon as possible to avoid glitches
   servo_init();
   servo_disable();

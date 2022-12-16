@@ -16,6 +16,8 @@
 
 #include "servo.h"
 
+#if 0
+
 #define PWM_IO_COUNT      6
 
 #define ENABLE_IO_NUM     2
@@ -111,4 +113,6 @@ void servo_set_all(int s1, int s2, int s3, int s4, int s5, int s6)
 
   servo_refresh();
 }
+
+#endif
 
