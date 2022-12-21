@@ -231,21 +231,44 @@ void pca9685_initialize(void)
     ESP_ERROR_CHECK(twi_pca9685_write_registers(PCA9685_MODE1, mode_buffer, sizeof(mode_buffer)));
     
     // Set all outputs to always off duty cycle
-    // Set 60hz frequency
+    // Set 500hz frequency
     // prescale_value = round(osc_clock / (4096 * update_rate)) - 1
     // Internal oscillator is 25mhz
-    uint8_t pwm_buffer[] = { 0x00, 0x00, 0x00, PCA9685_FULL_OFF, 101};    // { ALL_ON_L, ALL_ON_H, ALL_OFF_L, ALL_OFF_H, PRE_SCALE }
+    uint8_t pwm_buffer[] = { 0x00, 0x00, 0x00, PCA9685_FULL_OFF, 12};    // { ALL_ON_L, ALL_ON_H, ALL_OFF_L, ALL_OFF_H, PRE_SCALE }
     ESP_ERROR_CHECK(twi_pca9685_write_registers(PCA9685_ALL_LED_ON_L, pwm_buffer, sizeof(pwm_buffer)));
     
     // Disable sleep mode now PRE_SCALE is set
     ESP_ERROR_CHECK(twi_pca9685_write_register(PCA9685_MODE1, PCA9685_M1_AI));
 }
 
+void pca9685_set_raw(int channel, int value)
+{
+    if (channel < PCA9685_NUM_CHANNELS)
+    {
+        if (value <= 0)
+        {
+            value = 1;
+        }
+        uint8_t buffer[] = { 0x00, 0x00, value & 0xff, (value >> 8) & PCA9685_HIGH_MASK};
+        ESP_ERROR_CHECK(twi_pca9685_write_registers(PCA9685_LED0_ON_L + 4 * channel, buffer, sizeof(buffer)));
+    }
+}
+
+void pca9685_set_all_raw(int value)
+{
+    if (value <= 0)
+    {
+        value = 1;
+    }
+    uint8_t buffer[] = { 0x00, 0x00, value & 0xff, (value >> 8) & PCA9685_HIGH_MASK};
+    ESP_ERROR_CHECK(twi_pca9685_write_registers(PCA9685_ALL_LED_ON_L, buffer, sizeof(buffer)));
+}
+
 void pca9685_set_microseconds(int channel, int pulsewidth)
 {
     if (channel < PCA9685_NUM_CHANNELS)
     {
-        const int period = 1000000 / 60; // 1,000,000 microseconds in a second, our period is a 60th of that
+        const int period = 1000000 / 500; // 1,000,000 microseconds in a second, our period is a 500th of that
         int value = (pulsewidth * 4096) / period ;
         if (value <= 0)
         {
@@ -258,7 +281,7 @@ void pca9685_set_microseconds(int channel, int pulsewidth)
 
 void pca9685_set_all_microseconds(int pulsewidth)
 {
-    const int period = 1000000 / 60; // 1,000,000 microseconds in a second, our period is a 60th of that
+    const int period = 1000000 / 500; // 1,000,000 microseconds in a second, our period is a 500th of that
     int value = (pulsewidth * 4096) / period ;
     if (value <= 0)
     {
