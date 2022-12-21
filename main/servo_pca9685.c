@@ -3,6 +3,8 @@
 #include <stdlib.h>
 
 #include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/timers.h"
 
 #include "esp_log.h"
 #include "esp_system.h"
@@ -41,28 +43,6 @@ static uint32_t pulsewidths[SERVO_NUM_CHANNELS] = {
   1500, 1500, 1500, 1500, 1500, 1500,
 };
 
-void servo_init(void)
-{
-  // Initialize the PCA 9685
-  pca9685_initialize();
-
-  // Configure the enable pin and pull high to disable
-  gpio_config_t config;
-  config.pin_bit_mask = (1ull<<(ENABLE_IO_NUM));
-  config.mode = GPIO_MODE_OUTPUT;
-  config.pull_up_en = GPIO_PULLUP_DISABLE;
-  config.pull_down_en = GPIO_PULLDOWN_DISABLE;
-  config.intr_type = GPIO_INTR_DISABLE;
-  ESP_ERROR_CHECK( gpio_config(&config) );
-  ESP_ERROR_CHECK( gpio_set_level(ENABLE_IO_NUM, 1) );
-
-  // Configure the sleep pin on the PCA9685 high to disable sleep when outputs are enabled
-  pca9685_set_all_off();
-  pca9685_set_on(PCA9685_CHANNEL_SLEEP);
-
-  ESP_LOGI(TAG, "PCA9685 Initialised");
-}
-
 void servo_enable(void)
 {
   // Set enable low
@@ -95,7 +75,7 @@ void servo_set(int channel, int pulsewidth_ms)
   }
 }
 
-static void motor_refresh(int channel_a, int channel_b, int pulsewidth)
+static void motor_set(int channel_a, int channel_b, int pulsewidth)
 {
   if (pulsewidth < 1000 || pulsewidth > 2000) // Coast
   {
@@ -110,26 +90,13 @@ static void motor_refresh(int channel_a, int channel_b, int pulsewidth)
   else if (pulsewidth > 1500) // Forward
   {
     pca9685_set_off(channel_a);
-    pca9685_set_microseconds(channel_b, ((pulsewidth - 1500) * 8192) / 250); // Scale from 0 - 500 to 0 - 16384
+    pca9685_set_raw(channel_b, ((pulsewidth - 1500) * 4095) / 500); // Scale from 0 - 500 to 0 - 4095
   }
   else if (pulsewidth < 1500) // Reverse
   {
-    pca9685_set_microseconds(channel_a, ((1500 - pulsewidth) * 8192) / 250); // Scale from 0 - 500 to 0 - 16384
+    pca9685_set_raw(channel_a, ((1500 - pulsewidth) * 4095) / 500); // Scale from 0 - 500 to 0 - 4095
     pca9685_set_off(channel_b);
   }
-}
-
-void servo_refresh(void)
-{
-  // Motor channels
-  motor_refresh(PCA9685_CHANNEL_M1A, PCA9685_CHANNEL_M1B, pulsewidths[0]);
-  motor_refresh(PCA9685_CHANNEL_M2A, PCA9685_CHANNEL_M2B, pulsewidths[1]);
-  motor_refresh(PCA9685_CHANNEL_M3A, PCA9685_CHANNEL_M3B, pulsewidths[2]);
-
-  // Servo channels
-  pca9685_set_microseconds(PCA9685_CHANNEL_CH4, pulsewidths[3]);
-  pca9685_set_microseconds(PCA9685_CHANNEL_CH5, pulsewidths[4]);
-  pca9685_set_microseconds(PCA9685_CHANNEL_CH6, pulsewidths[5]);
 }
 
 void servo_set_all(int s1, int s2, int s3, int s4, int s5, int s6)
@@ -140,8 +107,63 @@ void servo_set_all(int s1, int s2, int s3, int s4, int s5, int s6)
   servo_set(3, s4);
   servo_set(4, s5);
   servo_set(5, s6);
+}
 
-  servo_refresh();
+void servo_task(void* args)
+{
+  ESP_LOGI(TAG, "Started servo task");
+
+  // Update servos every 20 ms, PWM period is 2 ms
+  const TickType_t interval = pdMS_TO_TICKS(18);
+  const TickType_t pwm_period = pdMS_TO_TICKS(2);
+  TickType_t previous_wake_time = xTaskGetTickCount();
+
+  for (;;)
+  {
+    // Update motor channels
+    motor_set(PCA9685_CHANNEL_M1A, PCA9685_CHANNEL_M1B, pulsewidths[0]);
+    motor_set(PCA9685_CHANNEL_M2A, PCA9685_CHANNEL_M2B, pulsewidths[1]);
+    motor_set(PCA9685_CHANNEL_M3A, PCA9685_CHANNEL_M3B, pulsewidths[2]);
+  
+    // Output to servo channels
+    pca9685_set_microseconds(PCA9685_CHANNEL_CH4, pulsewidths[3]);
+    pca9685_set_microseconds(PCA9685_CHANNEL_CH5, pulsewidths[4]);
+    pca9685_set_microseconds(PCA9685_CHANNEL_CH6, pulsewidths[5]);
+
+    // Wait for the next PWM period
+    vTaskDelayUntil(&previous_wake_time, pwm_period);
+
+    // Zero the servo outputs
+    pca9685_set_off(PCA9685_CHANNEL_CH4);
+    pca9685_set_off(PCA9685_CHANNEL_CH5);
+    pca9685_set_off(PCA9685_CHANNEL_CH6);
+
+    // Wait for the next interval
+    vTaskDelayUntil(&previous_wake_time, interval);
+  }
+}
+
+void servo_init(void)
+{
+  // Initialize the PCA 9685
+  pca9685_initialize();
+
+  // Configure the enable pin and pull high to disable
+  gpio_config_t config;
+  config.pin_bit_mask = (1ull<<(ENABLE_IO_NUM));
+  config.mode = GPIO_MODE_OUTPUT;
+  config.pull_up_en = GPIO_PULLUP_DISABLE;
+  config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+  config.intr_type = GPIO_INTR_DISABLE;
+  ESP_ERROR_CHECK( gpio_config(&config) );
+  ESP_ERROR_CHECK( gpio_set_level(ENABLE_IO_NUM, 1) );
+
+  // Configure the sleep pin on the PCA9685 high to disable sleep when outputs are enabled
+  pca9685_set_all_off();
+  pca9685_set_on(PCA9685_CHANNEL_SLEEP);
+
+  ESP_LOGI(TAG, "PCA9685 Initialised");
+  xTaskCreate(servo_task, "servo-task", 2048, NULL, 11, NULL);
 }
 
 #endif

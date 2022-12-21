@@ -59,7 +59,7 @@ static esp_err_t ws_handler(httpd_req_t *req)
       free(buf);
       return ret;
     }
-    ESP_LOGI(TAG, "Packet %d Message: %s", ++packet_count, ws_pkt.payload);
+    ESP_LOGD(TAG, "Packet %d Message: %s", ++packet_count, ws_pkt.payload);
   }
 
   // Build response
@@ -233,7 +233,7 @@ static esp_err_t ws_handler(httpd_req_t *req)
 
   char response_buffer[256];
   cJSON_PrintPreallocated(response, response_buffer, sizeof(response_buffer), false);
-  ESP_LOGI(TAG, "WS Response: %s", response_buffer);
+  ESP_LOGD(TAG, "WS Response: %s", response_buffer);
   cJSON_Delete(response);
   httpd_ws_frame_t response_pkt = {
     .final = false,

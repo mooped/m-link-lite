@@ -209,12 +209,11 @@ void rx_failsafe_callback(xTimerHandle xTimer)
       servo_set(channel, failsafes[channel]);
     }
   }
-  servo_refresh();
 }
 
 void rx_task(void* args)
 {
-  ESP_LOGI(TAG, "Started servo task");
+  ESP_LOGI(TAG, "Started rx task");
 
   // Wait 2 seconds on startup before enabling the servos
   vTaskDelay(pdMS_TO_TICKS(2000));
@@ -235,7 +234,6 @@ void rx_task(void* args)
       {
         servo_set(channel, servos[channel]);
       }
-      servo_refresh();
     }
 
     // Wait for the next interval
