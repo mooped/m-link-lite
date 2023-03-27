@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
 
@@ -22,26 +24,30 @@
 
 #if 1
 
-#define ENABLE_IO_NUM          12
+#define ENABLE_IO_NUM             12
+#define FEEDBACK_IO_NUM           13
 
-#define PCA9685_CHANNEL_SLEEP 0
-#define PCA9685_CHANNEL_M1A   11
-#define PCA9685_CHANNEL_M1B   10
-#define PCA9685_CHANNEL_M2A   9
-#define PCA9685_CHANNEL_M2B   8
-#define PCA9685_CHANNEL_M3A   7
-#define PCA9685_CHANNEL_M3B   6
-#define PCA9685_CHANNEL_CH4   5
-#define PCA9685_CHANNEL_CH5   4
-#define PCA9685_CHANNEL_CH6   3
+#define PCA9685_CHANNEL_SLEEP     0
+#define PCA9685_CHANNEL_FEEDBACK  2
+#define PCA9685_CHANNEL_M1A       11
+#define PCA9685_CHANNEL_M1B       10
+#define PCA9685_CHANNEL_M2A       9
+#define PCA9685_CHANNEL_M2B       8
+#define PCA9685_CHANNEL_M3A       7
+#define PCA9685_CHANNEL_M3B       6
+#define PCA9685_CHANNEL_CH4       5
+#define PCA9685_CHANNEL_CH5       4
+#define PCA9685_CHANNEL_CH6       3
 
-#define SERVO_NUM_CHANNELS 9
+#define SERVO_NUM_CHANNELS        9
 
 static const char *TAG = "pca9685-servo";
 
 static uint32_t pulsewidths[SERVO_NUM_CHANNELS] = {
   1500, 1500, 1500, 1500, 1500, 1500,
 };
+
+static SemaphoreHandle_t xServoSemaphore = NULL;
 
 void servo_enable(void)
 {
@@ -109,42 +115,65 @@ void servo_set_all(int s1, int s2, int s3, int s4, int s5, int s6)
   servo_set(5, s6);
 }
 
+static void feedback_isr_handler(void* arg)
+{
+  // Wake up and yield to the servo task at the start of each frame
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  xSemaphoreGiveFromISR(xServoSemaphore, &xHigherPriorityTaskWoken);
+  if (xHigherPriorityTaskWoken == pdTRUE)
+  {
+    portYIELD_FROM_ISR();
+  }
+}
+
 void servo_task(void* args)
 {
   ESP_LOGI(TAG, "Started servo task");
 
-  // Update servos every 20 ms, PWM period is 2 ms
-  const TickType_t interval = pdMS_TO_TICKS(18);
-  const TickType_t pwm_period = pdMS_TO_TICKS(2);
-  TickType_t previous_wake_time = xTaskGetTickCount();
+  // Enable feedback pulse
+  // TODO: Switch to feedback pin for revised board
+  pca9685_set_microseconds(PCA9685_CHANNEL_CH4, 1500);
+  //pca9685_set_microseconds(PCA9685_CHANNEL_FEEDBACK, 1500);
 
   for (;;)
   {
-    // Update motor channels
+    // Output pulse to first servo channel
+    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    // TODO: Enable on revised board
+    //pca9685_set_microseconds(PCA9685_CHANNEL_CH4, pulsewidths[3]);
+    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    //pca9685_set_off(PCA9685_CHANNEL_CH4);
+
+    // Output pulse to second servo channel
+    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    pca9685_set_microseconds(PCA9685_CHANNEL_CH5, pulsewidths[4]);
+    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    pca9685_set_off(PCA9685_CHANNEL_CH5);
+
+    // Output pulse to third servo channel
+    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    pca9685_set_microseconds(PCA9685_CHANNEL_CH6, pulsewidths[5]);
+    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    pca9685_set_off(PCA9685_CHANNEL_CH6);
+
+    // Update motor channels on the next sync pulse
+    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
     motor_set(PCA9685_CHANNEL_M1A, PCA9685_CHANNEL_M1B, pulsewidths[0]);
     motor_set(PCA9685_CHANNEL_M2A, PCA9685_CHANNEL_M2B, pulsewidths[1]);
     motor_set(PCA9685_CHANNEL_M3A, PCA9685_CHANNEL_M3B, pulsewidths[2]);
-  
-    // Output to servo channels
-    pca9685_set_microseconds(PCA9685_CHANNEL_CH4, pulsewidths[3]);
-    pca9685_set_microseconds(PCA9685_CHANNEL_CH5, pulsewidths[4]);
-    pca9685_set_microseconds(PCA9685_CHANNEL_CH6, pulsewidths[5]);
 
-    // Wait for the next PWM period
-    vTaskDelayUntil(&previous_wake_time, pwm_period);
-
-    // Zero the servo outputs
-    pca9685_set_off(PCA9685_CHANNEL_CH4);
-    pca9685_set_off(PCA9685_CHANNEL_CH5);
-    pca9685_set_off(PCA9685_CHANNEL_CH6);
-
-    // Wait for the next interval
-    vTaskDelayUntil(&previous_wake_time, interval);
+    // Three more sync pulses for a period of about 20ms
+    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
   }
 }
 
 void servo_init(void)
 {
+  // Create the semaphore
+  xServoSemaphore = xSemaphoreCreateBinary();
+
   // Initialize the PCA 9685
   pca9685_initialize();
 
@@ -157,6 +186,17 @@ void servo_init(void)
   config.intr_type = GPIO_INTR_DISABLE;
   ESP_ERROR_CHECK( gpio_config(&config) );
   ESP_ERROR_CHECK( gpio_set_level(ENABLE_IO_NUM, 1) );
+
+  // Configure feedback pin and interrupt to detect PPM frame start
+  config.pin_bit_mask = (1ull<<(FEEDBACK_IO_NUM));
+  config.mode = GPIO_MODE_INPUT;
+  config.pull_up_en = GPIO_PULLUP_DISABLE;
+  config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+  config.intr_type = GPIO_INTR_POSEDGE;
+  ESP_ERROR_CHECK( gpio_config(&config) );
+  ESP_ERROR_CHECK( gpio_install_isr_service(0) );
+  ESP_ERROR_CHECK( gpio_isr_handler_add(FEEDBACK_IO_NUM, feedback_isr_handler, (void*)FEEDBACK_IO_NUM) );
+  ESP_ERROR_CHECK( gpio_config(&config) );
 
   // Configure the sleep pin on the PCA9685 high to disable sleep when outputs are enabled
   pca9685_set_all_off();
