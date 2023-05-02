@@ -34,6 +34,10 @@
             {
               $('#ap_ssid').val(obj.settings.ap_ssid);
             }
+            if (obj.settings.ap_password)
+            {
+              $('#ap_password').val(obj.settings.ap_password);
+            }
             if (obj.settings.ssid)
             {
               $('#ssid').val(obj.settings.ssid);
@@ -50,6 +54,8 @@
                   {
                     "settings" : {
                       name: $('#name').val(),
+                      ap_ssid: $('#ap_ssid').val(),
+                      ap_password: $('#ap_password').val(),
                       ssid: $('#ssid').val(),
                       password: $('#password').val()
                     }
@@ -100,28 +106,37 @@
       <h1>M-Link Lite Settings</h1>
       <form action='javascript:void(0);'>
         <table class="settings" border="0">
-          <tr><td>
+          <tr><td width="32px"/><td>
             <label for="name">Bot Name:</label>
           </td><td>
             <input type='text' id='name' name='name' maxlength=32 autocomplete='off' data-lpignore='true' size='32' />
-          </td></tr>
-          <tr><td>
-            <label for="ap_ssid">Access Point Name:</label>
+          </td><td width="32px"/></tr>
+          <tr><td colspan="4" style="background: black;"></td></tr>
+          <tr><td width="32px"/><td>
+            <label for="ap_ssid">M-Link SSID/Hostname:</label>
           </td><td>
-            <input type='text' id='ap_ssid' name='ap_ssid' maxlength=32 autocomplete='off' data-lpignore='true' size='32' disabled/>
-          </td></tr>
-          <tr><td>
+            <input type='text' id='ap_ssid' name='ap_ssid' maxlength=32 autocomplete='off' data-lpignore='true' size='32'/>
+          </td><td width="32px"/></tr>
+          <tr><td width="32px"/><td>
+            <label for="ap_password">M-Link Password:</label>
+          </td><td>
+            <input type='password' id='ap_password' name='ap_password' minlength=8 maxlength=63 autocomplete='off' data-lpignore='true' size='32' />
+          </td><td width="32px"/></tr>
+          <tr><td colspan="4" style="background: black;"></td></tr>
+          <tr><td width="32px"/><td>
             <label for="ssid">Connect to SSID:</label>
           </td><td>
             <input type='text' id='ssid' name='ssid' maxlength=32 autocomplete='off' data-lpignore='true' size='32' />
-          </td></tr>
-          <tr><td>
+          </td><td width="32px"/></tr>
+          <tr><td width="32px"/><td>
             <label for="password">Password:</label>
           </td><td>
             <input type='password' id='password' name='password' minlength=8 maxlength=63 autocomplete='off' data-lpignore='true' size='32' />
-          </td></tr>
+          </td><td width="32px"/></tr>
+          <tr><td colspan="4" style="background: black;"></td></tr>
           <tr>
-            <td></td>
+            <td/>
+            <td/>
             <td>
               <input type='submit' id='submit' value='Update Settings' disabled></input>
               <input type='button' id='reboot' value='Reboot' disabled></input>

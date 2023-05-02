@@ -113,6 +113,20 @@ static esp_err_t ws_handler(httpd_req_t *req)
         settings_set_name(name->valuestring);
         any_updates = true;
       }
+      cJSON* ap_ssid = cJSON_GetObjectItem(settings, "ap_ssid");
+      if (cJSON_IsString(ap_ssid))
+      {
+        ESP_LOGI(TAG, "Set AP SSID to %s", ap_ssid->valuestring);
+        settings_set_ap_ssid(ap_ssid->valuestring);
+        any_updates = true;
+      }
+      cJSON* ap_password = cJSON_GetObjectItem(settings, "ap_password");
+      if (cJSON_IsString(ap_password))
+      {
+        ESP_LOGI(TAG, "Set AP password to %s", ap_password->valuestring);
+        settings_set_ap_password(ap_password->valuestring);
+        any_updates = true;
+      }
       cJSON* ssid = cJSON_GetObjectItem(settings, "ssid");
       if (cJSON_IsString(ssid))
       {
@@ -200,10 +214,17 @@ static esp_err_t ws_handler(httpd_req_t *req)
           }
         }
         {
-          cJSON* ap_ssid = cJSON_CreateString(generate_hostname());
+          cJSON* ap_ssid = cJSON_CreateString(settings_get_ap_ssid());
           if (ap_ssid)
           {
             cJSON_AddItemToObject(settings, "ap_ssid", ap_ssid);
+          }
+        }
+        {
+          cJSON* ap_password = cJSON_CreateString(settings_get_ap_password());
+          if (ap_password)
+          {
+            cJSON_AddItemToObject(settings, "ap_password", ap_password);
           }
         }
         {

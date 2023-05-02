@@ -13,7 +13,6 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-#include "hostname.h"
 #include "settings.h"
 
 /* The examples use WiFi configuration that you can set via project configuration menu
@@ -22,7 +21,6 @@
 */
 #define MLINK_ESP_MAXIMUM_RETRY    CONFIG_ESP_MAXIMUM_RETRY
 #define MLINK_WIFI_AP_PASSWORD     CONFIG_ESP_WIFI_AP_PASSWORD
-#define MLINK_WIFI_AP_GENERATE_PASSWORD  CONFIG_ESP_WIFI_AP_GENERATE_PASSWORD
 #define MLINK_MAX_STA_CONN         CONFIG_ESP_MAX_STA_CONN
 
 /* FreeRTOS event group to signal when we are connected*/
@@ -89,14 +87,9 @@ void wifi_init_apsta_impl(void)
     strcpy((char*)wifi_config_sta.sta.ssid, settings_get_ssid());
     strcpy((char*)wifi_config_sta.sta.password, settings_get_password());
 
-    // Generate AP password if configured
-    if (MLINK_WIFI_AP_GENERATE_PASSWORD)
-    {
-      strcpy((char*)wifi_config_ap.ap.password, generate_password());
-    }
-
-    // Set SSID from MAC address
-    strcpy((char*)wifi_config_ap.ap.ssid, generate_hostname());
+    // Set AP SSID and password from settings
+    strcpy((char*)wifi_config_ap.ap.ssid, settings_get_ap_ssid());
+    strcpy((char*)wifi_config_ap.ap.password, settings_get_ap_password());
 
     /* Setting a password implies station will connect to all security modes including WEP/WPA.
         * However these modes are deprecated and not advisable to be used. Incase your Access point

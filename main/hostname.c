@@ -19,6 +19,7 @@ char* generate_hostname()
     return hostname;
 }
 
+#if CONFIG_ESP_WIFI_AP_GENERATE_PASSWORD
 char* hex = "0123456789abcdef";
 
 int hexlookup(char h)
@@ -34,6 +35,7 @@ int hexlookup(char h)
   return 0;
 }
 
+// Generate a password from the MAC address and a one time pad
 char* generate_password()
 {
   uint8_t raw_mac[6];
@@ -57,4 +59,12 @@ char* generate_password()
 
   return password;
 }
+#else
+// Use a hardcoded password
+char* generate_password()
+{
+  return CONFIG_ESP_WIFI_AP_PASSWORD;
+}
+#endif
+
 
