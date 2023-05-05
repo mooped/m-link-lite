@@ -131,18 +131,15 @@ void servo_task(void* args)
   ESP_LOGI(TAG, "Started servo task");
 
   // Enable feedback pulse
-  // TODO: Switch to feedback pin for revised board
-  pca9685_set_microseconds(PCA9685_CHANNEL_CH4, 1500);
-  //pca9685_set_microseconds(PCA9685_CHANNEL_FEEDBACK, 1500);
+  pca9685_set_microseconds(PCA9685_CHANNEL_FEEDBACK, 1500);
 
   for (;;)
   {
     // Output pulse to first servo channel
     xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
-    // TODO: Enable on revised board
-    //pca9685_set_microseconds(PCA9685_CHANNEL_CH4, pulsewidths[3]);
+    pca9685_set_microseconds(PCA9685_CHANNEL_CH4, pulsewidths[3]);
     xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
-    //pca9685_set_off(PCA9685_CHANNEL_CH4);
+    pca9685_set_off(PCA9685_CHANNEL_CH4);
 
     // Output pulse to second servo channel
     xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
