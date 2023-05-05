@@ -13,14 +13,14 @@
 
 #include "captDns.h"
 
-#include "hostname.h"
+#include "settings.h"
 
 static const char* TAG = "mdns";
 
 static void initialise_mdns(void)
 {
   // Get hostname (prefix + 4 bytes of MAC address)
-  char* hostname = generate_hostname();
+  const char* hostname = settings_get_ap_ssid();
 
   // Initialize mDNS
   ESP_ERROR_CHECK( mdns_init() );
@@ -34,8 +34,6 @@ static void initialise_mdns(void)
 
   // Add a HTTP service
   ESP_ERROR_CHECK( mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0) );
-
-  free(hostname);
 }
 
 void mlink_dns_init(void)
