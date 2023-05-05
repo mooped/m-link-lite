@@ -136,33 +136,35 @@ void servo_task(void* args)
   for (;;)
   {
     // Output pulse to first servo channel
-    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
-    pca9685_set_microseconds(PCA9685_CHANNEL_CH4, pulsewidths[3]);
-    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
-    pca9685_set_off(PCA9685_CHANNEL_CH4);
+    //xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    //pca9685_set_microseconds(PCA9685_CHANNEL_CH4, pulsewidths[3]);
+    //xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    //pca9685_set_off(PCA9685_CHANNEL_CH4);
 
     // Output pulse to second servo channel
-    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
-    pca9685_set_microseconds(PCA9685_CHANNEL_CH5, pulsewidths[4]);
-    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
-    pca9685_set_off(PCA9685_CHANNEL_CH5);
+    //xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    //pca9685_set_microseconds(PCA9685_CHANNEL_CH5, pulsewidths[4]);
+    //xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    //pca9685_set_off(PCA9685_CHANNEL_CH5);
 
     // Output pulse to third servo channel
-    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
-    pca9685_set_microseconds(PCA9685_CHANNEL_CH6, pulsewidths[5]);
-    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
-    pca9685_set_off(PCA9685_CHANNEL_CH6);
+    //xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    //pca9685_set_microseconds(PCA9685_CHANNEL_CH6, pulsewidths[5]);
+    //xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    //pca9685_set_off(PCA9685_CHANNEL_CH6);
 
     // Update motor channels on the next sync pulse
-    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    //xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
     motor_set(PCA9685_CHANNEL_M1A, PCA9685_CHANNEL_M1B, pulsewidths[0]);
     motor_set(PCA9685_CHANNEL_M2A, PCA9685_CHANNEL_M2B, pulsewidths[1]);
     motor_set(PCA9685_CHANNEL_M3A, PCA9685_CHANNEL_M3B, pulsewidths[2]);
 
+    vTaskDelay(20 / portTICK_PERIOD_MS);
+
     // Three more sync pulses for a period of about 20ms
-    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
-    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
-    xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    //xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    //xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
+    //xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
   }
 }
 
