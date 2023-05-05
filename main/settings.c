@@ -1,5 +1,6 @@
 #include "settings.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "esp_system.h"
@@ -136,7 +137,10 @@ esp_err_t settings_write(void)
 esp_err_t settings_apply_defaults(void)
 {
   strcpy(name, CONFIG_BOT_NAME);
-  strcpy(ap_ssid, generate_hostname());
+  char* hostname = generate_hostname();
+  strcpy(ap_ssid, hostname);
+  free(hostname);
+  hostname = NULL;
   strcpy(ap_password, generate_password());
   strcpy(ssid, CONFIG_ESP_WIFI_SSID);
   strcpy(password, CONFIG_ESP_WIFI_PASSWORD);
