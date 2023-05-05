@@ -326,7 +326,7 @@ DEFINE_EMBEDDED_FILE_HANDLER(info_html, "text/html");
 DEFINE_EMBEDDED_FILE_HANDLER(settings_html, "text/html");
 DEFINE_EMBEDDED_FILE_HANDLER(joystick_html, "text/html");
 DEFINE_EMBEDDED_FILE_HANDLER(m_link_js, "text/javascript");
-DEFINE_EMBEDDED_FILE_HANDLER(virtualjoystick_js, "text/javascript");
+DEFINE_EMBEDDED_FILE_HANDLER(nipplejs_js, "text/javascript");
 DEFINE_EMBEDDED_FILE_HANDLER(jquery_min_js, "text/javascript");
 DEFINE_EMBEDDED_FILE_HANDLER(favicon_ico, "image/x-icon");
 DEFINE_EMBEDDED_FILE_HANDLER(hamburger_svg, "image/svg+xml");
@@ -560,9 +560,9 @@ static esp_err_t file_get_handler(httpd_req_t *req)
     {
       return m_link_js_get_handler(req);
     }
-    else if (strcmp(filename, "/virtualjoystick.js") == 0)
+    else if (strcmp(filename, "/nipplejs.js") == 0)
     {
-      return virtualjoystick_js_get_handler(req);
+      return nipplejs_js_get_handler(req);
     }
     else if (strcmp(filename, "/favicon.ico") == 0)
     {
