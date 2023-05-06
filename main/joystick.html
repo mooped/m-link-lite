@@ -58,18 +58,21 @@
         stickRadius: 100,
         strokeStyle: '#195905',
       })
+      var clamp = function (a, min, max) {
+        return Math.max(Math.min(a, max), min)
+      }
       setInterval(async function(){
         var status = 'waiting'
         if (mlink) {
-          const x = Math.round(joystick.deltaX() * 5)
-          const y = Math.round(joystick.deltaY() * 5)
+          const a = Math.round((joystick.deltaY() + joystick.deltaX()) * 5)
+          const b = Math.round((joystick.deltaY() - joystick.deltaX()) * 5)
           await mlink.setServos([
-            parseInt(1500 - y),
-            parseInt(1500 + x),
-            parseInt(1500 - y),
-            parseInt(1500 + x),
-            parseInt(1500 - y),
-            parseInt(1500 + x),
+            parseInt(1500 + a),
+            parseInt(1500 + b),
+            parseInt(1500),
+            parseInt(1500),
+            parseInt(1500),
+            parseInt(1500),
           ])
 
           status = mlink.status

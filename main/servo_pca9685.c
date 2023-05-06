@@ -130,19 +130,17 @@ void servo_task(void* args)
 {
   ESP_LOGI(TAG, "Started servo task");
 
+#if 0
   // Enable feedback pulse
-  // TODO: Switch to feedback pin for revised board
-  pca9685_set_microseconds(PCA9685_CHANNEL_CH4, 1500);
-  //pca9685_set_microseconds(PCA9685_CHANNEL_FEEDBACK, 1500);
+  pca9685_set_microseconds(PCA9685_CHANNEL_FEEDBACK, 1500);
 
   for (;;)
   {
     // Output pulse to first servo channel
     xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
-    // TODO: Enable on revised board
-    //pca9685_set_microseconds(PCA9685_CHANNEL_CH4, pulsewidths[3]);
+    pca9685_set_microseconds(PCA9685_CHANNEL_CH4, pulsewidths[3]);
     xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
-    //pca9685_set_off(PCA9685_CHANNEL_CH4);
+    pca9685_set_off(PCA9685_CHANNEL_CH4);
 
     // Output pulse to second servo channel
     xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
@@ -167,6 +165,27 @@ void servo_task(void* args)
     xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
     xSemaphoreTake(xServoSemaphore, portMAX_DELAY);
   }
+#else
+  // Update motors every 20 ms
+  const TickType_t interval = pdMS_TO_TICKS(18);
+  TickType_t previous_wake_time = xTaskGetTickCount();
+
+  for (;;)
+  {
+    // Update motor channels
+    motor_set(PCA9685_CHANNEL_M1A, PCA9685_CHANNEL_M1B, pulsewidths[0]);
+    motor_set(PCA9685_CHANNEL_M2A, PCA9685_CHANNEL_M2B, pulsewidths[1]);
+    motor_set(PCA9685_CHANNEL_M3A, PCA9685_CHANNEL_M3B, pulsewidths[2]);
+
+    // Update servo channels with pure PWM output
+    pca9685_set_microseconds(PCA9685_CHANNEL_CH4, pulsewidths[3]);
+    pca9685_set_microseconds(PCA9685_CHANNEL_CH6, pulsewidths[5]);
+    pca9685_set_microseconds(PCA9685_CHANNEL_CH6, pulsewidths[5]);
+
+    // Wait for the next interval
+    vTaskDelayUntil(&previous_wake_time, interval);
+  }
+#endif
 }
 
 void servo_init(void)
@@ -192,11 +211,15 @@ void servo_init(void)
   config.mode = GPIO_MODE_INPUT;
   config.pull_up_en = GPIO_PULLUP_DISABLE;
   config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+#if 0
   config.intr_type = GPIO_INTR_POSEDGE;
   ESP_ERROR_CHECK( gpio_config(&config) );
   ESP_ERROR_CHECK( gpio_install_isr_service(0) );
   ESP_ERROR_CHECK( gpio_isr_handler_add(FEEDBACK_IO_NUM, feedback_isr_handler, (void*)FEEDBACK_IO_NUM) );
+#else
+  config.intr_type = GPIO_INTR_DISABLE;
   ESP_ERROR_CHECK( gpio_config(&config) );
+#endif
 
   // Configure the sleep pin on the PCA9685 high to disable sleep when outputs are enabled
   pca9685_set_all_off();
