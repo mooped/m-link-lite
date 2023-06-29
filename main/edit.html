@@ -52,7 +52,112 @@
     </style>
   </head>
   <body>
-    <div id="panel"></div>
+    <div id="panel" style="width: 50%; height: 50%"></div>
+    <div id="mixer-panel">
+      <table>
+        <tr>
+          <th colspan="7">Mixer</th>
+        </tr>
+        <tr>
+          <td colspan="2"></td>
+          <th>[</th>
+          <th>In 1</th>
+          <th>In 2</th>
+          <th>In 3</th>
+          <th>In 4</th>
+          <th>In 5</th>
+          <th>In 6</th>
+          <th>]</th>
+          <th></th>
+        </tr>
+        <tr>
+          <th rowspan="7">[</th>
+          <td></td>
+          <th rowspan="7">] = [</th>
+          <th colspan="6">x</td>
+          <th rowspan="7">]</th>
+          <td></td>
+        </tr>
+        <tr>
+          <th>Out 1</th>
+          <td><input type="number" class="mixer" id="mix11" value="1"/></td>
+          <td><input type="number" class="mixer" id="mix12" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix13" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix14" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix15" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix16" value="0"/></td>
+        </tr>
+        <tr>
+          <th>Out 2</th>
+          <td><input type="number" class="mixer" id="mix21" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix22" value="1"/></td>
+          <td><input type="number" class="mixer" id="mix23" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix24" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix25" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix26" value="0"/></td>
+        </tr>
+        <tr>
+          <th>Out 3</th>
+          <td><input type="number" class="mixer" id="mix31" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix32" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix33" value="1"/></td>
+          <td><input type="number" class="mixer" id="mix34" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix35" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix36" value="0"/></td>
+        </tr>
+        <tr>
+          <th>Out 4</th>
+          <td><input type="number" class="mixer" id="mix41" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix42" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix43" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix44" value="1"/></td>
+          <td><input type="number" class="mixer" id="mix45" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix46" value="0"/></td>
+        </tr>
+        <tr>
+          <th>Out 5</th>
+          <td><input type="number" class="mixer" id="mix51" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix52" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix53" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix54" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix55" value="1"/></td>
+          <td><input type="number" class="mixer" id="mix56" value="0"/></td>
+        </tr>
+        <tr>
+          <th>Out 6</th>
+          <td><input type="number" class="mixer" id="mix61" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix62" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix63" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix64" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix65" value="0"/></td>
+          <td><input type="number" class="mixer" id="mix66" value="1"/></td>
+        </tr>
+      </table>
+    </div>
+    <div id="editor-panel">
+      <h1 class="small">Panel 1</h1>
+      <label class="small" for="panelType1">Panel Type</label>
+      <select id="panelType1" class="panel-type" data-control="1">
+        <option value="unused">Unused</option>
+        <option value="joystick">Joystick</option>
+        <option value="button">Button</option>
+      </select>
+      <br/>
+      <label class="small" for="panelX1">X</label>
+      <input type="number" class="panel-x small" data-control="1" value="1"/>
+      <label class="small" for="panelY1">Y</label>
+      <input type="number" class="panel-y small" data-control="1" value="1"/>
+      <br/>
+      <label class="small" for="panelW1">W</label>
+      <input type="number" class="panel-w small" data-control="1" value="1"/>
+      <label class="small" for="panelH1">H</label>
+      <input type="number" class="panel-h small" data-control="1" value="1"/>
+      <br/>
+      <label class="small" for="panelXCh1">X Ch</label>
+      <input type="number" class="panel-xch small" data-control="1" value="1"/>
+      <label class="small" for="panelH1">Y Ch</label>
+      <input type="number" class="panel-ych small" data-control="1" value="1"/>
+    </div>
     <div id="info">
       <h1 class="small" id="name">M-Link Lite Robot Controller</h1>
       <span class="small" id="result"></span>

@@ -49,97 +49,46 @@
         padding: 0;
         margin: 0;
       }
+      #left {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        /*
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 50%;
+        */
+        background: rgba(0, 255, 0, 0.1);
+      }
+      #right {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        /*
+        right: 0;
+        top: 0;
+        height: 100%;
+        width: 50%;
+        */
+        background: rgba(0, 0, 255, 0.1);
+      }
     </style>
   </head>
   <body>
-    <div id="panel"></div>
+    <div id="panel">
+      <div id="left"></div>
+      <div></div>
+      <div id="right"></div>
+      <div></div>
+    </div>
     <div id="info">
       <h1 class="small" id="name">M-Link Lite Robot Controller</h1>
       <span class="small" id="result"></span>
       <div id="hamburger" class="menu"><img src="hamburger.svg" alt="Menu Button" /></div>
     </div> 
     <script src="nipplejs.js"></script>
-    <script src="grid.js"></script>
     <script>
-      const apps = []
-      const panel = document.getElementById('panel')
-      /*
-      for (var i = 0; i < panel.children.length; ++i) {
-        const cell = panel.children[i]
-        const app = new Joystick(cell, {})
-        apps.push(app)
-        app._render()
-      }*/
-      const typeClasses = {
-        joystick: Joystick,
-        button: Button,
-      }
-      const createApp = function (type, options = {}) {
-        const cell = document.createElement('div')
-        const app = new typeClasses[type](cell, options)
-        apps.push(app)
-        panel.appendChild(cell)
-        app._render()
-      }
-      /*
-      var layout = {
-        panels: [
-          {
-            type: 'stick',
-            x: 1,
-            y: 1,
-            w: 5,
-            h: 5,
-            size: 200,
-            color: '#105905',
-            background: 'rgba(0, 255, 0, 0.1)',
-          },
-          {
-            type: 'stick',
-            x: 6,
-            y: 1,
-            w: 5,
-            h: 10,
-            size: 200,
-            color: '#105905',
-            background: 'rgba(0, 0, 255, 0.1)',
-          }
-        ]
-      }
-      let template = function (definition) {
-        const element = document.createElement('div')
-        console.log(definition)
-        element.style.background = definition.background
-        element.style.gridColumn = definition.x.toString() + ' / span ' + definition.w.toString()
-        element.style.gridRow = definition.y.toString() + ' / span ' + definition.h.toString()
-        element.style.width = '100%'
-        element.style.height = '100%'
-        element.style.position = 'relative'
-        return {
-          element,
-          callback: function () {
-            nipplejs.create({
-              zone: element,
-              mode: 'static',
-              position: { left: '50%', top: '50%' },
-              color: definition.color,
-              size: definition.size,
-            })
-          }
-        }
-      }
-      let panel = document.getElementById('panel')
-      for (let panelDefinition of layout.panels) {
-        const result = template(panelDefinition)
-        if (result.element) {
-          panel.appendChild(result.element)
-          if (result.callback) {
-            result.callback()
-          }
-        }
-      }
-      /*
-      /*
       var joystickL = nipplejs.create({
         zone: document.getElementById('left'),
         mode: 'static',
@@ -154,6 +103,7 @@
         color: '#105905',
         size: 200,
       })
+      /*
       setInterval(async function(){
         var status = 'waiting'
         if (mlink) {
