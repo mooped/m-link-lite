@@ -56,7 +56,7 @@
     <div id="mixer-panel">
       <table>
         <tr>
-          <th colspan="7">Mixer</th>
+          <th colspan="9">Mixer</th>
         </tr>
         <tr>
           <td colspan="2"></td>
@@ -135,28 +135,170 @@
       </table>
     </div>
     <div id="editor-panel">
-      <h1 class="small">Panel 1</h1>
-      <label class="small" for="panelType1">Panel Type</label>
-      <select id="panelType1" class="panel-type" data-control="1">
-        <option value="unused">Unused</option>
-        <option value="joystick">Joystick</option>
-        <option value="button">Button</option>
-      </select>
-      <br/>
-      <label class="small" for="panelX1">X</label>
-      <input type="number" class="panel-x small" data-control="1" value="1"/>
-      <label class="small" for="panelY1">Y</label>
-      <input type="number" class="panel-y small" data-control="1" value="1"/>
-      <br/>
-      <label class="small" for="panelW1">W</label>
-      <input type="number" class="panel-w small" data-control="1" value="1"/>
-      <label class="small" for="panelH1">H</label>
-      <input type="number" class="panel-h small" data-control="1" value="1"/>
-      <br/>
-      <label class="small" for="panelXCh1">X Ch</label>
-      <input type="number" class="panel-xch small" data-control="1" value="1"/>
-      <label class="small" for="panelH1">Y Ch</label>
-      <input type="number" class="panel-ych small" data-control="1" value="1"/>
+      <table>
+        <tr>
+          <th colspan="6">Panel 1</th>
+        </tr>
+        <tr>
+          <td><label class="small" for="panelX1">X</label></td>
+          <td><input type="number" id="panelX1" class="panel-x small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelW1">W</label></td>
+          <td><input type="number" id="panelW1" class="panel-w small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelXCh1">X Ch</label></td>
+          <td><input type="number" id="panelXCh1" class="panel-xch small small-panel" data-control="1" value="1" min="1" max="6"/></td>
+        </tr>
+        <tr>
+          <td><label class="small" for="panelY1">Y</label></td>
+          <td><input type="number" id="panelY1" class="panel-y small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelH1">H</label></td>
+          <td><input type="number" id="panelH1" class="panel-h small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelYCh1">Y Ch</label></td>
+          <td><input type="number" id="panelYCh1" class="panel-ych small small-panel" data-control="1" value="1" min="1" max="6"/></td>
+        </tr>
+        <tr>
+          <td><input type="radio" id="unused1" name="type1" value="unused" checked/></td>
+          <td><label for="unused1">Unused</label></td>
+          <td><input type="radio" id="joystick1" name="type1" value="joystick"/></td>
+          <td><label for="joystick1">Joystick</label></td>
+          <td><input type="radio" id="button1" name="type1" value="button"/></td>
+          <td><label for="button1">Button</label></td>
+        </tr>
+        <tr>
+          <th colspan="6">Panel 2</th>
+        </tr>
+        <tr>
+          <td><label class="small" for="panelX2">X</label></td>
+          <td><input type="number" id="panelX2" class="panel-x small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelW2">W</label></td>
+          <td><input type="number" id="panelW2" class="panel-w small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelXCh2">X Ch</label></td>
+          <td><input type="number" id="panelXCh2" class="panel-xch small small-panel" data-control="1" value="1" min="1" max="6"/></td>
+        </tr>
+        <tr>
+          <td><label class="small" for="panelY2">Y</label></td>
+          <td><input type="number" id="panelY2" class="panel-y small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelH2">H</label></td>
+          <td><input type="number" id="panelH2" class="panel-h small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelYCh2">Y Ch</label></td>
+          <td><input type="number" id="panelYCh2" class="panel-ych small small-panel" data-control="1" value="1" min="1" max="6"/></td>
+        </tr>
+        <tr>
+          <td><input type="radio" id="unused2" name="type2" value="unused" checked/></td>
+          <td><label for="unused2">Unused</label></td>
+          <td><input type="radio" id="joystick2" name="type2" value="joystick"/></td>
+          <td><label for="joystick2">Joystick</label></td>
+          <td><input type="radio" id="button2" name="type2" value="button"/></td>
+          <td><label for="button2">Button</label></td>
+        </tr>
+        <tr>
+          <th colspan="6">Panel 3</th>
+        </tr>
+        <tr>
+          <td><label class="small" for="panelX3">X</label></td>
+          <td><input type="number" id="panelX3" class="panel-x small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelW3">W</label></td>
+          <td><input type="number" id="panelW3" class="panel-w small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelXCh3">X Ch</label></td>
+          <td><input type="number" id="panelXCh3" class="panel-xch small small-panel" data-control="1" value="1" min="1" max="6"/></td>
+        </tr>
+        <tr>
+          <td><label class="small" for="panelY3">Y</label></td>
+          <td><input type="number" id="panelY3" class="panel-y small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelH3">H</label></td>
+          <td><input type="number" id="panelH3" class="panel-h small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelYCh3">Y Ch</label></td>
+          <td><input type="number" id="panelYCh3" class="panel-ych small small-panel" data-control="1" value="1" min="1" max="6"/></td>
+        </tr>
+        <tr>
+          <td><input type="radio" id="unused3" name="type3" value="unused" checked/></td>
+          <td><label for="unused3">Unused</label></td>
+          <td><input type="radio" id="joystick3" name="type3" value="joystick"/></td>
+          <td><label for="joystick3">Joystick</label></td>
+          <td><input type="radio" id="button3" name="type3" value="button"/></td>
+          <td><label for="button3">Button</label></td>
+        </tr>
+        <tr>
+          <th colspan="6">Panel 4</th>
+        </tr>
+        <tr>
+          <td><label class="small" for="panelX4">X</label></td>
+          <td><input type="number" id="panelX4" class="panel-x small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelW4">W</label></td>
+          <td><input type="number" id="panelW4" class="panel-w small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelXCh4">X Ch</label></td>
+          <td><input type="number" id="panelXCh4" class="panel-xch small small-panel" data-control="1" value="1" min="1" max="6"/></td>
+        </tr>
+        <tr>
+          <td><label class="small" for="panelY4">Y</label></td>
+          <td><input type="number" id="panelY4" class="panel-y small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelH4">H</label></td>
+          <td><input type="number" id="panelH4" class="panel-h small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelYCh4">Y Ch</label></td>
+          <td><input type="number" id="panelYCh4" class="panel-ych small small-panel" data-control="1" value="1" min="1" max="6"/></td>
+        </tr>
+        <tr>
+          <td><input type="radio" id="unused4" name="type4" value="unused" checked/></td>
+          <td><label for="unused4">Unused</label></td>
+          <td><input type="radio" id="joystick4" name="type4" value="joystick"/></td>
+          <td><label for="joystick4">Joystick</label></td>
+          <td><input type="radio" id="button4" name="type4" value="button"/></td>
+          <td><label for="button4">Button</label></td>
+        </tr>
+        <tr>
+          <th colspan="6">Panel 5</th>
+        </tr>
+        <tr>
+          <td><label class="small" for="panelX5">X</label></td>
+          <td><input type="number" id="panelX5" class="panel-x small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelW5">W</label></td>
+          <td><input type="number" id="panelW5" class="panel-w small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelXCh5">X Ch</label></td>
+          <td><input type="number" id="panelXCh5" class="panel-xch small small-panel" data-control="1" value="1" min="1" max="6"/></td>
+        </tr>
+        <tr>
+          <td><label class="small" for="panelY5">Y</label></td>
+          <td><input type="number" id="panelY5" class="panel-y small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelH5">H</label></td>
+          <td><input type="number" id="panelH5" class="panel-h small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelYCh5">Y Ch</label></td>
+          <td><input type="number" id="panelYCh5" class="panel-ych small small-panel" data-control="1" value="1" min="1" max="6"/></td>
+        </tr>
+        <tr>
+          <td><input type="radio" id="unused5" name="type5" value="unused" checked/></td>
+          <td><label for="unused5">Unused</label></td>
+          <td><input type="radio" id="joystick5" name="type5" value="joystick"/></td>
+          <td><label for="joystick5">Joystick</label></td>
+          <td><input type="radio" id="button5" name="type5" value="button"/></td>
+          <td><label for="button5">Button</label></td>
+        </tr>
+        <tr>
+          <th colspan="6">Panel 6</th>
+        </tr>
+        <tr>
+          <td><label class="small" for="panelX6">X</label></td>
+          <td><input type="number" id="panelX6" class="panel-x small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelW6">W</label></td>
+          <td><input type="number" id="panelW6" class="panel-w small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelXCh6">X Ch</label></td>
+          <td><input type="number" id="panelXCh6" class="panel-xch small small-panel" data-control="1" value="1" min="1" max="6"/></td>
+        </tr>
+        <tr>
+          <td><label class="small" for="panelY6">Y</label></td>
+          <td><input type="number" id="panelY6" class="panel-y small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelH6">H</label></td>
+          <td><input type="number" id="panelH6" class="panel-h small small-panel" data-control="1" value="1" min="1" max="5"/></td>
+          <td><label class="small" for="panelYCh6">Y Ch</label></td>
+          <td><input type="number" id="panelYCh6" class="panel-ych small small-panel" data-control="1" value="1" min="1" max="6"/></td>
+        </tr>
+        <tr>
+          <td><input type="radio" id="unused6" name="type6" value="unused" checked/></td>
+          <td><label for="unused6">Unused</label></td>
+          <td><input type="radio" id="joystick6" name="type6" value="joystick"/></td>
+          <td><label for="joystick6">Joystick</label></td>
+          <td><input type="radio" id="button6" name="type6" value="button"/></td>
+          <td><label for="button6">Button</label></td>
+        </tr>
+      </table>
     </div>
     <div id="info">
       <h1 class="small" id="name">M-Link Lite Robot Controller</h1>
