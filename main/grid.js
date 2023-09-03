@@ -37,22 +37,18 @@ class Application {
 class Joystick extends Application {
   constructor (parent, options = {}) {
     super(parent, options)
-
-    this._edit = options.edit || false
   }
 
   _render () {
     super._render()
 
-    if (!this._edit) {
-      this._stick = nipplejs.create({
-        zone: this._parent,
-        mode: 'static',
-        position: { left: '50%', top: '50%' },
-        color: this._options.foreground || '#105905',
-        size: 200,
-      })
-    }
+    this._stick = nipplejs.create({
+      zone: this._parent,
+      mode: 'static',
+      position: { left: '50%', top: '50%' },
+      color: this._options.foreground || '#105905',
+      size: 200,
+    })
   }
 
   _activateListeners () {
