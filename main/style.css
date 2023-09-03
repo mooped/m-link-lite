@@ -59,6 +59,7 @@ li.menu {
 }
 #panel {
   display: grid;
+  grid-auto-flow: row dense;
   grid-template-columns: repeat(5, 1fr);
   grid-template-rows: repeat(5, 1fr);
   width    : 100%;
