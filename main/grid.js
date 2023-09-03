@@ -17,19 +17,18 @@ class Application {
     if (this._options.background) {
       this._parent.style.backgroundColor = this._options.background
     }
-    //this._parent.style.border = '1px solid black'
   }
 
   _activateListeners () {
 
   }
 
-  create() {
+  create () {
     this._render()
     this._activateListeners()
   }
 
-  destroy() {
+  destroy () {
     this._parent.remove()
   }
 }
@@ -63,9 +62,39 @@ class Button extends Application {
 
   _render () {
     super._render()
+
+    this._button = document.createElement('div')
+    this._button.classList.add('button')
+    this._state = 0
+    if (this._options.foreground) {
+      this._button.style.backgroundColor = this._options.foreground
+    }
+    this._parent.appendChild(this._button)
   }
 
   _activateListeners () {
     super._activateListeners()
+
+    this._button.onmousedown = this._mouseDown.bind(this)
+    this._button.onmouseup = this._mouseUp.bind(this)
+    this._button.onmouseout = this._mouseUp.bind(this)
+  }
+
+  _mouseDown () {
+    console.log("Down")
+    this._button.style.backgroundColor = this._options.background
+    this._state = 1
+  }
+
+  _mouseUp () {
+    console.log("Up")
+    this._button.style.backgroundColor = this._options.foreground
+    this._state = 0
+  }
+
+  destroy () {
+    super.destroy()
+
+    this._button = null
   }
 }
