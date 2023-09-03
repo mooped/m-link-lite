@@ -141,6 +141,9 @@
       <label style="grid-area: cb1l" for="cb1">Y</label>
       <label style="grid-area: f1l" for="f1">Fg</label>
       <label style="grid-area: b1l" for="b1">Bg</label>
+      <label style="grid-area: l1l" for="l1">Label</label>
+      <label style="grid-area: va1l" for="va1">Idle</label>
+      <label style="grid-area: vb1l" for="vb1">Active</label>
 
       <input style="grid-area: w1" type="number" id="w1" name="w1" value="5" min="1" max="5"/>
       <input style="grid-area: h1" type="number" id="h1" name="h1" value="5" min="1" max="5"/>
@@ -150,17 +153,20 @@
         <option value="b">Button</option>
         <option value="p">Padding</option>
       </select>
-      <input style="grid-area: ca1" type="number" id="ca1" name="ca1" value="1" min="1" max="6"/>
-      <input style="grid-area: cb1" type="number" id="cb1" name="cb1" value="1" min="1" max="6"/>
+      <input style="grid-area: ca1" type="number" id="ca1" name="ca1" value="1" min="0" max="6"/>
+      <input style="grid-area: cb1" type="number" id="cb1" name="cb1" value="2" min="0" max="6"/>
       <input style="grid-area: f1" type="color" id="f1" name="f1" value="#195905"/>
       <input style="grid-area: b1" type="color" id="b1" name="b1" value="#f0feec"/>
+      <input style="grid-area: l1" type="text" id="l1" name="l1" value=""/>
+      <input style="grid-area: va1" type="text" id="va1" name="va1" value="500"/>
+      <input style="grid-area: vb1" type="text" id="vb1" name="vb1" value="1500"/>
 
       <b style="grid-area: p2;" class="title">Panel 2</b>
       <label style="grid-area: w2l" for="w2">Width</label>
       <label style="grid-area: h2l" for="h2">Height</label>
       <label style="grid-area: t2l" for="t2">Type</label>
-      <label style="grid-area: ca2l" for="ca2">X/B</label>
-      <label style="grid-area: cb2l" for="cb2">Y</label>
+      <label style="grid-area: ca2l" for="ca2">Ch 1</label>
+      <label style="grid-area: cb2l" for="cb2">Ch 2</label>
       <label style="grid-area: f2l" for="f2">Fg</label>
       <label style="grid-area: b2l" for="b2">Bg</label>
 
@@ -172,8 +178,8 @@
         <option value="b">Button</option>
         <option value="p">Padding</option>
       </select>
-      <input style="grid-area: ca2" type="number" id="ca2" name="ca2" value="2" min="1" max="6"/>
-      <input style="grid-area: cb2" type="number" id="cb2" name="cb2" value="2" min="1" max="6"/>
+      <input style="grid-area: ca2" type="number" id="ca2" name="ca2" value="3" min="0" max="6"/>
+      <input style="grid-area: cb2" type="number" id="cb2" name="cb2" value="4" min="0" max="6"/>
       <input style="grid-area: f2" type="color" id="f2" name="f2" value="#8e5572"/>
       <input style="grid-area: b2" type="color" id="b2" name="b2" value="#e8d9e1"/>
 
@@ -194,8 +200,8 @@
         <option value="b">Button</option>
         <option value="p">Padding</option>
       </select>
-      <input style="grid-area: ca3" type="number" id="ca3" name="ca3" value="3" min="1" max="6"/>
-      <input style="grid-area: cb3" type="number" id="cb3" name="cb3" value="3" min="1" max="6"/>
+      <input style="grid-area: ca3" type="number" id="ca3" name="ca3" value="5" min="0" max="6"/>
+      <input style="grid-area: cb3" type="number" id="cb3" name="cb3" value="6" min="0" max="6"/>
       <input style="grid-area: f3" type="color" id="f3" name="f3" value="#6eb257"/>
       <input style="grid-area: b3" type="color" id="b3" name="b3" value="#dbecd5"/>
 
@@ -216,8 +222,8 @@
         <option value="b">Button</option>
         <option value="p">Padding</option>
       </select>
-      <input style="grid-area: ca4" type="number" id="ca4" name="ca4" value="4" min="1" max="6"/>
-      <input style="grid-area: cb4" type="number" id="cb4" name="cb4" value="4" min="1" max="6"/>
+      <input style="grid-area: ca4" type="number" id="ca4" name="ca4" value="0" min="0" max="6"/>
+      <input style="grid-area: cb4" type="number" id="cb4" name="cb4" value="0" min="0" max="6"/>
       <input style="grid-area: f4" type="color" id="f4" name="f4" value="#f18f01"/>
       <input style="grid-area: b4" type="color" id="b4" name="b4" value="#ffe6c2"/>
 
@@ -238,8 +244,8 @@
         <option value="b">Button</option>
         <option value="p">Padding</option>
       </select>
-      <input style="grid-area: ca5" type="number" id="ca5" name="ca5" value="5" min="1" max="6"/>
-      <input style="grid-area: cb5" type="number" id="cb5" name="cb5" value="5" min="1" max="6"/>
+      <input style="grid-area: ca5" type="number" id="ca5" name="ca5" value="0" min="0" max="6"/>
+      <input style="grid-area: cb5" type="number" id="cb5" name="cb5" value="0" min="0" max="6"/>
       <input style="grid-area: f5" type="color" id="f5" name="f5" value="#d0f0c0"/>
       <input style="grid-area: b5" type="color" id="b5" name="b5" value="#285313"/>
 
@@ -260,8 +266,8 @@
         <option value="b">Button</option>
         <option value="p">Padding</option>
       </select>
-      <input style="grid-area: ca6" type="number" id="ca6" name="ca6" value="6" min="1" max="6"/>
-      <input style="grid-area: cb6" type="number" id="cb6" name="cb6" value="6" min="1" max="6"/>
+      <input style="grid-area: ca6" type="number" id="ca6" name="ca6" value="0" min="0" max="6"/>
+      <input style="grid-area: cb6" type="number" id="cb6" name="cb6" value="0" min="0" max="6"/>
       <input style="grid-area: f6" type="color" id="f6" name="f6" value="#508991"/>
       <input style="grid-area: b6" type="color" id="b6" name="f6" value="#cadfe2"/>
     </form>
@@ -278,7 +284,7 @@
       const typeClasses = {
         j: Joystick,
         b: Button,
-        p: Application,
+        p: Padding,
       }
       const createApp = function (type, options = {}) {
         const cell = document.createElement('div')
@@ -305,14 +311,17 @@
         let argN = function (arg, index, def) {
           return decodeURIComponent(params[arg + index.toString()]) || def
         }
-        for (var i = 0; i < 6; ++i) {
-          createApp(argN('t', i + 1, 'u'), {
-            width: argN('w', i + 1, 1),
-            height: argN('h', i + 1, 1),
-            ca: argN('ca', i + 1, -1),
-            cb: argN('cb', i + 1, -1),
-            foreground: argN('f', i + 1, '#bbbbbb'),
-            background: argN('b', i + 1, '#105905'),
+        for (var i = 1; i < 7; ++i) {
+          createApp(argN('t', i, 'u'), {
+            width: argN('w', i, 1),
+            height: argN('h', i, 1),
+            ca: argN('ca', i, -1),
+            cb: argN('cb', i, -1),
+            va: argN('va', i, 500),
+            vb: argN('vb', i, 1500),
+            foreground: argN('f', i, '#bbbbbb'),
+            background: argN('b', i, '#105905'),
+            label: argN('l', i, ''),
           })
         }
       }

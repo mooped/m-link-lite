@@ -107,9 +107,9 @@ li.menu {
   grid-template-rows: 1fr repeat(18, 1fr);
   grid-template-areas:
     "header header header header header header header header"
-    "p1 p1 p1 p1 p1 p1 p1 p1"
-    "w1l w1 t1l t1 ca1l ca1 f1l f1"
-    "h1l h1 . . cb1l cb1 b1l b1"
+    "p1 p1 w1l w1 ca1l ca1 va1l va1"
+    "t1l t1 h1l h1 cb1l cb1 vb1l vb1"
+    "l1l l1 l1 l1 f1l f1 b1l b1"
     "p2 p2 p2 p2 p2 p2 p2 p2"
     "w2l w2 t2l t2 ca2l ca2 f2l f2"
     "h2l h2 . . cb2l cb2 b2l b2"

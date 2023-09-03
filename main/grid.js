@@ -20,7 +20,6 @@ class Application {
   }
 
   _activateListeners () {
-
   }
 
   create () {
@@ -34,10 +33,6 @@ class Application {
 }
 
 class Joystick extends Application {
-  constructor (parent, options = {}) {
-    super(parent, options)
-  }
-
   _render () {
     super._render()
 
@@ -56,20 +51,25 @@ class Joystick extends Application {
 }
 
 class Button extends Application {
-  constructor (parent, options = {}) {
-    super(parent, options)
-  }
-
   _render () {
     super._render()
 
     this._button = document.createElement('div')
     this._button.classList.add('button')
+    this._button.style.display = 'grid'
+    this._label = document.createElement('span')
+    this._label.style.alignSelf = 'center'
+    this._label.style.justifySelf = 'center'
+    this._label.textContent = this._options.label || ''
+    if (this._options.foreground) {
+      this._label.style.color = this._options.background
+    }
     this._state = 0
     if (this._options.foreground) {
       this._button.style.backgroundColor = this._options.foreground
     }
     this._parent.appendChild(this._button)
+    this._button.appendChild(this._label)
   }
 
   _activateListeners () {
@@ -81,20 +81,28 @@ class Button extends Application {
   }
 
   _mouseDown () {
-    console.log("Down")
     this._button.style.backgroundColor = this._options.background
     this._state = 1
   }
 
   _mouseUp () {
-    console.log("Up")
     this._button.style.backgroundColor = this._options.foreground
     this._state = 0
   }
+}
 
-  destroy () {
-    super.destroy()
+class Padding extends Application {
+  _render () {
+    super._render()
 
-    this._button = null
+    this._parent.style.display = 'grid'
+    this._label = document.createElement('span')
+    this._label.style.alignSelf = 'center'
+    this._label.style.justifySelf = 'center'
+    this._label.textContent = this._options.label || ''
+    if (this._options.foreground) {
+      this._label.style.color = this._options.foreground
+    }
+    this._parent.appendChild(this._label)
   }
 }
