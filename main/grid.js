@@ -20,6 +20,15 @@ class Application {
   _activateListeners () {
 
   }
+
+  create() {
+    this._render()
+    this._activateListeners()
+  }
+
+  destroy() {
+    this._parent.remove()
+  }
 }
 
 class Joystick extends Application {
