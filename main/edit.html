@@ -52,271 +52,198 @@
     </style>
   </head>
   <body>
-    <div id="panel" style="width: 50%; height: 50%"></div>
-    <div id="mixer-panel">
-      <table>
-        <tr>
-          <th colspan="9">Mixer</th>
-        </tr>
-        <tr>
-          <td colspan="2"></td>
-          <th>[</th>
-          <th>In 1</th>
-          <th>In 2</th>
-          <th>In 3</th>
-          <th>In 4</th>
-          <th>In 5</th>
-          <th>In 6</th>
-          <th>]</th>
-          <th></th>
-        </tr>
-        <tr>
-          <th rowspan="7">[</th>
-          <td></td>
-          <th rowspan="7">] = [</th>
-          <th colspan="6">x</td>
-          <th rowspan="7">]</th>
-          <td></td>
-        </tr>
-        <tr>
-          <th>Out 1</th>
-          <td><input type="number" class="mixer" id="mix11" value="1"/></td>
-          <td><input type="number" class="mixer" id="mix12" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix13" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix14" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix15" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix16" value="0"/></td>
-        </tr>
-        <tr>
-          <th>Out 2</th>
-          <td><input type="number" class="mixer" id="mix21" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix22" value="1"/></td>
-          <td><input type="number" class="mixer" id="mix23" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix24" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix25" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix26" value="0"/></td>
-        </tr>
-        <tr>
-          <th>Out 3</th>
-          <td><input type="number" class="mixer" id="mix31" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix32" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix33" value="1"/></td>
-          <td><input type="number" class="mixer" id="mix34" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix35" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix36" value="0"/></td>
-        </tr>
-        <tr>
-          <th>Out 4</th>
-          <td><input type="number" class="mixer" id="mix41" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix42" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix43" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix44" value="1"/></td>
-          <td><input type="number" class="mixer" id="mix45" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix46" value="0"/></td>
-        </tr>
-        <tr>
-          <th>Out 5</th>
-          <td><input type="number" class="mixer" id="mix51" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix52" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix53" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix54" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix55" value="1"/></td>
-          <td><input type="number" class="mixer" id="mix56" value="0"/></td>
-        </tr>
-        <tr>
-          <th>Out 6</th>
-          <td><input type="number" class="mixer" id="mix61" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix62" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix63" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix64" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix65" value="0"/></td>
-          <td><input type="number" class="mixer" id="mix66" value="1"/></td>
-        </tr>
-      </table>
-    </div>
-    <div id="editor-panel">
-      <table>
-        <tr>
-          <th colspan="6">Panel 1</th>
-        </tr>
-        <tr>
-          <td><label class="small" for="panelX1">X</label></td>
-          <td><input type="number" id="panelX1" class="panel-x small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelW1">W</label></td>
-          <td><input type="number" id="panelW1" class="panel-w small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelXCh1">X Ch</label></td>
-          <td><input type="number" id="panelXCh1" class="panel-xch small small-panel" data-control="1" value="1" min="1" max="6"/></td>
-        </tr>
-        <tr>
-          <td><label class="small" for="panelY1">Y</label></td>
-          <td><input type="number" id="panelY1" class="panel-y small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelH1">H</label></td>
-          <td><input type="number" id="panelH1" class="panel-h small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelYCh1">Y Ch</label></td>
-          <td><input type="number" id="panelYCh1" class="panel-ych small small-panel" data-control="1" value="1" min="1" max="6"/></td>
-        </tr>
-        <tr>
-          <td><input type="radio" id="unused1" name="type1" value="unused" checked/></td>
-          <td><label for="unused1">Unused</label></td>
-          <td><input type="radio" id="joystick1" name="type1" value="joystick"/></td>
-          <td><label for="joystick1">Joystick</label></td>
-          <td><input type="radio" id="button1" name="type1" value="button"/></td>
-          <td><label for="button1">Button</label></td>
-        </tr>
-        <tr>
-          <th colspan="6">Panel 2</th>
-        </tr>
-        <tr>
-          <td><label class="small" for="panelX2">X</label></td>
-          <td><input type="number" id="panelX2" class="panel-x small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelW2">W</label></td>
-          <td><input type="number" id="panelW2" class="panel-w small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelXCh2">X Ch</label></td>
-          <td><input type="number" id="panelXCh2" class="panel-xch small small-panel" data-control="1" value="1" min="1" max="6"/></td>
-        </tr>
-        <tr>
-          <td><label class="small" for="panelY2">Y</label></td>
-          <td><input type="number" id="panelY2" class="panel-y small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelH2">H</label></td>
-          <td><input type="number" id="panelH2" class="panel-h small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelYCh2">Y Ch</label></td>
-          <td><input type="number" id="panelYCh2" class="panel-ych small small-panel" data-control="1" value="1" min="1" max="6"/></td>
-        </tr>
-        <tr>
-          <td><input type="radio" id="unused2" name="type2" value="unused" checked/></td>
-          <td><label for="unused2">Unused</label></td>
-          <td><input type="radio" id="joystick2" name="type2" value="joystick"/></td>
-          <td><label for="joystick2">Joystick</label></td>
-          <td><input type="radio" id="button2" name="type2" value="button"/></td>
-          <td><label for="button2">Button</label></td>
-        </tr>
-        <tr>
-          <th colspan="6">Panel 3</th>
-        </tr>
-        <tr>
-          <td><label class="small" for="panelX3">X</label></td>
-          <td><input type="number" id="panelX3" class="panel-x small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelW3">W</label></td>
-          <td><input type="number" id="panelW3" class="panel-w small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelXCh3">X Ch</label></td>
-          <td><input type="number" id="panelXCh3" class="panel-xch small small-panel" data-control="1" value="1" min="1" max="6"/></td>
-        </tr>
-        <tr>
-          <td><label class="small" for="panelY3">Y</label></td>
-          <td><input type="number" id="panelY3" class="panel-y small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelH3">H</label></td>
-          <td><input type="number" id="panelH3" class="panel-h small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelYCh3">Y Ch</label></td>
-          <td><input type="number" id="panelYCh3" class="panel-ych small small-panel" data-control="1" value="1" min="1" max="6"/></td>
-        </tr>
-        <tr>
-          <td><input type="radio" id="unused3" name="type3" value="unused" checked/></td>
-          <td><label for="unused3">Unused</label></td>
-          <td><input type="radio" id="joystick3" name="type3" value="joystick"/></td>
-          <td><label for="joystick3">Joystick</label></td>
-          <td><input type="radio" id="button3" name="type3" value="button"/></td>
-          <td><label for="button3">Button</label></td>
-        </tr>
-        <tr>
-          <th colspan="6">Panel 4</th>
-        </tr>
-        <tr>
-          <td><label class="small" for="panelX4">X</label></td>
-          <td><input type="number" id="panelX4" class="panel-x small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelW4">W</label></td>
-          <td><input type="number" id="panelW4" class="panel-w small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelXCh4">X Ch</label></td>
-          <td><input type="number" id="panelXCh4" class="panel-xch small small-panel" data-control="1" value="1" min="1" max="6"/></td>
-        </tr>
-        <tr>
-          <td><label class="small" for="panelY4">Y</label></td>
-          <td><input type="number" id="panelY4" class="panel-y small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelH4">H</label></td>
-          <td><input type="number" id="panelH4" class="panel-h small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelYCh4">Y Ch</label></td>
-          <td><input type="number" id="panelYCh4" class="panel-ych small small-panel" data-control="1" value="1" min="1" max="6"/></td>
-        </tr>
-        <tr>
-          <td><input type="radio" id="unused4" name="type4" value="unused" checked/></td>
-          <td><label for="unused4">Unused</label></td>
-          <td><input type="radio" id="joystick4" name="type4" value="joystick"/></td>
-          <td><label for="joystick4">Joystick</label></td>
-          <td><input type="radio" id="button4" name="type4" value="button"/></td>
-          <td><label for="button4">Button</label></td>
-        </tr>
-        <tr>
-          <th colspan="6">Panel 5</th>
-        </tr>
-        <tr>
-          <td><label class="small" for="panelX5">X</label></td>
-          <td><input type="number" id="panelX5" class="panel-x small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelW5">W</label></td>
-          <td><input type="number" id="panelW5" class="panel-w small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelXCh5">X Ch</label></td>
-          <td><input type="number" id="panelXCh5" class="panel-xch small small-panel" data-control="1" value="1" min="1" max="6"/></td>
-        </tr>
-        <tr>
-          <td><label class="small" for="panelY5">Y</label></td>
-          <td><input type="number" id="panelY5" class="panel-y small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelH5">H</label></td>
-          <td><input type="number" id="panelH5" class="panel-h small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelYCh5">Y Ch</label></td>
-          <td><input type="number" id="panelYCh5" class="panel-ych small small-panel" data-control="1" value="1" min="1" max="6"/></td>
-        </tr>
-        <tr>
-          <td><input type="radio" id="unused5" name="type5" value="unused" checked/></td>
-          <td><label for="unused5">Unused</label></td>
-          <td><input type="radio" id="joystick5" name="type5" value="joystick"/></td>
-          <td><label for="joystick5">Joystick</label></td>
-          <td><input type="radio" id="button5" name="type5" value="button"/></td>
-          <td><label for="button5">Button</label></td>
-        </tr>
-        <tr>
-          <th colspan="6">Panel 6</th>
-        </tr>
-        <tr>
-          <td><label class="small" for="panelX6">X</label></td>
-          <td><input type="number" id="panelX6" class="panel-x small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelW6">W</label></td>
-          <td><input type="number" id="panelW6" class="panel-w small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelXCh6">X Ch</label></td>
-          <td><input type="number" id="panelXCh6" class="panel-xch small small-panel" data-control="1" value="1" min="1" max="6"/></td>
-        </tr>
-        <tr>
-          <td><label class="small" for="panelY6">Y</label></td>
-          <td><input type="number" id="panelY6" class="panel-y small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelH6">H</label></td>
-          <td><input type="number" id="panelH6" class="panel-h small small-panel" data-control="1" value="1" min="1" max="5"/></td>
-          <td><label class="small" for="panelYCh6">Y Ch</label></td>
-          <td><input type="number" id="panelYCh6" class="panel-ych small small-panel" data-control="1" value="1" min="1" max="6"/></td>
-        </tr>
-        <tr>
-          <td><input type="radio" id="unused6" name="type6" value="unused" checked/></td>
-          <td><label for="unused6">Unused</label></td>
-          <td><input type="radio" id="joystick6" name="type6" value="joystick"/></td>
-          <td><label for="joystick6">Joystick</label></td>
-          <td><input type="radio" id="button6" name="type6" value="button"/></td>
-          <td><label for="button6">Button</label></td>
-        </tr>
-      </table>
-    </div>
     <div id="info">
       <h1 class="small" id="name">M-Link Lite Robot Controller</h1>
       <span class="small" id="result"></span>
       <div id="hamburger" class="menu"><img src="hamburger.svg" alt="Menu Button" /></div>
     </div> 
+    <div id="panel" style="width: 50%; height: 50%"></div>
+    <div id="mixer-panel">
+      <b style="grid-area: header;" class="title">Mixer</b>
+      <div style="grid-area: in1">In 1</div>
+      <div style="grid-area: in2">In 2</div>
+      <div style="grid-area: in3">In 3</div>
+      <div style="grid-area: in4">In 4</div>
+      <div style="grid-area: in5">In 5</div>
+      <div style="grid-area: in6">In 6</div>
+      <div style="grid-area: out1">Out 1</div>
+      <div style="grid-area: out2">Out 2</div>
+      <div style="grid-area: out3">Out 3</div>
+      <div style="grid-area: out4">Out 4</div>
+      <div style="grid-area: out5">Out 5</div>
+      <div style="grid-area: out6">Out 6</div>
+      <div style="grid-area: out6">Out 6</div>
+      <div style="grid-area: x; text-align: center;">x</div>
+      <div style="grid-area: y; margin: auto;">=</div>
+      <input class="mix-ctl" style="grid-area: c11;" type="number" id="mix11" value="1" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c21;" type="number" id="mix21" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c31;" type="number" id="mix31" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c41;" type="number" id="mix41" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c51;" type="number" id="mix51" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c61;" type="number" id="mix61" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c12;" type="number" id="mix12" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c22;" type="number" id="mix22" value="1" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c32;" type="number" id="mix32" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c42;" type="number" id="mix42" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c52;" type="number" id="mix52" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c62;" type="number" id="mix62" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c13;" type="number" id="mix13" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c23;" type="number" id="mix23" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c33;" type="number" id="mix33" value="1" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c43;" type="number" id="mix43" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c53;" type="number" id="mix53" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c63;" type="number" id="mix63" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c14;" type="number" id="mix14" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c24;" type="number" id="mix24" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c34;" type="number" id="mix34" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c44;" type="number" id="mix44" value="1" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c54;" type="number" id="mix54" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c64;" type="number" id="mix64" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c15;" type="number" id="mix15" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c25;" type="number" id="mix25" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c35;" type="number" id="mix35" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c45;" type="number" id="mix45" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c55;" type="number" id="mix55" value="1" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c65;" type="number" id="mix65" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c16;" type="number" id="mix16" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c26;" type="number" id="mix26" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c36;" type="number" id="mix36" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c46;" type="number" id="mix46" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c56;" type="number" id="mix56" value="0" step="0.01"/>
+      <input class="mix-ctl" style="grid-area: c66;" type="number" id="mix66" value="1" step="0.01"/>
+    </div>
+    <div id="editor-panel">
+      <b style="grid-area: p1;" class="title">Panel 1</b>
+      <label style="grid-area: x1l" for="x1">Col</label>
+      <label style="grid-area: y1l" for="y1">Row</label>
+      <label style="grid-area: w1l" for="w1">Width</label>
+      <label style="grid-area: h1l" for="h1">Height</label>
+      <label style="grid-area: t1l" for="t1">Type</label>
+      <label style="grid-area: c1al" for="c1a">X/B</label>
+      <label style="grid-area: c1bl" for="c1b">Y</label>
+
+      <input class="grid-ctl" style="grid-area: x1" type="number" id="x1" value="1" min="1" max="5"/>
+      <input class="grid-ctl" style="grid-area: w1" type="number" id="w1" value="1" min="1" max="5"/>
+      <input class="grid-ctl" style="grid-area: c1a" type="number" id="c1a" value="1" min="1" max="6"/>
+      <input class="grid-ctl" style="grid-area: y1" type="number" id="y1" value="1" min="1" max="5"/>
+      <input class="grid-ctl" style="grid-area: h1" type="number" id="h1" value="1" min="1" max="5"/>
+      <input class="grid-ctl" style="grid-area: c1b" type="number" id="c1b" value="1" min="1" max="6"/>
+      <select class="grid-ctl" style="grid-area: t1" id="t1">
+        <option value="unused">Unused</option>
+        <option value="joystick" selected>Joystick</option>
+        <option value="button">Button</option>
+      </select>
+
+      <b style="grid-area: p2;" class="title">Panel 2</b>
+      <label style="grid-area: x2l" for="x2">Col</label>
+      <label style="grid-area: y2l" for="y2">Row</label>
+      <label style="grid-area: w2l" for="w2">Width</label>
+      <label style="grid-area: h2l" for="h2">Height</label>
+      <label style="grid-area: t2l" for="t2">Type</label>
+      <label style="grid-area: c2al" for="c2a">X/B</label>
+      <label style="grid-area: c2bl" for="c2b">Y</label>
+
+      <input class="grid-ctl" style="grid-area: x2" type="number" id="x2" value="2" min="2" max="5"/>
+      <input class="grid-ctl" style="grid-area: w2" type="number" id="w2" value="2" min="2" max="5"/>
+      <input class="grid-ctl" style="grid-area: c2a" type="number" id="c2a" value="2" min="2" max="6"/>
+      <input class="grid-ctl" style="grid-area: y2" type="number" id="y2" value="2" min="2" max="5"/>
+      <input class="grid-ctl" style="grid-area: h2" type="number" id="h2" value="2" min="2" max="5"/>
+      <input class="grid-ctl" style="grid-area: c2b" type="number" id="c2b" value="2" min="2" max="6"/>
+      <select class="grid-ctl" style="grid-area: t2" id="t2">
+        <option value="unused" selected>Unused</option>
+        <option value="joystick">Joystick</option>
+        <option value="button">Button</option>
+      </select>
+
+      <b style="grid-area: p3;" class="title">Panel 3</b>
+      <label style="grid-area: x3l" for="x3">Col</label>
+      <label style="grid-area: y3l" for="y3">Row</label>
+      <label style="grid-area: w3l" for="w3">Width</label>
+      <label style="grid-area: h3l" for="h3">Height</label>
+      <label style="grid-area: t3l" for="t3">Type</label>
+      <label style="grid-area: c3al" for="c3a">X/B</label>
+      <label style="grid-area: c3bl" for="c3b">Y</label>
+
+      <input class="grid-ctl" style="grid-area: x3" type="number" id="x3" value="3" min="3" max="5"/>
+      <input class="grid-ctl" style="grid-area: w3" type="number" id="w3" value="3" min="3" max="5"/>
+      <input class="grid-ctl" style="grid-area: c3a" type="number" id="c3a" value="3" min="3" max="6"/>
+      <input class="grid-ctl" style="grid-area: y3" type="number" id="y3" value="3" min="3" max="5"/>
+      <input class="grid-ctl" style="grid-area: h3" type="number" id="h3" value="3" min="3" max="5"/>
+      <input class="grid-ctl" style="grid-area: c3b" type="number" id="c3b" value="3" min="3" max="6"/>
+      <select class="grid-ctl" style="grid-area: t3" id="t3">
+        <option value="unused" selected>Unused</option>
+        <option value="joystick">Joystick</option>
+        <option value="button">Button</option>
+      </select>
+
+      <b style="grid-area: p4;" class="title">Panel 4</b>
+      <label style="grid-area: x4l" for="x4">Col</label>
+      <label style="grid-area: y4l" for="y4">Row</label>
+      <label style="grid-area: w4l" for="w4">Width</label>
+      <label style="grid-area: h4l" for="h4">Height</label>
+      <label style="grid-area: t4l" for="t4">Type</label>
+      <label style="grid-area: c4al" for="c4a">X/B</label>
+      <label style="grid-area: c4bl" for="c4b">Y</label>
+
+      <input class="grid-ctl" style="grid-area: x4" type="number" id="x4" value="4" min="4" max="5"/>
+      <input class="grid-ctl" style="grid-area: w4" type="number" id="w4" value="4" min="4" max="5"/>
+      <input class="grid-ctl" style="grid-area: c4a" type="number" id="c4a" value="4" min="4" max="6"/>
+      <input class="grid-ctl" style="grid-area: y4" type="number" id="y4" value="4" min="4" max="5"/>
+      <input class="grid-ctl" style="grid-area: h4" type="number" id="h4" value="4" min="4" max="5"/>
+      <input class="grid-ctl" style="grid-area: c4b" type="number" id="c4b" value="4" min="4" max="6"/>
+      <select class="grid-ctl" style="grid-area: t4" id="t4">
+        <option value="unused" selected>Unused</option>
+        <option value="joystick">Joystick</option>
+        <option value="button">Button</option>
+      </select>
+
+      <b style="grid-area: p5;" class="title">Panel 5</b>
+      <label style="grid-area: x5l" for="x5">Col</label>
+      <label style="grid-area: y5l" for="y5">Row</label>
+      <label style="grid-area: w5l" for="w5">Width</label>
+      <label style="grid-area: h5l" for="h5">Height</label>
+      <label style="grid-area: t5l" for="t5">Type</label>
+      <label style="grid-area: c5al" for="c5a">X/B</label>
+      <label style="grid-area: c5bl" for="c5b">Y</label>
+      
+      <input class="grid-ctl" style="grid-area: x5" type="number" id="x5" value="5" min="5" max="5"/>
+      <input class="grid-ctl" style="grid-area: w5" type="number" id="w5" value="5" min="5" max="5"/>
+      <input class="grid-ctl" style="grid-area: c5a" type="number" id="c5a" value="5" min="5" max="6"/>
+      <input class="grid-ctl" style="grid-area: y5" type="number" id="y5" value="5" min="5" max="5"/>
+      <input class="grid-ctl" style="grid-area: h5" type="number" id="h5" value="5" min="5" max="5"/>
+      <input class="grid-ctl" style="grid-area: c5b" type="number" id="c5b" value="5" min="5" max="6"/>
+      <select class="grid-ctl" style="grid-area: t5" id="t5">
+        <option value="unused" selected>Unused</option>
+        <option value="joystick">Joystick</option>
+        <option value="button">Button</option>
+      </select>
+
+      <b style="grid-area: p6;" class="title">Panel 6</b>
+      <label style="grid-area: x6l" for="x6">Col</label>
+      <label style="grid-area: y6l" for="y6">Row</label>
+      <label style="grid-area: w6l" for="w6">Width</label>
+      <label style="grid-area: h6l" for="h6">Height</label>
+      <label style="grid-area: t6l" for="t6">Type</label>
+      <label style="grid-area: c6al" for="c6a">X/B</label>
+      <label style="grid-area: c6bl" for="c6b">Y</label>
+
+      <input class="grid-ctl" style="grid-area: x6" type="number" id="x6" value="6" min="6" max="5"/>
+      <input class="grid-ctl" style="grid-area: w6" type="number" id="w6" value="6" min="6" max="5"/>
+      <input class="grid-ctl" style="grid-area: c6a" type="number" id="c6a" value="6" min="6" max="6"/>
+      <input class="grid-ctl" style="grid-area: y6" type="number" id="y6" value="6" min="6" max="5"/>
+      <input class="grid-ctl" style="grid-area: h6" type="number" id="h6" value="6" min="6" max="5"/>
+      <input class="grid-ctl" style="grid-area: c6b" type="number" id="c6b" value="6" min="6" max="6"/>
+      <select class="grid-ctl" style="grid-area: t6" id="t6">
+        <option value="unused" selected>Unused</option>
+        <option value="joystick">Joystick</option>
+        <option value="button">Button</option>
+      </select>
+    </div>
     <script src="nipplejs.js"></script>
     <script src="grid.js"></script>
     <script>
       const apps = []
       const panel = document.getElementById('panel')
-      /*
-      for (var i = 0; i < panel.children.length; ++i) {
-        const cell = panel.children[i]
-        const app = new Joystick(cell, {})
-        apps.push(app)
-        app._render()
-      }*/
       const typeClasses = {
         joystick: Joystick,
         button: Button,
@@ -328,64 +255,6 @@
         panel.appendChild(cell)
         app._render()
       }
-      /*
-      var layout = {
-        panels: [
-          {
-            type: 'stick',
-            x: 1,
-            y: 1,
-            w: 5,
-            h: 5,
-            size: 200,
-            color: '#105905',
-            background: 'rgba(0, 255, 0, 0.1)',
-          },
-          {
-            type: 'stick',
-            x: 6,
-            y: 1,
-            w: 5,
-            h: 10,
-            size: 200,
-            color: '#105905',
-            background: 'rgba(0, 0, 255, 0.1)',
-          }
-        ]
-      }
-      let template = function (definition) {
-        const element = document.createElement('div')
-        console.log(definition)
-        element.style.background = definition.background
-        element.style.gridColumn = definition.x.toString() + ' / span ' + definition.w.toString()
-        element.style.gridRow = definition.y.toString() + ' / span ' + definition.h.toString()
-        element.style.width = '100%'
-        element.style.height = '100%'
-        element.style.position = 'relative'
-        return {
-          element,
-          callback: function () {
-            nipplejs.create({
-              zone: element,
-              mode: 'static',
-              position: { left: '50%', top: '50%' },
-              color: definition.color,
-              size: definition.size,
-            })
-          }
-        }
-      }
-      let panel = document.getElementById('panel')
-      for (let panelDefinition of layout.panels) {
-        const result = template(panelDefinition)
-        if (result.element) {
-          panel.appendChild(result.element)
-          if (result.callback) {
-            result.callback()
-          }
-        }
-      }
-      /*
       /*
       var joystickL = nipplejs.create({
         zone: document.getElementById('left'),

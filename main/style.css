@@ -23,9 +23,6 @@ input {
 .small {
   font-size: 1rem;
 }
-.small-panel {
-  width: 100px;
-}
 table.filemanager input {
   font-size: 1rem;
 }
@@ -62,8 +59,8 @@ li.menu {
 }
 #panel {
   display: grid;
-  grid-template-columns: 20% 20% 20% 20% 20%;
-  grid-template-rows: 20% 20% 20% 20% 20%;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
   width    : 100%;
   height    : 100%;
   overflow  : hidden;
@@ -73,16 +70,80 @@ li.menu {
   -moz-user-select  : none;
 }
 #mixer-panel {
-  width: 50%;
-  height: 50%;
-}
-#editor-panel {
+  display: grid;
+  grid-template-columns: 0.75fr 0.25fr repeat(6, 1fr);
+  grid-template-rows: 0.5fr 0.5fr 0.5fr repeat(6, 1fr) 0.5fr;
+  grid-template-areas:
+    "header header header header header header header header"
+    ". . in1 in2 in3 in4 in5 in6"
+    ". . x x x x x x"
+    "out1 y c11 c21 c31 c41 c51 c61"
+    "out2 y c12 c22 c32 c42 c52 c62"
+    "out3 y c13 c23 c33 c43 c53 c63"
+    "out4 y c14 c24 c34 c44 c54 c64"
+    "out5 y c15 c25 c35 c45 c55 c65"
+    "out6 y c16 c26 c36 c46 c56 c66"
+    ". . . . . . . .";
+  grid-gap: 8px 8px;
   position: absolute;
   width: 50%;
-  height: 90%;
-  top: 10%;
-  left: 50%;
+  height: 50%;
+  top: 50%;
+  left: 0%;
+
 }
-.mixer {
-  width: 96px;
+#mixer-panel input {
+  width: 80%;
+}
+#mixer-panel * {
+  justify-self: center;
+  font-size: 1.5rem;
+}
+#editor-panel {
+  display: grid;
+  grid-template-columns: 0.5fr 1fr 0.5fr 1fr 0.5fr 1fr 0.5fr 1fr;
+  grid-template-rows: 1fr repeat(18, 1fr);
+  grid-template-areas:
+    "header header header header header header header header"
+    "p1 p1 p1 p1 p1 p1 p1 p1"
+    "x1l x1 w1l w1 t1l t1 c1al c1a"
+    "y1l y1 h1l h1 . . c1bl c1b"
+    "p2 p2 p2 p2 p2 p2 p2 p2"
+    "x2l x2 w2l w2 t2l t2 c2al c2a"
+    "y2l y2 h2l h2 . . c2bl c2b"
+    "p3 p3 p3 p3 p3 p3 p3 p3"
+    "x3l x3 w3l w3 t3l t3 c3al c3a"
+    "y3l y3 h3l h3 . . c3bl c3b"
+    "p4 p4 p4 p4 p4 p4 p4 p4"
+    "x4l x4 w4l w4 t4l t4 c4al c4a"
+    "y4l y4 h4l h4 . . c4bl c4b"
+    "p5 p5 p5 p5 p5 p5 p5 p5"
+    "x5l x5 w5l w5 t5l t5 c5al c5a"
+    "y5l y5 h5l h5 . . c5bl c5b"
+    "p6 p6 p6 p6 p6 p6 p6 p6"
+    "x6l x6 w6l w6 t6l t6 c6al c6a"
+    "y6l y6 h6l h6 . . c6bl c6b";
+  grid-gap: 8px 8px;
+  position: absolute;
+  width: 40%;
+  height: 90%;
+  top: 5%;
+  left: 55%;
+}
+#editor-panel input {
+  justify-self: center;
+  width: 100%;
+}
+#editor-panel select {
+  justify-self: center;
+  width: 100%;
+}
+#editor-panel * {
+  justify-self: left;
+  font-size: 1.5rem;
+}
+.title {
+  justify-self: left;
+  border-bottom: 1px solid black;
+  width: 95%;
 }
