@@ -14,7 +14,10 @@ class Application {
     if (this._options.height) {
       this._parent.style.gridRow = 'span ' + this._options.height.toString()
     }
-    this._parent.style.border = '1px solid black'
+    if (this._options.background) {
+      this._parent.style.backgroundColor = this._options.background
+    }
+    //this._parent.style.border = '1px solid black'
   }
 
   _activateListeners () {
@@ -46,7 +49,7 @@ class Joystick extends Application {
         zone: this._parent,
         mode: 'static',
         position: { left: '50%', top: '50%' },
-        color: '#105905',
+        color: this._options.foreground || '#105905',
         size: 200,
       })
     }

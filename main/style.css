@@ -2,7 +2,7 @@ body {
   overflow: hidden;
   padding: 0;
   margin: 0;
-  background-color: #BBB;
+  background-color: #bbb;
   font-family: Lato,proxima-nova,Helvetica Neue,Arial,sans-serif;
   font-size: 2rem;
 }
@@ -87,10 +87,10 @@ li.menu {
     ". . . . . . . .";
   grid-gap: 8px 8px;
   position: absolute;
-  width: 50%;
-  height: 50%;
-  top: 50%;
-  left: 0%;
+  width: 48%;
+  height: 48%;
+  top: 51%;
+  left: 1%;
 
 }
 #mixer-panel input {
@@ -107,23 +107,23 @@ li.menu {
   grid-template-areas:
     "header header header header header header header header"
     "p1 p1 p1 p1 p1 p1 p1 p1"
-    "x1l x1 w1l w1 t1l t1 ca1l ca1"
-    "y1l y1 h1l h1 . . cb1l cb1"
+    "w1l w1 t1l t1 ca1l ca1 f1l f1"
+    "h1l h1 . . cb1l cb1 b1l b1"
     "p2 p2 p2 p2 p2 p2 p2 p2"
-    "x2l x2 w2l w2 t2l t2 ca2l ca2"
-    "y2l y2 h2l h2 . . cb2l cb2"
+    "w2l w2 t2l t2 ca2l ca2 f2l f2"
+    "h2l h2 . . cb2l cb2 b2l b2"
     "p3 p3 p3 p3 p3 p3 p3 p3"
-    "x3l x3 w3l w3 t3l t3 ca3l ca3"
-    "y3l y3 h3l h3 . . cb3l cb3"
+    "w3l w3 t3l t3 ca3l ca3 f3l f3"
+    "h3l h3 . . cb3l cb3 b3l b3"
     "p4 p4 p4 p4 p4 p4 p4 p4"
-    "x4l x4 w4l w4 t4l t4 ca4l ca4"
-    "y4l y4 h4l h4 . . cb4l cb4"
+    "w4l w4 t4l t4 ca4l ca4 f4l f4"
+    "h4l h4 . . cb4l cb4 b4l b4"
     "p5 p5 p5 p5 p5 p5 p5 p5"
-    "x5l x5 w5l w5 t5l t5 ca5l ca5"
-    "y5l y5 h5l h5 . . cb5l cb5"
+    "w5l w5 t5l t5 ca5l ca5 f5l f5"
+    "h5l h5 . . cb5l cb5 b5l b5"
     "p6 p6 p6 p6 p6 p6 p6 p6"
-    "x6l x6 w6l w6 t6l t6 ca6l ca6"
-    "y6l y6 h6l h6 . . cb6l cb6";
+    "w6l w6 t6l t6 ca6l ca6 f6l f6"
+    "h6l h6 . . cb6l cb6 b6l b6";
   grid-gap: 8px 8px;
   position: absolute;
   width: 40%;
