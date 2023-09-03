@@ -49,10 +49,35 @@
         padding: 0;
         margin: 0;
       }
+      #panel {
+        width: 50%;
+        height: 50%;
+      }
+      @media (max-width: 1250px) {
+        body {
+          overflow-y: scroll;
+        }
+        #panel {
+          width: 100%;
+          height: 100%;
+        }
+        #mixer-panel {
+          width: 98%;
+          height: 100%;
+          top: 200%;
+          left: 1%;
+        }
+        #layout-panel {
+          width: 90%;
+          height: 100%;
+          top: 100%;
+          left: 5%;
+        }
+      }
     </style>
   </head>
   <body>
-    <div id="panel" style="width: 50%; height: 50%"></div>
+    <div id="panel"></div>
     <form id="mixer-panel">
       <b style="grid-area: header;" class="title">Mixer</b>
       <div style="grid-area: in1">In 1</div>
