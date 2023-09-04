@@ -64,10 +64,10 @@ li.menu {
   -moz-user-select  : none;
 }
 .button {
-  top: 2.5%;
-  left: 2.5%;
-  width: 95%;
-  height: 95%;
+  left: 4px;
+  top: 4px;
+  bottom: 5px;
+  right: 5px;
   position: absolute;
 }
 /* Control Panel Editor */

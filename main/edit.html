@@ -165,8 +165,8 @@
       <label style="grid-area: w2l" for="w2">Width</label>
       <label style="grid-area: h2l" for="h2">Height</label>
       <label style="grid-area: t2l" for="t2">Type</label>
-      <label style="grid-area: ca2l" for="ca2">Ch 1</label>
-      <label style="grid-area: cb2l" for="cb2">Ch 2</label>
+      <label style="grid-area: ca2l" for="ca2">X/B</label>
+      <label style="grid-area: cb2l" for="cb2">Y</label>
       <label style="grid-area: f2l" for="f2">Fg</label>
       <label style="grid-area: b2l" for="b2">Bg</label>
       <label style="grid-area: l2l" for="l1">Label</label>
@@ -181,13 +181,13 @@
         <option value="b">Button</option>
         <option value="p">Padding</option>
       </select>
-      <input style="grid-area: ca2" type="number" id="ca2" name="ca2" value="3" min="0" max="6"/>
-      <input style="grid-area: cb2" type="number" id="cb2" name="cb2" value="4" min="0" max="6"/>
+      <input style="grid-area: ca2" type="number" id="ca2" name="ca2" value="3" min="0" max="6" data-pn="1" data-types="jb"/>
+      <input style="grid-area: cb2" type="number" id="cb2" name="cb2" value="4" min="0" max="6" data-pn="1" data-types="j"/>
       <input style="grid-area: f2" type="color" id="f2" name="f2" value="#8e5572"/>
       <input style="grid-area: b2" type="color" id="b2" name="b2" value="#e8d9e1"/>
-      <input style="grid-area: l2" type="text" id="l2" name="l2" value=""/>
-      <input style="grid-area: va2" type="number" id="va2" name="va2" value="-1" step="0.01"/>
-      <input style="grid-area: vb2" type="number" id="vb2" name="vb2" value="1" step="0.01"/>
+      <input style="grid-area: l2" type="text" id="l2" name="l2" value="" data-pn="1" data-types="jbp"/>
+      <input style="grid-area: va2" type="number" id="va2" name="va2" value="-1" step="0.01" data-pn="1" data-types="b"/>
+      <input style="grid-area: vb2" type="number" id="vb2" name="vb2" value="1" step="0.01" data-pn="1" data-types="b"/>
 
       <b style="grid-area: p3;" class="title">Panel 3</b>
       <label style="grid-area: w3l" for="w3">Width</label>
@@ -197,7 +197,7 @@
       <label style="grid-area: cb3l" for="cb3">Y</label>
       <label style="grid-area: f3l" for="f3">Fg</label>
       <label style="grid-area: b3l" for="b3">Bg</label>
-      <label style="grid-area: l3" for="l3">Label</label>
+      <label style="grid-area: l3l" for="l3">Label</label>
       <label style="grid-area: va3l" for="va3">Idle</label>
       <label style="grid-area: vb3l" for="vb3">Active</label>
 
@@ -326,33 +326,46 @@
         }
       }
 
-      let rebuildMixer = function (evt) {
-        mixerData = $('#mixer-panel').serialize()
-        console.log('Mixer changed')
-      }
-
       let rebuildLayout = function (evt) {
-        console.log('Grid layout changed')
         while (apps.length > 0) {
           apps.pop().destroy()
         }
-        layoutData = $('#layout-panel').serialize()
-        let params = Object.fromEntries(layoutData.split('&').map(x => x.split('=')))
-        let argN = function (arg, index, def) {
-          return decodeURIComponent(params[arg + index.toString()]) || def
+        let elN = function(arg, index) {
+          return document.getElementById(arg + (index + 1).toString())
         }
-        for (var i = 1; i < 7; ++i) {
+        let argN = function (arg, index, def) {
+          return elN(arg, index)?.value || def
+        }
+        for (var i = 0; i < 6; ++i) {
           createApp(argN('t', i, 'u'), {
             width: argN('w', i, 1),
             height: argN('h', i, 1),
-            ca: argN('ca', i, -1),
-            cb: argN('cb', i, -1),
-            va: argN('va', i, 500),
-            vb: argN('vb', i, 1500),
-            foreground: argN('f', i, '#bbbbbb'),
-            background: argN('b', i, '#105905'),
+            ca: argN('ca', i, 0),
+            cb: argN('cb', i, 0),
+            idle: argN('va', i, -1),
+            pressed: argN('vb', i, 1),
+            foreground: argN('f', i, '#105905'),
+            background: argN('b', i, '#bbbbbb'),
             label: argN('l', i, ''),
           })
+        }
+      }
+
+      // Register listener for layout changes
+      $('#layout-panel').children().on('change', function (evt) {
+        rebuildLayout()
+      })
+
+      let mixerData
+
+      let rebuildMixer = function (evt) {
+        mixerData = []
+        for (var j = 1; j <= 6; ++j) {
+          let row = []
+          for (var i = 1; i <= 6; ++i) {
+            row.push(parseFloat(document.getElementById('c' + i.toString() + j.toString())?.value || 0.0))
+          }
+          mixerData.push(row)
         }
       }
 
@@ -361,30 +374,27 @@
         rebuildMixer()
       })
 
-      // Register listener for layout changes
-      $('#layout-panel').children().on('change', function (evt) {
-        rebuildLayout()
-      })
+      let readData = function () {
+        let channels = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        for (const app of apps) {
+          const appData = app?.channels || {}
+          for (const key in appData) {
+            if (key > 0 && key <= 6) {
+              channels[key - 1] += appData[key]
+            }
+          }
+        }
+        console.log(channels)
+      }
 
       $(document).ready(function() {
         rebuildLayout()
+        rebuildMixer()
       })
-      /*
-      var joystickL = nipplejs.create({
-        zone: document.getElementById('left'),
-        mode: 'static',
-        position: { left: '50%', top: '50%' },
-        color: '#105905',
-        size: 200,
-      })
-      var joystickL = nipplejs.create({
-        zone: document.getElementById('right'),
-        mode: 'static',
-        position: { left: '50%', top: '50%' },
-        color: '#105905',
-        size: 200,
-      })
+
       setInterval(async function(){
+        readData()
+        /*
         var status = 'waiting'
         if (mlink) {
           const x = Math.round(joystick.deltaX() * 5)
@@ -402,8 +412,8 @@
         }
         var outputEl = document.getElementById('result')
         outputEl.innerHTML = status
+        */
       }, 1/30 * 1000)
-      */
     </script>
   </body>
 </html>
