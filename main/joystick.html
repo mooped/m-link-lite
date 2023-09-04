@@ -103,12 +103,12 @@
       <div style="grid-area: out5">Out 5</div>
       <div style="grid-area: out6">Out 6</div>
       <div style="grid-area: out6">Out 6</div>
-      <div style="grid-area: v1">0.0</div>
-      <div style="grid-area: v2">0.0</div>
-      <div style="grid-area: v3">0.0</div>
-      <div style="grid-area: v4">0.0</div>
-      <div style="grid-area: v5">0.0</div>
-      <div style="grid-area: v6">0.0</div>
+      <div style="grid-area: v1" id="v1">0.0</div>
+      <div style="grid-area: v2" id="v2">0.0</div>
+      <div style="grid-area: v3" id="v3">0.0</div>
+      <div style="grid-area: v4" id="v4">0.0</div>
+      <div style="grid-area: v5" id="v5">0.0</div>
+      <div style="grid-area: v6" id="v6">0.0</div>
       <input style="grid-area: c11;" type="number" id="c11" name="c11" value="1" step="0.01"/>
       <input style="grid-area: c21;" type="number" id="c21" name="c21" value="0" step="0.01"/>
       <input style="grid-area: c31;" type="number" id="c31" name="c31" value="0" step="0.01"/>
@@ -270,7 +270,7 @@
       <label style="grid-area: l5l" for="l5">Label</label>
       <label style="grid-area: va5l" for="va5">Idle</label>
       <label style="grid-area: vb5l" for="vb5">Active</label>
-      
+
       <input style="grid-area: w5" type="number" id="w5" name="w5" value="1" min="1" max="5"/>
       <input style="grid-area: h5" type="number" id="h5" name="h5" value="1" min="1" max="5"/>
       <select style="grid-area: t5" id="t5" name="t5">
@@ -347,15 +347,17 @@
         }
       }
 
+      let elN = function(arg, index) {
+        return document.getElementById(arg + (index + 1).toString())
+      }
+
+      let argN = function (arg, index, def) {
+        return elN(arg, index)?.value || def
+      }
+
       let rebuildLayout = function (evt) {
         while (apps.length > 0) {
           apps.pop().destroy()
-        }
-        let elN = function(arg, index) {
-          return document.getElementById(arg + (index + 1).toString())
-        }
-        let argN = function (arg, index, def) {
-          return elN(arg, index)?.value || def
         }
         for (var i = 0; i < 6; ++i) {
           createApp(argN('t', i, 'u'), {
@@ -412,6 +414,7 @@
             sum += inputs[i] * mixerData[j][i]
           }
           channels.push(sum)
+          elN('v', j).textContent = sum.toFixed(2).toString()
         }
         return channels
       }
