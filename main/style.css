@@ -73,26 +73,23 @@ li.menu {
 /* Control Panel Editor */
 #mixer-panel {
   display: grid;
-  grid-template-columns: 0.75fr 0.25fr repeat(6, 1fr);
-  grid-template-rows: 0.5fr 0.5fr 0.5fr repeat(6, 1fr) 0.5fr;
+  grid-template-columns: 0.75fr repeat(6, 1fr) 0.75fr;
+  grid-template-rows: 0.5fr 0.5fr repeat(6, 0.5fr);
   grid-template-areas:
     "header header header header header header header header"
-    ". . in1 in2 in3 in4 in5 in6"
-    ". . x x x x x x"
-    "out1 y c11 c21 c31 c41 c51 c61"
-    "out2 y c12 c22 c32 c42 c52 c62"
-    "out3 y c13 c23 c33 c43 c53 c63"
-    "out4 y c14 c24 c34 c44 c54 c64"
-    "out5 y c15 c25 c35 c45 c55 c65"
-    "out6 y c16 c26 c36 c46 c56 c66"
-    ". . . . . . . .";
+    ". in1 in2 in3 in4 in5 in6 ."
+    "out1 c11 c21 c31 c41 c51 c61 v1"
+    "out2 c12 c22 c32 c42 c52 c62 v2"
+    "out3 c13 c23 c33 c43 c53 c63 v3"
+    "out4 c14 c24 c34 c44 c54 c64 v4"
+    "out5 c15 c25 c35 c45 c55 c65 v5"
+    "out6 c16 c26 c36 c46 c56 c66 v6";
   grid-gap: 8px 8px;
   position: absolute;
   width: 48%;
-  height: 48%;
-  top: 51%;
+  height: 44%;
+  top: 53%;
   left: 1%;
-
 }
 #mixer-panel input {
   width: 80%;
@@ -103,7 +100,7 @@ li.menu {
 }
 #layout-panel {
   display: grid;
-  grid-template-columns: 0.5fr 1fr 0.5fr 1fr 0.5fr 1fr 0.5fr 1fr;
+  grid-template-columns: 0.5fr 1.25fr 0.5fr 1fr 0.25fr 1fr 0.5fr 1fr;
   grid-template-rows: repeat(18, 1fr);
   grid-template-areas:
     "p1 p1 w1l w1 ca1l ca1 va1l va1"

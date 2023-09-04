@@ -93,8 +93,12 @@
       <div style="grid-area: out5">Out 5</div>
       <div style="grid-area: out6">Out 6</div>
       <div style="grid-area: out6">Out 6</div>
-      <div style="grid-area: x; text-align: center;">x</div>
-      <div style="grid-area: y; margin: auto;">=</div>
+      <div style="grid-area: v1">0.0</div>
+      <div style="grid-area: v2">0.0</div>
+      <div style="grid-area: v3">0.0</div>
+      <div style="grid-area: v4">0.0</div>
+      <div style="grid-area: v5">0.0</div>
+      <div style="grid-area: v6">0.0</div>
       <input style="grid-area: c11;" type="number" id="c11" name="c11" value="1" step="0.01"/>
       <input style="grid-area: c21;" type="number" id="c21" name="c21" value="0" step="0.01"/>
       <input style="grid-area: c31;" type="number" id="c31" name="c31" value="0" step="0.01"/>
@@ -375,16 +379,24 @@
       })
 
       let readData = function () {
-        let channels = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        let inputs = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         for (const app of apps) {
           const appData = app?.channels || {}
-          for (const key in appData) {
-            if (key > 0 && key <= 6) {
-              channels[key - 1] += appData[key]
+          for (const channel in appData) {
+            if (channel > 0 && channel <= 6) {
+              inputs[channel - 1] += appData[channel]
             }
           }
         }
-        console.log(channels)
+        let channels = []
+        for (var j = 0; j < 6; ++j) {
+          let sum = 0
+          for (var i = 0; i < 6; ++i) {
+            sum += inputs[i] * mixerData[j][i]
+          }
+          channels.push(sum)
+        }
+        return channels
       }
 
       $(document).ready(function() {
@@ -393,26 +405,14 @@
       })
 
       setInterval(async function(){
-        readData()
-        /*
         var status = 'waiting'
+        let channels = readData().map(x => Math.round(1500 + (500 * x)))
         if (mlink) {
-          const x = Math.round(joystick.deltaX() * 5)
-          const y = Math.round(joystick.deltaY() * 5)
-          await mlink.setServos([
-            parseInt(1500 - y),
-            parseInt(1500 + x),
-            1500,
-            1500,
-            1500,
-            1500
-          ])
-
+          await mlink.setServos(channels)
           status = mlink.status
         }
         var outputEl = document.getElementById('result')
         outputEl.innerHTML = status
-        */
       }, 1/30 * 1000)
     </script>
   </body>

@@ -103,6 +103,7 @@ class Joystick extends Application {
     super._activateListeners()
 
     this._stick.on('move', this._move.bind(this))
+    this._stick.on('end', this._end.bind(this))
   }
 
   destroy () {
@@ -113,6 +114,11 @@ class Joystick extends Application {
   _move (evt, data) {
     this._state.x = data.vector.x
     this._state.y = data.vector.y
+  }
+
+  _end (evt) {
+    this._state.x = 0.0
+    this._state.y = 0.0
   }
 }
 
