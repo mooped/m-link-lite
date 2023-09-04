@@ -223,13 +223,17 @@ class MLink {
     return {}
   }
 
+  static get hashArgs () {
+    return decodeURIComponent(location.hash.substr(1)).split('&').map(v => v.split('=')).reduce( (pre, [key, value]) => ({ ...pre, [key]: value }), {})
+  }
+
   /*
    * Get default host from location.host or # params
    */
-  static get defaultHost() {
-    const hashArgs = decodeURIComponent(location.hash.substr(1)).split('&').map(v => v.split('=')).reduce( (pre, [key, value]) => ({ ...pre, [key]: value }), {})
-    if (hashArgs.host) {
-      return hashArgs.host
+  static get defaultHost () {
+    const args = this.hashArgs
+    if (args.host) {
+      return args.host
     }
     return location.host
   }
