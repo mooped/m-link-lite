@@ -104,27 +104,26 @@ li.menu {
 #layout-panel {
   display: grid;
   grid-template-columns: 0.5fr 1fr 0.5fr 1fr 0.5fr 1fr 0.5fr 1fr;
-  grid-template-rows: 1fr repeat(18, 1fr);
+  grid-template-rows: repeat(18, 1fr);
   grid-template-areas:
-    "header header header header header header header header"
     "p1 p1 w1l w1 ca1l ca1 va1l va1"
     "t1l t1 h1l h1 cb1l cb1 vb1l vb1"
     "l1l l1 l1 l1 f1l f1 b1l b1"
-    "p2 p2 p2 p2 p2 p2 p2 p2"
-    "w2l w2 t2l t2 ca2l ca2 f2l f2"
-    "h2l h2 . . cb2l cb2 b2l b2"
-    "p3 p3 p3 p3 p3 p3 p3 p3"
-    "w3l w3 t3l t3 ca3l ca3 f3l f3"
-    "h3l h3 . . cb3l cb3 b3l b3"
-    "p4 p4 p4 p4 p4 p4 p4 p4"
-    "w4l w4 t4l t4 ca4l ca4 f4l f4"
-    "h4l h4 . . cb4l cb4 b4l b4"
-    "p5 p5 p5 p5 p5 p5 p5 p5"
-    "w5l w5 t5l t5 ca5l ca5 f5l f5"
-    "h5l h5 . . cb5l cb5 b5l b5"
-    "p6 p6 p6 p6 p6 p6 p6 p6"
-    "w6l w6 t6l t6 ca6l ca6 f6l f6"
-    "h6l h6 . . cb6l cb6 b6l b6";
+    "p2 p2 w2l w2 ca2l ca2 va2l va2"
+    "t2l t2 h2l h2 cb2l cb2 vb2l vb2"
+    "l2l l2 l2 l2 f2l f2 b2l b2"
+    "p3 p3 w3l w3 ca3l ca3 va3l va3"
+    "t3l t3 h3l h3 cb3l cb3 vb3l vb3"
+    "l3l l3 l3 l3 f3l f3 b3l b3"
+    "p4 p4 w4l w4 ca4l ca4 va4l va4"
+    "t4l t4 h4l h4 cb4l cb4 vb4l vb4"
+    "l4l l4 l4 l4 f4l f4 b4l b4"
+    "p5 p5 w5l w5 ca5l ca5 va5l va5"
+    "t5l t5 h5l h5 cb5l cb5 vb5l vb5"
+    "l5l l5 l5 l5 f5l f5 b5l b5"
+    "p6 p6 w6l w6 ca6l ca6 va6l va6"
+    "t6l t6 h6l h6 cb6l cb6 vb6l vb6"
+    "l6l l6 l6 l6 f6l f6 b6l b6";
   grid-gap: 8px 8px;
   position: absolute;
   width: 40%;
