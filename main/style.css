@@ -101,7 +101,7 @@ li.menu {
 #layout-panel {
   display: grid;
   grid-template-columns: 0.5fr 1.25fr 0.5fr 1fr 0.25fr 1fr 0.5fr 1fr;
-  grid-template-rows: repeat(18, 1fr);
+  grid-template-rows: repeat(18, 1fr) 0.5fr;
   grid-template-areas:
     "p1 p1 w1l w1 ca1l ca1 va1l va1"
     "t1l t1 h1l h1 cb1l cb1 vb1l vb1"
@@ -120,7 +120,8 @@ li.menu {
     "l5l l5 l5 l5 f5l f5 b5l b5"
     "p6 p6 w6l w6 ca6l ca6 va6l va6"
     "t6l t6 h6l h6 cb6l cb6 vb6l vb6"
-    "l6l l6 l6 l6 f6l f6 b6l b6";
+    "l6l l6 l6 l6 f6l f6 b6l b6"
+    "sv sv psl psl ps ps ps ps";
   grid-gap: 8px 8px;
   position: absolute;
   width: 40%;

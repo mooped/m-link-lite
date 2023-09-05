@@ -30,7 +30,7 @@
 // PWM period 20ms (50hz)
 #define PWM_PERIOD    (20000)
 
-static const char *TAG = "m-link-servo";
+//static const char *TAG = "m-link-servo";
 
 // pwm pin number
 static const uint32_t pin_num[PWM_IO_COUNT] = {

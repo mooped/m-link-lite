@@ -314,6 +314,18 @@
       <input style="grid-area: l6" type="text" id="l6" name="l6" value=""/>
       <input style="grid-area: va6" type="number" id="va6" name="va6" value="-1" step="0.01"/>
       <input style="grid-area: vb6" type="number" id="vb6" name="vb6" value="1" step="0.01"/>
+
+      <input style="grid-area: sv" type="button" id="sv" value="Save"/>
+      <label style="grid-area: psl" for="ps">Load Data</label>
+      <select style="grid-area: ps" id="ps" name="ps">
+        <option value="-" selected>-</option>
+        <option value="default">Default Settings</option>
+        <option value="saved">Saved Settings</option>
+        <option value="direct">Preset: Direct</option>
+        <option value="tank">Preset: Tank</option>
+        <option value="two-stick">Preset: Two Stick</option>
+        <option value="flipper">Preset: Flipper</option>
+      </select>
     </form>
     <div id="info">
       <h1 class="small" id="name">M-Link Lite Robot Controller</h1>
@@ -323,13 +335,12 @@
     <script src="nipplejs.js"></script>
     <script src="grid.js"></script>
     <script>
-      const hashArgs = decodeURIComponent(location.hash.substr(1)).split('&').map(v => v.split('=')).reduce( (pre, [key, value]) => ({ ...pre, [key]: value }), {})
-      const panel = document.getElementById('panel')
-
       // Hide editor UI outside of edit mode
-      if (!hashArgs?.edit) {
+      if (!MLink.hashArgs?.edit) {
         document.body.classList.add('no-edit')
       }
+
+      const panel = document.getElementById('panel')
 
       const apps = []
       const typeClasses = {
@@ -417,6 +428,41 @@
           elN('v', j).textContent = sum.toFixed(2).toString()
         }
         return channels
+      }
+
+      // Presets
+      const presets = {
+        default: {},
+        saved: {},
+        direct: {},
+        tank: {},
+        "two-stick": {},
+        flipper: {},
+      }
+
+      let loadPreset = function (preset) {
+        if (!presets[preset]) {
+          return
+        }
+
+        document.getElementById('mixer-panel').reset()
+        document.getElementById('layout-panel').reset()
+
+        const data = presets[preset]
+        for (const key in data) {
+          const el = document.getElementById(key)
+          if (el) {
+            el.value = data[key]
+          }
+        }
+
+        rebuildLayout()
+        rebuildMixer()
+      }
+
+      const presetEl = document.getElementById('ps')
+      presetEl.onchange = function (evt) {
+        loadPreset(presetEl.value)
       }
 
       $(document).ready(function() {
