@@ -316,11 +316,10 @@
       <input style="grid-area: vb6" type="number" id="vb6" name="vb6" value="1" step="0.01"/>
 
       <input style="grid-area: sv" type="button" id="sv" value="Save"/>
-      <label style="grid-area: psl" for="ps">Load Data</label>
       <select style="grid-area: ps" id="ps" name="ps">
-        <option value="-" selected>-</option>
+        <option value="-" selected>- Presets / Restore -</option>
         <option value="default">Default Settings</option>
-        <option value="saved">Saved Settings</option>
+        <option value="saved">Last Saved Settings</option>
         <option value="direct">Preset: Direct</option>
         <option value="tank">Preset: Tank</option>
         <option value="two-stick">Preset: Two Stick</option>
@@ -435,9 +434,9 @@
         default: {},
         saved: {},
         direct: {},
-        tank: {},
-        "two-stick": {},
-        flipper: {},
+        tank: {c11:1,c12:-1,c21:1,c22:1},
+        "two-stick":{w1:2,ca1:0,cb1:0,t2:'p',h2:5,w3:2,h3:5,t3:'j',ca3:0,cb3:2},
+        flipper:{h1:3,t2:'b',w2:5,h2:2,ca2:6,c11:1,c12:-1,c21:1,c22:1,c55:0,c65:-1},
       }
 
       let loadPreset = function (preset) {
