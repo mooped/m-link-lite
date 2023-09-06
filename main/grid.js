@@ -174,6 +174,8 @@ class Button extends Application {
     this._button.onmousedown = this._mouseDown.bind(this)
     this._button.onmouseup = this._mouseUp.bind(this)
     this._button.onmouseout = this._mouseUp.bind(this)
+    this._button.onpointerdown = this._mouseDown.bind(this)
+    this._button.onpointerup = this._mouseUp.bind(this)
   }
 
   _mouseDown () {
