@@ -14,12 +14,13 @@
         {
           onmessage: function(obj) {
             // Update name from settings
-            if (obj && obj.settings)
-            {
-              if (obj.settings.name)
-              {
+            if (obj && obj.settings) {
+              if (obj.settings.name) {
                 $('#name').html(obj.settings.name)
                 document.title = obj.settings.name
+              }
+              if (obj.settings.layout)  {
+                presets['saved'] = obj.settings.layout
               }
               delete obj.settings
             }
@@ -459,26 +460,44 @@
         rebuildMixer()
       }
 
+      let savePreset = function () {
+        const layout = {}
+        $.map($('#layout-panel').serializeArray(), function (n, i) {
+          layout[n['name']] = n['value']
+        })
+        $.map($('#mixer-panel').serializeArray(), function (n, i) {
+          layout[n['name']] = n['value']
+        })
+        mlink.updateSettings({
+          layout
+        })
+        presets['saved'] = layout
+      }
+
       const presetEl = document.getElementById('ps')
       presetEl.onchange = function (evt) {
         loadPreset(presetEl.value)
       }
 
+      document.getElementById('sv').onclick = function (evt) {
+        savePreset()
+      }
+
       $(document).ready(function() {
         rebuildLayout()
         rebuildMixer()
-      })
 
-      setInterval(async function(){
-        var status = 'waiting'
-        let channels = readData().map(x => Math.round(1500 + (500 * x)))
-        if (mlink) {
-          await mlink.setServos(channels)
-          status = mlink.status
-        }
-        var outputEl = document.getElementById('result')
-        outputEl.innerHTML = status
-      }, 1/30 * 1000)
+        setInterval(async function(){
+          var status = 'waiting'
+          let channels = readData().map(x => Math.round(1500 + (500 * x)))
+          if (mlink) {
+            await mlink.setServos(channels)
+            status = mlink.status
+          }
+          var outputEl = document.getElementById('result')
+          outputEl.innerHTML = status
+        }, 1/30 * 1000)
+      })
     </script>
   </body>
 </html>
