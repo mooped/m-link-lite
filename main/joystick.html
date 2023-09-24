@@ -19,9 +19,6 @@
                 $('#name').html(obj.settings.name)
                 document.title = obj.settings.name
               }
-              if (obj.settings.layout)  {
-                presets['saved'] = obj.settings.layout
-              }
               delete obj.settings
             }
           },
@@ -37,6 +34,14 @@
         // Register listener for menu button
         $('#hamburger').click(function (evt) {
           window.location = '/'
+        })
+
+        // Load the current preset
+        $.get('/layout.json', function (data, status) {
+          if (status === 'success') {
+            presets['saved'] = JSON.parse(data)
+            loadPreset('saved')
+          }
         })
       })
     </script>
@@ -70,12 +75,12 @@
         }
         #panel {
           width: 100%;
-          height: 100%;
+          height: 80%;
         }
         #mixer-panel {
           width: 98%;
           height: 100%;
-          top: 200%;
+          top: 210%;
           left: 1%;
         }
         #layout-panel {
@@ -436,7 +441,7 @@
         saved: {},
         direct: {},
         tank: {c11:1,c12:-1,c21:1,c22:1},
-        "two-stick":{w1:2,ca1:0,cb1:0,t2:'p',h2:5,w3:2,h3:5,t3:'j',ca3:0,cb3:2},
+        "two-stick":{w1:2,ca1:1,cb1:0,t2:'p',h2:5,w3:2,h3:5,t3:'j',ca3:0,cb3:2},
         flipper:{h1:3,t2:'b',w2:5,h2:2,ca2:6,c11:1,c12:-1,c21:1,c22:1,c55:0,c65:-1},
       }
 
@@ -472,6 +477,9 @@
           layout
         })
         presets['saved'] = layout
+        $.post('/delete/files/layout.json', function (data) {
+          $.post('/upload/layout.json', JSON.stringify(presets['saved']))
+        })
       }
 
       const presetEl = document.getElementById('ps')
