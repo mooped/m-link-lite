@@ -24,6 +24,7 @@
 
 #define BUTTON_INTERVAL   100         // 100ms update rate
 
+#if defined(CONFIG_BUTTON)
 static const char *TAG = "m-link-button";
 
 typedef struct
@@ -103,9 +104,11 @@ static void button_task(void* pvParam)
     vTaskDelayUntil(&previous_wake_time, interval);
   }
 }
+#endif
 
 void button_init(void)
 {
+#if defined(CONFIG_BUTTON)
   // Initialise the GPIOs for the defined buttons
   for (int button_idx = 0; button_idx < BUTTON_IO_COUNT; ++button_idx)
   {
@@ -121,4 +124,5 @@ void button_init(void)
 
   // Start the button handler task
   xTaskCreate(button_task, "button-task", 1024, NULL, 6, NULL);
+#endif
 }

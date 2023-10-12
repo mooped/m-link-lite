@@ -243,7 +243,7 @@ void rx_task(void* args)
 
 void app_main()
 {
-#if 1
+#if CONFIG_PLUS
   // Initialise I2C driver
   ESP_ERROR_CHECK( twi_init() );
 #endif

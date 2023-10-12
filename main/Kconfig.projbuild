@@ -6,6 +6,26 @@ menu "M-Link Configuration"
         help
             Robot name for display purposes.
 
+    config BUTTON
+        boolean "Button"
+        default true
+        help
+            Board has a button to reset to default configuration.
+
+    config PLUS
+        boolean "Plus"
+        default false
+        help
+            Board is an M-Link plus with a PCA9685 and DRV8837 motor drivers.
+
+    config PCA9865_FEEDBACK
+        boolean "PCA9685 Feedback"
+        depends on PLUS
+        default false
+        help
+            Use precise servo timings driven from a feedback line from the PCA9685.
+            This feature is experimental, can consume a lot of resources, and is very timing dependent.
+
     config ESP_WIFI_SSID
         string "WiFi SSID"
         default "myssid"

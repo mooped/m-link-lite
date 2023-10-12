@@ -1,3 +1,5 @@
+#if defined(CONFIG_PLUS)
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -21,8 +23,6 @@
 #include "pca9685.h"
 
 #include "servo.h"
-
-#if 1
 
 #define ENABLE_IO_NUM             12
 #define FEEDBACK_IO_NUM           13
@@ -130,7 +130,7 @@ void servo_task(void* args)
 {
   ESP_LOGI(TAG, "Started servo task");
 
-#if 0
+#if CONFIG_PCA9685_FEEDBACK
   // Enable feedback pulse
   pca9685_set_microseconds(PCA9685_CHANNEL_FEEDBACK, 1500);
 
@@ -212,12 +212,11 @@ void servo_init(void)
   config.pull_up_en = GPIO_PULLUP_DISABLE;
   config.pull_down_en = GPIO_PULLDOWN_DISABLE;
 
-#if 0
+#if CONFIG_PCA9685_FEEDBACK
   config.intr_type = GPIO_INTR_POSEDGE;
   ESP_ERROR_CHECK( gpio_config(&config) );
   ESP_ERROR_CHECK( gpio_install_isr_service(0) );
   ESP_ERROR_CHECK( gpio_isr_handler_add(FEEDBACK_IO_NUM, feedback_isr_handler, (void*)FEEDBACK_IO_NUM) );
-
 #else
   config.intr_type = GPIO_INTR_DISABLE;
   ESP_ERROR_CHECK( gpio_config(&config) );
