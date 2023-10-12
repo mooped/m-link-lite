@@ -26,9 +26,194 @@ static const char* TAG = "m-link-http-server";
 /*
  * M-Link WebSocket handler
  */
+static void process_ws_payload(cJSON* root, cJSON* response)
+{
+  // Extract servo data
+  cJSON* servos = cJSON_GetObjectItem(root, "servos");
+  cJSON* servo = NULL;
+  if (cJSON_IsArray(servos))
+  {
+    // Process servo data
+    int index = 0;
+    cJSON_ArrayForEach(servo, servos)
+    {
+      if (cJSON_IsNumber(servo))
+      {
+        process_servo_event(index++, servo->valueint);
+      }
+    }
+
+    // Early out to avoid chewing up cycles - only if no other elements
+    if (servos->next == NULL && servos->prev == NULL)
+    {
+      return;
+    }
+  }
+
+  // Extract failsafe data
+  cJSON* failsafes = cJSON_GetObjectItem(root, "failsafes");
+  cJSON* failsafe = NULL;
+  if (cJSON_IsArray(failsafes))
+  {
+    // Process failsafe data
+    int index = 0;
+    cJSON_ArrayForEach(failsafe, failsafes)
+    {
+      if (cJSON_IsNumber(failsafe))
+      {
+        process_failsafe_event(index, failsafe->valueint);
+      }
+    }
+  }
+
+  // Apply settings?
+  cJSON* settings = cJSON_GetObjectItem(root, "settings");
+  if (settings)
+  {
+    bool any_updates = false;
+    cJSON* name = cJSON_GetObjectItem(settings, "name");
+    if (cJSON_IsString(name))
+    {
+      ESP_LOGI(TAG, "Set name to %s", name->valuestring);
+      settings_set_name(name->valuestring);
+      any_updates = true;
+    }
+    cJSON* ap_ssid = cJSON_GetObjectItem(settings, "ap_ssid");
+    if (cJSON_IsString(ap_ssid))
+    {
+      ESP_LOGI(TAG, "Set AP SSID to %s", ap_ssid->valuestring);
+      settings_set_ap_ssid(ap_ssid->valuestring);
+      any_updates = true;
+    }
+    cJSON* ap_password = cJSON_GetObjectItem(settings, "ap_password");
+    if (cJSON_IsString(ap_password))
+    {
+      ESP_LOGI(TAG, "Set AP password to %s", ap_password->valuestring);
+      settings_set_ap_password(ap_password->valuestring);
+      any_updates = true;
+    }
+    cJSON* ssid = cJSON_GetObjectItem(settings, "ssid");
+    if (cJSON_IsString(ssid))
+    {
+      ESP_LOGI(TAG, "Set SSID to %s", ssid->valuestring);
+      settings_set_ssid(ssid->valuestring);
+      any_updates = true;
+    }
+    cJSON* password = cJSON_GetObjectItem(settings, "password");
+    if (cJSON_IsString(password))
+    {
+      ESP_LOGI(TAG, "Set password to %s", password->valuestring);
+      settings_set_password(password->valuestring);
+      any_updates = true;
+    }
+    if (any_updates)
+    {
+      ESP_LOGI(TAG, "Writing settings");
+      settings_write();
+    }
+  }
+
+  // Reset settings
+  cJSON* reset_settings = cJSON_GetObjectItem(root, "reset_settings");
+  if (reset_settings)
+  {
+    if (cJSON_IsString(reset_settings) && strcmp(reset_settings->valuestring,  "sgnittes_teser") == 0)
+    {
+      ESP_LOGI(TAG, "Restoring default settings");
+      settings_reset_defaults();
+    }
+  }
+
+  // Reboot
+  cJSON* reboot = cJSON_GetObjectItem(root, "reboot");
+  if (reboot)
+  {
+    if (cJSON_IsString(reboot) && strcmp(reboot->valuestring,  "toober") == 0)
+    {
+      ESP_LOGI(TAG, "Rebooting");
+      esp_restart();
+    }
+  }
+
+  // Handle queries
+  cJSON* query= cJSON_GetObjectItem(root, "query");
+  if (cJSON_IsString(query))
+  {
+    // Querying battery level?
+    if (strcmp(query->valuestring, "battery") == 0)
+    {
+      // TODO: Figure out why cJSON_Print crashes on numbers!
+      char voltage_buffer[16];
+      snprintf(voltage_buffer, 15, "%d", query_battery_voltage());
+      voltage_buffer[15] = '\0';
+      cJSON* voltage = cJSON_CreateString(voltage_buffer);
+      cJSON_AddItemToObject(response, "battery", voltage);
+    }
+
+    // Querying failsafe?
+    if (strcmp(query->valuestring, "failsafes") == 0)
+    {
+      // TODO: Figure out why cJSON_Print crashes on numbers!
+      char failsafe_buffer[16];
+      cJSON* failsafes = cJSON_CreateArray();
+      const int num_channels = query_supported_channels();
+      for (int i = 0; i < num_channels; ++i)
+      {
+        snprintf(failsafe_buffer, 15, "%d", query_failsafe(i));
+        failsafe_buffer[15] = '\0';
+        cJSON* failsafe = cJSON_CreateString(failsafe_buffer);
+        cJSON_AddItemToArray(failsafes, failsafe);
+      }
+      cJSON_AddItemToObject(response, "failsafes", failsafes);
+    }
+
+    // Querying settings?
+    if (strcmp(query->valuestring, "settings") == 0)
+    {
+      cJSON* settings = cJSON_CreateObject();
+      {
+        cJSON* name = cJSON_CreateString(settings_get_name());
+        if (name)
+        {
+          cJSON_AddItemToObject(settings, "name", name);
+        }
+      }
+      {
+        cJSON* ap_ssid = cJSON_CreateString(settings_get_ap_ssid());
+        if (ap_ssid)
+        {
+          cJSON_AddItemToObject(settings, "ap_ssid", ap_ssid);
+        }
+      }
+      {
+        cJSON* ap_password = cJSON_CreateString(settings_get_ap_password());
+        if (ap_password)
+        {
+          cJSON_AddItemToObject(settings, "ap_password", ap_password);
+        }
+      }
+      {
+        cJSON* ssid = cJSON_CreateString(settings_get_ssid());
+        if (ssid)
+        {
+          cJSON_AddItemToObject(settings, "ssid", ssid);
+        }
+      }
+      {
+        cJSON* password = cJSON_CreateString(settings_get_password());
+        if (password)
+        {
+          cJSON_AddItemToObject(settings, "password", password);
+        }
+      }
+      cJSON_AddItemToObject(response, "settings", settings);
+    }
+  }
+}
+
 static esp_err_t ws_handler(httpd_req_t *req)
 {
-  static int packet_count = 0;
+  //static int packet_count = 0;
   if (req->method == HTTP_GET) {
     ESP_LOGI(TAG, "Handshake done, the new connection was opened");
     return ESP_OK;
@@ -59,7 +244,7 @@ static esp_err_t ws_handler(httpd_req_t *req)
       free(buf);
       return ret;
     }
-    ESP_LOGI(TAG, "Packet %d Message: %s", ++packet_count, ws_pkt.payload);
+    //ESP_LOGI(TAG, "Packet %d Message: %s", ++packet_count, ws_pkt.payload);
   }
 
   // Build response
@@ -69,182 +254,7 @@ static esp_err_t ws_handler(httpd_req_t *req)
   cJSON* root = cJSON_Parse((char*)ws_pkt.payload);
   if (root)
   {
-    // Extract servo data
-    cJSON* servos = cJSON_GetObjectItem(root, "servos");
-    cJSON* servo = NULL;
-    if (cJSON_IsArray(servos))
-    {
-      // Process servo data
-      int index = 0;
-      cJSON_ArrayForEach(servo, servos)
-      {
-        if (cJSON_IsNumber(servo))
-        {
-          process_servo_event(index++, servo->valueint);
-        }
-      }
-    }
-
-    // Extract failsafe data
-    cJSON* failsafes = cJSON_GetObjectItem(root, "failsafes");
-    cJSON* failsafe = NULL;
-    if (cJSON_IsArray(failsafes))
-    {
-      // Process failsafe data
-      int index = 0;
-      cJSON_ArrayForEach(failsafe, failsafes)
-      {
-        if (cJSON_IsNumber(failsafe))
-        {
-          process_failsafe_event(index, failsafe->valueint);
-        }
-      }
-    }
-
-    // Apply settings?
-    cJSON* settings = cJSON_GetObjectItem(root, "settings");
-    if (settings)
-    {
-      bool any_updates = false;
-      cJSON* name = cJSON_GetObjectItem(settings, "name");
-      if (cJSON_IsString(name))
-      {
-        ESP_LOGI(TAG, "Set name to %s", name->valuestring);
-        settings_set_name(name->valuestring);
-        any_updates = true;
-      }
-      cJSON* ap_ssid = cJSON_GetObjectItem(settings, "ap_ssid");
-      if (cJSON_IsString(ap_ssid))
-      {
-        ESP_LOGI(TAG, "Set AP SSID to %s", ap_ssid->valuestring);
-        settings_set_ap_ssid(ap_ssid->valuestring);
-        any_updates = true;
-      }
-      cJSON* ap_password = cJSON_GetObjectItem(settings, "ap_password");
-      if (cJSON_IsString(ap_password))
-      {
-        ESP_LOGI(TAG, "Set AP password to %s", ap_password->valuestring);
-        settings_set_ap_password(ap_password->valuestring);
-        any_updates = true;
-      }
-      cJSON* ssid = cJSON_GetObjectItem(settings, "ssid");
-      if (cJSON_IsString(ssid))
-      {
-        ESP_LOGI(TAG, "Set SSID to %s", ssid->valuestring);
-        settings_set_ssid(ssid->valuestring);
-        any_updates = true;
-      }
-      cJSON* password = cJSON_GetObjectItem(settings, "password");
-      if (cJSON_IsString(password))
-      {
-        ESP_LOGI(TAG, "Set password to %s", password->valuestring);
-        settings_set_password(password->valuestring);
-        any_updates = true;
-      }
-      if (any_updates)
-      {
-        ESP_LOGI(TAG, "Writing settings");
-        settings_write();
-      }
-    }
-
-    // Reset settings
-    cJSON* reset_settings = cJSON_GetObjectItem(root, "reset_settings");
-    if (reset_settings)
-    {
-      if (cJSON_IsString(reset_settings) && strcmp(reset_settings->valuestring,  "sgnittes_teser") == 0)
-      {
-        ESP_LOGI(TAG, "Restoring default settings");
-        settings_reset_defaults();
-      }
-    }
-
-    // Reboot
-    cJSON* reboot = cJSON_GetObjectItem(root, "reboot");
-    if (reboot)
-    {
-      if (cJSON_IsString(reboot) && strcmp(reboot->valuestring,  "toober") == 0)
-      {
-        ESP_LOGI(TAG, "Rebooting");
-        esp_restart();
-      }
-    }
-
-    // Handle queries
-    cJSON* query= cJSON_GetObjectItem(root, "query");
-    if (cJSON_IsString(query))
-    {
-      // Querying battery level?
-      if (strcmp(query->valuestring, "battery") == 0)
-      {
-        // TODO: Figure out why cJSON_Print crashes on numbers!
-        char voltage_buffer[16];
-        snprintf(voltage_buffer, 15, "%d", query_battery_voltage());
-        voltage_buffer[15] = '\0';
-        cJSON* voltage = cJSON_CreateString(voltage_buffer);
-        cJSON_AddItemToObject(response, "battery", voltage);
-      }
-
-      // Querying failsafe?
-      if (strcmp(query->valuestring, "failsafes") == 0)
-      {
-        // TODO: Figure out why cJSON_Print crashes on numbers!
-        char failsafe_buffer[16];
-        cJSON* failsafes = cJSON_CreateArray();
-        const int num_channels = query_supported_channels();
-        for (int i = 0; i < num_channels; ++i)
-        {
-          snprintf(failsafe_buffer, 15, "%d", query_failsafe(i));
-          failsafe_buffer[15] = '\0';
-          cJSON* failsafe = cJSON_CreateString(failsafe_buffer);
-          cJSON_AddItemToArray(failsafes, failsafe);
-        }
-        cJSON_AddItemToObject(response, "failsafes", failsafes);
-      }
-
-      // Querying settings?
-      if (strcmp(query->valuestring, "settings") == 0)
-      {
-        cJSON* settings = cJSON_CreateObject();
-        {
-          cJSON* name = cJSON_CreateString(settings_get_name());
-          if (name)
-          {
-            cJSON_AddItemToObject(settings, "name", name);
-          }
-        }
-        {
-          cJSON* ap_ssid = cJSON_CreateString(settings_get_ap_ssid());
-          if (ap_ssid)
-          {
-            cJSON_AddItemToObject(settings, "ap_ssid", ap_ssid);
-          }
-        }
-        {
-          cJSON* ap_password = cJSON_CreateString(settings_get_ap_password());
-          if (ap_password)
-          {
-            cJSON_AddItemToObject(settings, "ap_password", ap_password);
-          }
-        }
-        {
-          cJSON* ssid = cJSON_CreateString(settings_get_ssid());
-          if (ssid)
-          {
-            cJSON_AddItemToObject(settings, "ssid", ssid);
-          }
-        }
-        {
-          cJSON* password = cJSON_CreateString(settings_get_password());
-          if (password)
-          {
-            cJSON_AddItemToObject(settings, "password", password);
-          }
-        }
-        cJSON_AddItemToObject(response, "settings", settings);
-      }
-    }
-
+    process_ws_payload(root, response);
     cJSON_Delete(root);
   }
 
@@ -254,7 +264,7 @@ static esp_err_t ws_handler(httpd_req_t *req)
 
   char response_buffer[256];
   cJSON_PrintPreallocated(response, response_buffer, sizeof(response_buffer), false);
-  ESP_LOGI(TAG, "WS Response: %s", response_buffer);
+  //ESP_LOGI(TAG, "WS Response: %s", response_buffer);
   cJSON_Delete(response);
   httpd_ws_frame_t response_pkt = {
     .final = false,

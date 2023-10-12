@@ -24,6 +24,7 @@
 #include <esp_spiffs.h>
 #include <esp_vfs.h>
 
+#include "twi.h"
 #include "battery.h"
 #include "button.h"
 #include "dns.h"
@@ -208,12 +209,11 @@ void rx_failsafe_callback(xTimerHandle xTimer)
       servo_set(channel, failsafes[channel]);
     }
   }
-  servo_refresh();
 }
 
 void rx_task(void* args)
 {
-  ESP_LOGI(TAG, "Started servo task");
+  ESP_LOGI(TAG, "Started rx task");
 
   // Wait 2 seconds on startup before enabling the servos
   vTaskDelay(pdMS_TO_TICKS(2000));
@@ -234,7 +234,6 @@ void rx_task(void* args)
       {
         servo_set(channel, servos[channel]);
       }
-      servo_refresh();
     }
 
     // Wait for the next interval
@@ -244,6 +243,11 @@ void rx_task(void* args)
 
 void app_main()
 {
+#if 1
+  // Initialise I2C driver
+  ESP_ERROR_CHECK( twi_init() );
+#endif
+
   // Initialise and immediately disable servo module as soon as possible to avoid glitches
   servo_init();
   servo_disable();
