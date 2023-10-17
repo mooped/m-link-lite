@@ -19,7 +19,8 @@
 
 #include "pca9685.h"
 
-#define PCA9685_ADDR (0x40<<1) // All address inputs set to zero
+#define PCA9685_DEFAULT_ADDR   (0x40<<1) // Default to all address inputs set to zero
+#define PCA9685_ADDR           pca9685_addr
 
 #define PCA9685_NUM_CHANNELS   16
 
@@ -130,6 +131,8 @@ typedef enum
 #define PCA9685_FULL_ON     0x10    // Special 'full on' value when used in *_ON_H register
 #define PCA9685_FULL_OFF    0x10    // Special 'full off' value when used in *_OFF_H register
 
+int pca9685_addr = PCA9685_DEFAULT_ADDR;
+
 inline esp_err_t twi_write_addr(i2c_cmd_handle_t cmd, uint8_t addr)
 {
   return i2c_master_write_byte(cmd, addr | WRITE_BIT, ACK_CHECK_EN);
@@ -219,6 +222,11 @@ static esp_err_t twi_pca9685_read_registers(uint8_t reg, uint8_t* values, size_t
 }
 #endif
 
+void pca9685_set_addr(int address)
+{
+  pca9685_addr = address;
+}
+
 void pca9685_initialize(void)
 {
   // Software reset
@@ -247,7 +255,8 @@ void pca9685_set_raw(int channel, int value)
   {
     if (value <= 0)
     {
-      value = 1;
+      pca9685_set_off(channel);
+      return;
     }
     uint8_t buffer[] = { 0x00, 0x00, value & 0xff, (value >> 8) & PCA9685_HIGH_MASK};
     ESP_ERROR_CHECK(twi_pca9685_write_registers(PCA9685_LED0_ON_L + 4 * channel, buffer, sizeof(buffer)));
@@ -258,7 +267,8 @@ void pca9685_set_all_raw(int value)
 {
   if (value <= 0)
   {
-    value = 1;
+    pca9685_set_all_off();
+    return;
   }
   uint8_t buffer[] = { 0x00, 0x00, value & 0xff, (value >> 8) & PCA9685_HIGH_MASK};
   ESP_ERROR_CHECK(twi_pca9685_write_registers(PCA9685_ALL_LED_ON_L, buffer, sizeof(buffer)));
@@ -272,7 +282,8 @@ void pca9685_set_microseconds(int channel, int pulsewidth)
     int value = (pulsewidth * 4095) / period;
     if (value <= 0)
     {
-      value = 1;
+      pca9685_set_off(channel);
+      return;
     }
     uint8_t buffer[] = { 0x00, 0x00, value & 0xff, (value >> 8) & PCA9685_HIGH_MASK};
     ESP_ERROR_CHECK(twi_pca9685_write_registers(PCA9685_LED0_ON_L + 4 * channel, buffer, sizeof(buffer)));
@@ -285,7 +296,8 @@ void pca9685_set_all_microseconds(int pulsewidth)
   int value = (pulsewidth * 4095) / period ;
   if (value <= 0)
   {
-    value = 1;
+    pca9685_set_all_off();
+    return;
   }
   uint8_t buffer[] = { 0x00, 0x00, value & 0xff, (value >> 8) & PCA9685_HIGH_MASK};
   ESP_ERROR_CHECK(twi_pca9685_write_registers(PCA9685_ALL_LED_ON_L, buffer, sizeof(buffer)));

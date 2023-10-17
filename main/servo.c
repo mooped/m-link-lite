@@ -83,7 +83,11 @@ void servo_disable(void)
 
 void servo_set(int channel, int pulsewidth_ms)
 {
-  if (pulsewidth_ms <= 1000)
+  if (pulsewidth_ms == 0) // No output
+  {
+    duties[channel] = 0;
+  }
+  else if (pulsewidth_ms <= 1000)
   {
     duties[channel] = 1000;
   }

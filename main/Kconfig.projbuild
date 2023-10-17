@@ -12,15 +12,23 @@ menu "M-Link Configuration"
         help
             Board has a button to reset to default configuration.
 
-    config PLUS
-        boolean "Plus"
+    config HEXAPOD
+        boolean "Hexapod"
         default false
         help
-            Board is an M-Link plus with a PCA9685 and DRV8837 motor drivers.
+            Combine the internal PCA9685 and an external PCA9685 on address 0x82/0x81 for 19 total servo outputs.
+            Motors are not usable in this mode due to the low PWM frequency required for the servos.
+
+    config PLUS
+        boolean "Plus"
+        depends on !HEXAPOD
+        default false
+        help
+            Board is an M-Link Plus with a PCA9685 and DRV8837 motor drivers.
 
     config PCA9865_FEEDBACK
         boolean "PCA9685 Feedback"
-        depends on PLUS
+        depends on PLUS && !HEXAPOD
         default false
         help
             Use precise servo timings driven from a feedback line from the PCA9685.

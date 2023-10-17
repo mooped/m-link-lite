@@ -1,6 +1,8 @@
 // PCA9685 PWM controller driver
 #pragma once
 
+void pca9685_set_addr(int address);
+
 void pca9685_initialize(void);
 
 void pca9685_set_raw(int channel, int pulsewidth);

@@ -119,9 +119,15 @@ void rx_telemetry_task(void* args)
 xTimerHandle rx_failsafe_timer = NULL;
 bool failsafe_elapsed = false;
 
-#define SERVO_NUM   6
+#if defined(CONFIG_HEXAPOD)
+# define SERVO_NUM   19
+static int servos[SERVO_NUM] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+static int failsafes[SERVO_NUM] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+#else
+# define SERVO_NUM   6
 static int servos[SERVO_NUM] = { 1500, 1500, 1500, 1500, 1500, 1500 };
 static int failsafes[SERVO_NUM] = { 1500, 1500, 1500, 1500, 1500, 1500 };
+#endif
 
 int query_supported_channels(void)
 {
@@ -289,7 +295,7 @@ void app_main()
   xTaskCreate(rx_telemetry_task, "rx-telemetry-task", 2048, NULL, 7, NULL);
 
   // Initialise mDNS
-  mlink_dns_init();
+  //mlink_dns_init();
 
   // Start failsafe timer
   rx_failsafe_timer = xTimerCreate("rx-failsafe-timer", pdMS_TO_TICKS(500), pdTRUE, NULL, rx_failsafe_callback);

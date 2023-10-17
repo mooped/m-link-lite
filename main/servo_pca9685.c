@@ -24,28 +24,50 @@
 
 #include "servo.h"
 
-#define ENABLE_IO_NUM             12
-#define FEEDBACK_IO_NUM           13
-
-#define PCA9685_CHANNEL_SLEEP     0
-#define PCA9685_CHANNEL_FEEDBACK  2
-#define PCA9685_CHANNEL_M1A       11
-#define PCA9685_CHANNEL_M1B       10
-#define PCA9685_CHANNEL_M2A       9
-#define PCA9685_CHANNEL_M2B       8
-#define PCA9685_CHANNEL_M3A       7
-#define PCA9685_CHANNEL_M3B       6
-#define PCA9685_CHANNEL_CH4       5
-#define PCA9685_CHANNEL_CH5       4
-#define PCA9685_CHANNEL_CH6       3
-
-#define SERVO_NUM_CHANNELS        9
-
 static const char *TAG = "pca9685-servo";
+
+#if defined(CONFIG_HEXAPOD)
+
+// Local - channels 16 - 18
+#define PCA9685_LOCAL_ADDR        (0x40<<1)
+#define PCA9685_LOCAL_NUM         3
+#define PCA9685_LOCAL_START       16
+
+// Remote - channels 0 - 16
+#define PCA9685_REMOTE_ADDR       (0x41<<1)
+#define PCA9685_REMOTE_NUM        16
+#define PCA9685_REMOTE_START      0
+
+# define SERVO_NUM_CHANNELS       19
+
+static uint32_t pulsewidths[SERVO_NUM_CHANNELS] = {
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+};
+
+#else
+
+# define ENABLE_IO_NUM            12
+# define FEEDBACK_IO_NUM          13
+
+# define PCA9685_CHANNEL_SLEEP    0
+# define PCA9685_CHANNEL_FEEDBACK 2
+# define PCA9685_CHANNEL_M1A      11
+# define PCA9685_CHANNEL_M1B      10
+# define PCA9685_CHANNEL_M2A      9
+# define PCA9685_CHANNEL_M2B      8
+# define PCA9685_CHANNEL_M3A      7
+# define PCA9685_CHANNEL_M3B      6
+# define PCA9685_CHANNEL_CH4      5
+# define PCA9685_CHANNEL_CH5      4
+# define PCA9685_CHANNEL_CH6      3
+
+# define SERVO_NUM_CHANNELS       9
 
 static uint32_t pulsewidths[SERVO_NUM_CHANNELS] = {
   1500, 1500, 1500, 1500, 1500, 1500,
 };
+
+#endif
 
 static SemaphoreHandle_t xServoSemaphore = NULL;
 
@@ -66,7 +88,11 @@ void servo_set(int channel, int pulsewidth_ms)
   if (channel >= 0 && channel < SERVO_NUM_CHANNELS)
   {
     // Store pulsewidth for the channel
-    if (pulsewidth_ms <= 1000)
+    if (pulsewidth_ms == 0) // No output
+    {
+      pulsewidths[channel] = 0;
+    }
+    else if (pulsewidth_ms <= 1000)
     {
       pulsewidths[channel] = 1000;
     }
@@ -105,6 +131,7 @@ static void motor_set(int channel_a, int channel_b, int pulsewidth)
   }
 }
 
+#if !defined(CONFIG_HEXAPOD)
 void servo_set_all(int s1, int s2, int s3, int s4, int s5, int s6)
 {
   servo_set(0, s1);
@@ -114,6 +141,7 @@ void servo_set_all(int s1, int s2, int s3, int s4, int s5, int s6)
   servo_set(4, s5);
   servo_set(5, s6);
 }
+#endif
 
 static void feedback_isr_handler(void* arg)
 {
@@ -130,7 +158,31 @@ void servo_task(void* args)
 {
   ESP_LOGI(TAG, "Started servo task");
 
-#if CONFIG_PCA9685_FEEDBACK
+#if defined(CONFIG_HEXAPOD)
+  // Update servos every 20 ms
+  const TickType_t interval = pdMS_TO_TICKS(18);
+  TickType_t previous_wake_time = xTaskGetTickCount();
+
+  for (;;)
+  {
+    // Local
+    pca9685_set_addr(PCA9685_LOCAL_ADDR);
+    if (int i = 0; i < PCA9685_LOCAL_NUM; ++i)
+    {
+      pca9685_set_microseconds(i, pulsewidths[i + PCA9685_LOCAL_START]);
+    }
+    
+    // Remote
+    pca9685_set_addr(PCA9685_REMOTE_ADDR);
+    if (int i = 0; i < PCA9685_REMOTE_NUM; ++i)
+    {
+      pca9685_set_microseconds(i, pulsewidths[i + PCA9685_REMOTE_START]);
+    }
+
+    // Wait for the next interval
+    vTaskDelayUntil(&previous_wake_time, interval);
+  }
+#elif defined(CONFIG_PCA9685_FEEDBACK)
   // Enable feedback pulse
   pca9685_set_microseconds(PCA9685_CHANNEL_FEEDBACK, 1500);
 
@@ -194,7 +246,14 @@ void servo_init(void)
   xServoSemaphore = xSemaphoreCreateBinary();
 
   // Initialize the PCA 9685
+#if defined(CONFIG_HEXAPOD)
+  pca9685_set_addr(PCA9685_LOCAL_ADDR);
   pca9685_initialize();
+  pca9685_set_addr(PCA9685_REMOTE_ADDR);
+  pca9685_initialize();
+#else
+  pca9685_initialize();
+#endif
 
   // Configure the enable pin and pull high to disable
   gpio_config_t config;
@@ -223,8 +282,13 @@ void servo_init(void)
 #endif
 
   // Configure the sleep pin on the PCA9685 high to disable sleep when outputs are enabled
+  pca9685_set_addr(PCA9685_LOCAL_ADDR);
   pca9685_set_all_off();
+#if !defined(CONFIG_HEXAPOD)
   pca9685_set_on(PCA9685_CHANNEL_SLEEP);
+#endif
+  pca9685_set_addr(PCA9685_REMOTE_ADDR);
+  pca9685_set_all_off();
 
   ESP_LOGI(TAG, "PCA9685 Initialised");
   xTaskCreate(servo_task, "servo-task", 2048, NULL, 11, NULL);
