@@ -56,282 +56,13 @@
         margin: 0;
       }
       #panel {
-        width: 50%;
-        height: 50%;
-      }
-      .no-edit #panel {
         width: 100% !important;
         height: 100% !important;
-      }
-      .no-edit #mixer-panel {
-        display: none !important;
-      }
-      .no-edit #layout-panel {
-        display: none !important;
-      }
-      @media (max-width: 1250px) {
-        body {
-          overflow-y: scroll;
-        }
-        #panel {
-          width: 100%;
-          height: 80%;
-        }
-        #mixer-panel {
-          width: 98%;
-          height: 100%;
-          top: 210%;
-          left: 1%;
-        }
-        #layout-panel {
-          width: 90%;
-          height: 100%;
-          top: 100%;
-          left: 5%;
-        }
       }
     </style>
   </head>
   <body>
     <div id="panel"></div>
-    <form id="mixer-panel">
-      <b style="grid-area: header;" class="title">Mixer</b>
-      <div style="grid-area: in1">In 1</div>
-      <div style="grid-area: in2">In 2</div>
-      <div style="grid-area: in3">In 3</div>
-      <div style="grid-area: in4">In 4</div>
-      <div style="grid-area: in5">In 5</div>
-      <div style="grid-area: in6">In 6</div>
-      <div style="grid-area: out1">Out 1</div>
-      <div style="grid-area: out2">Out 2</div>
-      <div style="grid-area: out3">Out 3</div>
-      <div style="grid-area: out4">Out 4</div>
-      <div style="grid-area: out5">Out 5</div>
-      <div style="grid-area: out6">Out 6</div>
-      <div style="grid-area: out6">Out 6</div>
-      <div style="grid-area: v1" id="v1">0.0</div>
-      <div style="grid-area: v2" id="v2">0.0</div>
-      <div style="grid-area: v3" id="v3">0.0</div>
-      <div style="grid-area: v4" id="v4">0.0</div>
-      <div style="grid-area: v5" id="v5">0.0</div>
-      <div style="grid-area: v6" id="v6">0.0</div>
-      <input style="grid-area: c11;" type="number" id="c11" name="c11" value="1" step="0.01"/>
-      <input style="grid-area: c21;" type="number" id="c21" name="c21" value="0" step="0.01"/>
-      <input style="grid-area: c31;" type="number" id="c31" name="c31" value="0" step="0.01"/>
-      <input style="grid-area: c41;" type="number" id="c41" name="c41" value="0" step="0.01"/>
-      <input style="grid-area: c51;" type="number" id="c51" name="c51" value="0" step="0.01"/>
-      <input style="grid-area: c61;" type="number" id="c61" name="c61" value="0" step="0.01"/>
-      <input style="grid-area: c12;" type="number" id="c12" name="c12" value="0" step="0.01"/>
-      <input style="grid-area: c22;" type="number" id="c22" name="c22" value="1" step="0.01"/>
-      <input style="grid-area: c32;" type="number" id="c32" name="c32" value="0" step="0.01"/>
-      <input style="grid-area: c42;" type="number" id="c42" name="c42" value="0" step="0.01"/>
-      <input style="grid-area: c52;" type="number" id="c52" name="c52" value="0" step="0.01"/>
-      <input style="grid-area: c62;" type="number" id="c62" name="c62" value="0" step="0.01"/>
-      <input style="grid-area: c13;" type="number" id="c13" name="c13" value="0" step="0.01"/>
-      <input style="grid-area: c23;" type="number" id="c23" name="c23" value="0" step="0.01"/>
-      <input style="grid-area: c33;" type="number" id="c33" name="c33" value="1" step="0.01"/>
-      <input style="grid-area: c43;" type="number" id="c43" name="c43" value="0" step="0.01"/>
-      <input style="grid-area: c53;" type="number" id="c53" name="c53" value="0" step="0.01"/>
-      <input style="grid-area: c63;" type="number" id="c63" name="c63" value="0" step="0.01"/>
-      <input style="grid-area: c14;" type="number" id="c14" name="c14" value="0" step="0.01"/>
-      <input style="grid-area: c24;" type="number" id="c24" name="c24" value="0" step="0.01"/>
-      <input style="grid-area: c34;" type="number" id="c34" name="c34" value="0" step="0.01"/>
-      <input style="grid-area: c44;" type="number" id="c44" name="c44" value="1" step="0.01"/>
-      <input style="grid-area: c54;" type="number" id="c54" name="c54" value="0" step="0.01"/>
-      <input style="grid-area: c64;" type="number" id="c64" name="c64" value="0" step="0.01"/>
-      <input style="grid-area: c15;" type="number" id="c15" name="c15" value="0" step="0.01"/>
-      <input style="grid-area: c25;" type="number" id="c25" name="c25" value="0" step="0.01"/>
-      <input style="grid-area: c35;" type="number" id="c35" name="c35" value="0" step="0.01"/>
-      <input style="grid-area: c45;" type="number" id="c45" name="c45" value="0" step="0.01"/>
-      <input style="grid-area: c55;" type="number" id="c55" name="c55" value="1" step="0.01"/>
-      <input style="grid-area: c65;" type="number" id="c65" name="c65" value="0" step="0.01"/>
-      <input style="grid-area: c16;" type="number" id="c16" name="c16" value="0" step="0.01"/>
-      <input style="grid-area: c26;" type="number" id="c26" name="c26" value="0" step="0.01"/>
-      <input style="grid-area: c36;" type="number" id="c36" name="c36" value="0" step="0.01"/>
-      <input style="grid-area: c46;" type="number" id="c46" name="c46" value="0" step="0.01"/>
-      <input style="grid-area: c56;" type="number" id="c56" name="c56" value="0" step="0.01"/>
-      <input style="grid-area: c66;" type="number" id="c66" name="c66" value="1" step="0.01"/>
-    </form>
-    <form id="layout-panel">
-      <b style="grid-area: p1;" class="title">Panel 1</b>
-      <label style="grid-area: w1l" for="w1">Width</label>
-      <label style="grid-area: h1l" for="h1">Height</label>
-      <label style="grid-area: t1l" for="t1">Type</label>
-      <label style="grid-area: ca1l" for="ca1">X/B</label>
-      <label style="grid-area: cb1l" for="cb1">Y</label>
-      <label style="grid-area: f1l" for="f1">Fg</label>
-      <label style="grid-area: b1l" for="b1">Bg</label>
-      <label style="grid-area: l1l" for="l1">Label</label>
-      <label style="grid-area: va1l" for="va1">Idle</label>
-      <label style="grid-area: vb1l" for="vb1">Active</label>
-
-      <input style="grid-area: w1" type="number" id="w1" name="w1" value="5" min="1" max="5"/>
-      <input style="grid-area: h1" type="number" id="h1" name="h1" value="5" min="1" max="5"/>
-      <select style="grid-area: t1" id="t1" name="t1">
-        <option value="u">Unused</option>
-        <option value="j" selected>Joystick</option>
-        <option value="b">Button</option>
-        <option value="p">Padding</option>
-      </select>
-      <input style="grid-area: ca1" type="number" id="ca1" name="ca1" value="1" min="0" max="6"/>
-      <input style="grid-area: cb1" type="number" id="cb1" name="cb1" value="2" min="0" max="6"/>
-      <input style="grid-area: f1" type="color" id="f1" name="f1" value="#195905"/>
-      <input style="grid-area: b1" type="color" id="b1" name="b1" value="#f0feec"/>
-      <input style="grid-area: l1" type="text" id="l1" name="l1" value=""/>
-      <input style="grid-area: va1" type="number" id="va1" name="va1" value="-1" step="0.01"/>
-      <input style="grid-area: vb1" type="number" id="vb1" name="vb1" value="1" step="0.01"/>
-
-      <b style="grid-area: p2;" class="title">Panel 2</b>
-      <label style="grid-area: w2l" for="w2">Width</label>
-      <label style="grid-area: h2l" for="h2">Height</label>
-      <label style="grid-area: t2l" for="t2">Type</label>
-      <label style="grid-area: ca2l" for="ca2">X/B</label>
-      <label style="grid-area: cb2l" for="cb2">Y</label>
-      <label style="grid-area: f2l" for="f2">Fg</label>
-      <label style="grid-area: b2l" for="b2">Bg</label>
-      <label style="grid-area: l2l" for="l1">Label</label>
-      <label style="grid-area: va2l" for="va2">Idle</label>
-      <label style="grid-area: vb2l" for="vb2">Active</label>
-
-      <input style="grid-area: w2" type="number" id="w2" name="w2" value="1" min="1" max="5"/>
-      <input style="grid-area: h2" type="number" id="h2" name="h2" value="1" min="1" max="5"/>
-      <select style="grid-area: t2" id="t2" name="t2">
-        <option value="u" selected>Unused</option>
-        <option value="j">Joystick</option>
-        <option value="b">Button</option>
-        <option value="p">Padding</option>
-      </select>
-      <input style="grid-area: ca2" type="number" id="ca2" name="ca2" value="3" min="0" max="6" data-pn="1" data-types="jb"/>
-      <input style="grid-area: cb2" type="number" id="cb2" name="cb2" value="4" min="0" max="6" data-pn="1" data-types="j"/>
-      <input style="grid-area: f2" type="color" id="f2" name="f2" value="#8e5572"/>
-      <input style="grid-area: b2" type="color" id="b2" name="b2" value="#e8d9e1"/>
-      <input style="grid-area: l2" type="text" id="l2" name="l2" value="" data-pn="1" data-types="jbp"/>
-      <input style="grid-area: va2" type="number" id="va2" name="va2" value="-1" step="0.01" data-pn="1" data-types="b"/>
-      <input style="grid-area: vb2" type="number" id="vb2" name="vb2" value="1" step="0.01" data-pn="1" data-types="b"/>
-
-      <b style="grid-area: p3;" class="title">Panel 3</b>
-      <label style="grid-area: w3l" for="w3">Width</label>
-      <label style="grid-area: h3l" for="h3">Height</label>
-      <label style="grid-area: t3l" for="t3">Type</label>
-      <label style="grid-area: ca3l" for="ca3">X/B</label>
-      <label style="grid-area: cb3l" for="cb3">Y</label>
-      <label style="grid-area: f3l" for="f3">Fg</label>
-      <label style="grid-area: b3l" for="b3">Bg</label>
-      <label style="grid-area: l3l" for="l3">Label</label>
-      <label style="grid-area: va3l" for="va3">Idle</label>
-      <label style="grid-area: vb3l" for="vb3">Active</label>
-
-      <input style="grid-area: w3" type="number" id="w3" name="w3" value="1" min="1" max="5"/>
-      <input style="grid-area: h3" type="number" id="h3" name="h3" value="1" min="1" max="5"/>
-      <select style="grid-area: t3" id="t3" name="t3">
-        <option value="u" selected>Unused</option>
-        <option value="j">Joystick</option>
-        <option value="b">Button</option>
-        <option value="p">Padding</option>
-      </select>
-      <input style="grid-area: ca3" type="number" id="ca3" name="ca3" value="5" min="0" max="6"/>
-      <input style="grid-area: cb3" type="number" id="cb3" name="cb3" value="6" min="0" max="6"/>
-      <input style="grid-area: f3" type="color" id="f3" name="f3" value="#6eb257"/>
-      <input style="grid-area: b3" type="color" id="b3" name="b3" value="#dbecd5"/>
-      <input style="grid-area: l3" type="text" id="l3" name="l3" value=""/>
-      <input style="grid-area: va3" type="number" id="va3" name="va3" value="-1" step="0.01"/>
-      <input style="grid-area: vb3" type="number" id="vb3" name="vb3" value="1" step="0.01"/>
-
-      <b style="grid-area: p4;" class="title">Panel 4</b>
-      <label style="grid-area: w4l" for="w4">Width</label>
-      <label style="grid-area: h4l" for="h4">Height</label>
-      <label style="grid-area: t4l" for="t4">Type</label>
-      <label style="grid-area: ca4l" for="ca4">X/B</label>
-      <label style="grid-area: cb4l" for="cb4">Y</label>
-      <label style="grid-area: f4l" for="f4">Fg</label>
-      <label style="grid-area: b4l" for="b4">Bg</label>
-      <label style="grid-area: l4l" for="l4">Label</label>
-      <label style="grid-area: va4l" for="va4">Idle</label>
-      <label style="grid-area: vb4l" for="vb4">Active</label>
-
-      <input style="grid-area: w4" type="number" id="w4" name="w4" value="1" min="1" max="5"/>
-      <input style="grid-area: h4" type="number" id="h4" name="h4" value="1" min="1" max="5"/>
-      <select style="grid-area: t4" id="t4" name="t4">
-        <option value="u" selected>Unused</option>
-        <option value="j">Joystick</option>
-        <option value="b">Button</option>
-        <option value="p">Padding</option>
-      </select>
-      <input style="grid-area: ca4" type="number" id="ca4" name="ca4" value="0" min="0" max="6"/>
-      <input style="grid-area: cb4" type="number" id="cb4" name="cb4" value="0" min="0" max="6"/>
-      <input style="grid-area: f4" type="color" id="f4" name="f4" value="#f18f01"/>
-      <input style="grid-area: b4" type="color" id="b4" name="b4" value="#ffe6c2"/>
-      <input style="grid-area: l4" type="text" id="l4" name="l4" value=""/>
-      <input style="grid-area: va4" type="number" id="va4" name="va4" value="-1" step="0.01"/>
-      <input style="grid-area: vb4" type="number" id="vb4" name="vb4" value="1" step="0.01"/>
-
-      <b style="grid-area: p5;" class="title">Panel 5</b>
-      <label style="grid-area: w5l" for="w5">Width</label>
-      <label style="grid-area: h5l" for="h5">Height</label>
-      <label style="grid-area: t5l" for="t5">Type</label>
-      <label style="grid-area: ca5l" for="ca5">X/B</label>
-      <label style="grid-area: cb5l" for="cb5">Y</label>
-      <label style="grid-area: f5l" for="f5">Fg</label>
-      <label style="grid-area: b5l" for="b5">Bg</label>
-      <label style="grid-area: l5l" for="l5">Label</label>
-      <label style="grid-area: va5l" for="va5">Idle</label>
-      <label style="grid-area: vb5l" for="vb5">Active</label>
-
-      <input style="grid-area: w5" type="number" id="w5" name="w5" value="1" min="1" max="5"/>
-      <input style="grid-area: h5" type="number" id="h5" name="h5" value="1" min="1" max="5"/>
-      <select style="grid-area: t5" id="t5" name="t5">
-        <option value="u" selected>Unused</option>
-        <option value="j">Joystick</option>
-        <option value="b">Button</option>
-        <option value="p">Padding</option>
-      </select>
-      <input style="grid-area: ca5" type="number" id="ca5" name="ca5" value="0" min="0" max="6"/>
-      <input style="grid-area: cb5" type="number" id="cb5" name="cb5" value="0" min="0" max="6"/>
-      <input style="grid-area: f5" type="color" id="f5" name="f5" value="#d0f0c0"/>
-      <input style="grid-area: b5" type="color" id="b5" name="b5" value="#285313"/>
-      <input style="grid-area: l5" type="text" id="l5" name="l5" value=""/>
-      <input style="grid-area: va5" type="number" id="va5" name="va5" value="-1" step="0.01"/>
-      <input style="grid-area: vb5" type="number" id="vb5" name="vb5" value="1" step="0.01"/>
-
-      <b style="grid-area: p6;" class="title">Panel 6</b>
-      <label style="grid-area: w6l" for="w6">Width</label>
-      <label style="grid-area: h6l" for="h6">Height</label>
-      <label style="grid-area: t6l" for="t6">Type</label>
-      <label style="grid-area: ca6l" for="ca6">X/B</label>
-      <label style="grid-area: cb6l" for="cb6">Y</label>
-      <label style="grid-area: f6l" for="f6">Fg</label>
-      <label style="grid-area: b6l" for="b6">Bg</label>
-      <label style="grid-area: l6l" for="l6">Label</label>
-      <label style="grid-area: va6l" for="va6">Idle</label>
-      <label style="grid-area: vb6l" for="vb6">Active</label>
-
-      <input style="grid-area: w6" type="number" id="w6" name="w6" value="1" min="1" max="5"/>
-      <input style="grid-area: h6" type="number" id="h6" name="h6" value="1" min="1" max="5"/>
-      <select style="grid-area: t6" id="t6" name="t6">
-        <option value="u" selected>Unused</option>
-        <option value="j">Joystick</option>
-        <option value="b">Button</option>
-        <option value="p">Padding</option>
-      </select>
-      <input style="grid-area: ca6" type="number" id="ca6" name="ca6" value="0" min="0" max="6"/>
-      <input style="grid-area: cb6" type="number" id="cb6" name="cb6" value="0" min="0" max="6"/>
-      <input style="grid-area: f6" type="color" id="f6" name="f6" value="#508991"/>
-      <input style="grid-area: b6" type="color" id="b6" name="b6" value="#cadfe2"/>
-      <input style="grid-area: l6" type="text" id="l6" name="l6" value=""/>
-      <input style="grid-area: va6" type="number" id="va6" name="va6" value="-1" step="0.01"/>
-      <input style="grid-area: vb6" type="number" id="vb6" name="vb6" value="1" step="0.01"/>
-
-      <input style="grid-area: sv" type="button" id="sv" value="Save"/>
-      <select style="grid-area: ps" id="ps" name="ps">
-        <option value="-" selected>- Presets / Restore -</option>
-        <option value="default">Default Settings</option>
-        <option value="saved">Last Saved Settings</option>
-        <option value="direct">Preset: Direct</option>
-        <option value="tank">Preset: Tank</option>
-        <option value="two-stick">Preset: Two Stick</option>
-        <option value="flipper">Preset: Flipper</option>
-      </select>
-    </form>
     <div id="info">
       <h1 class="small" id="name">M-Link Lite Robot Controller</h1>
       <span class="small" id="result"></span>
@@ -339,14 +70,9 @@
     </div> 
     <script src="nipplejs.js"></script>
     <script src="grid.js"></script>
+    <script type='application/javascript' src='hexapod.js'></script>
+    <script type='application/javascript' src='vector.js'></script>
     <script>
-      // Hide editor UI outside of edit mode
-      if (!MLink.hashArgs?.edit) {
-        document.body.classList.add('no-edit')
-      }
-
-      const panel = document.getElementById('panel')
-
       const apps = []
       const typeClasses = {
         j: Joystick,
@@ -360,151 +86,176 @@
           apps.push(app)
           panel.appendChild(cell)
           app.create()
+          return app
         }
       }
 
-      let elN = function(arg, index) {
-        return document.getElementById(arg + (index + 1).toString())
-      }
-
-      let argN = function (arg, index, def) {
-        return elN(arg, index)?.value || def
-      }
+      let stanceApp = undefined
+      let translationApp = undefined
+      let rotationApp = undefined
+      let legApps = [undefined, undefined, undefined, undefined, undefined, undefined]
+      let resetApp = undefined
 
       let rebuildLayout = function (evt) {
         while (apps.length > 0) {
           apps.pop().destroy()
         }
-        for (var i = 0; i < 6; ++i) {
-          createApp(argN('t', i, 'u'), {
-            width: argN('w', i, 1),
-            height: argN('h', i, 1),
-            ca: argN('ca', i, 0),
-            cb: argN('cb', i, 0),
-            idle: argN('va', i, -1),
-            pressed: argN('vb', i, 1),
-            foreground: argN('f', i, '#105905'),
-            background: argN('b', i, '#bbbbbb'),
-            label: argN('l', i, ''),
-          })
-        }
-      }
-
-      // Register listener for layout changes
-      $('#layout-panel').children().on('change', function (evt) {
-        rebuildLayout()
-      })
-
-      let mixerData
-
-      let rebuildMixer = function (evt) {
-        mixerData = []
-        for (var j = 1; j <= 6; ++j) {
-          let row = []
-          for (var i = 1; i <= 6; ++i) {
-            row.push(parseFloat(document.getElementById('c' + i.toString() + j.toString())?.value || 0.0))
-          }
-          mixerData.push(row)
-        }
-      }
-
-      // Register listener for mixer changes
-      $('#mixer-panel').children().on('change', function (evt) {
-        rebuildMixer()
-      })
-
-      let readData = function () {
-        let inputs = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        for (const app of apps) {
-          const appData = app?.channels || {}
-          for (const channel in appData) {
-            if (channel > 0 && channel <= 6) {
-              inputs[channel - 1] += appData[channel]
-            }
-          }
-        }
-        let channels = []
-        for (var j = 0; j < 6; ++j) {
-          let sum = 0
-          for (var i = 0; i < 6; ++i) {
-            sum += inputs[i] * mixerData[j][i]
-          }
-          channels.push(sum)
-          elN('v', j).textContent = sum.toFixed(2).toString()
-        }
-        return channels
-      }
-
-      // Presets
-      const presets = {
-        default: {},
-        saved: {},
-        direct: {},
-        tank: {c11:1,c12:-1,c21:1,c22:1},
-        "two-stick":{w1:2,ca1:1,cb1:0,t2:'p',h2:5,w3:2,h3:5,t3:'j',ca3:0,cb3:2},
-        flipper:{h1:3,t2:'b',w2:5,h2:2,ca2:6,c11:1,c12:-1,c21:1,c22:1,c55:0,c65:-1},
-      }
-
-      let loadPreset = function (preset) {
-        if (!presets[preset]) {
-          return
-        }
-
-        document.getElementById('mixer-panel').reset()
-        document.getElementById('layout-panel').reset()
-
-        const data = presets[preset]
-        for (const key in data) {
-          const el = document.getElementById(key)
-          if (el) {
-            el.value = data[key]
-          }
-        }
-
-        rebuildLayout()
-        rebuildMixer()
-      }
-
-      let savePreset = function () {
-        const layout = {}
-        $.map($('#layout-panel').serializeArray(), function (n, i) {
-          layout[n['name']] = n['value']
+        rotationApp = createApp('j', {
+          width: 1,
+          height: 2,
+          ca: 0,
+          cb: 1,
+          idle: 0,
+          pressed: 1,
+          foreground: '#edffad',
+          background: '#506600',
+          pressed: 0,
+          label: 'Rotation'
         })
-        $.map($('#mixer-panel').serializeArray(), function (n, i) {
-          layout[n['name']] = n['value']
+        translationApp = createApp('j', {
+          width: 3,
+          height: 3,
+          ca: 0,
+          cb: 1,
+          idle: 0,
+          pressed: 1,
+          foreground: '#48acf0',
+          background: '#083c5e',
+          label: 'Translation'
         })
-        mlink.updateSettings({
-          layout
+        stanceApp = createApp('j', {
+          width: 1,
+          height: 2,
+          ca: 0,
+          cb: 1,
+          idle: 0,
+          pressed: 1,
+          foreground: '#c8ffbe',
+          background: '#0f6600',
+          label: 'Stance'
         })
-        presets['saved'] = layout
-        $.post('/delete/files/layout.json', function (data) {
-          $.post('/upload/layout.json', JSON.stringify(presets['saved']))
+        legApps[0] = createApp('j', {
+          width: 1,
+          height: 1,
+          ca: 0,
+          cb: 1,
+          idle: 0,
+          pressed: 1,
+          foreground: '#990D35',
+          background: '#5e0820',
+          label: 'Leg1'
         })
-      }
-
-      const presetEl = document.getElementById('ps')
-      presetEl.onchange = function (evt) {
-        loadPreset(presetEl.value)
-      }
-
-      document.getElementById('sv').onclick = function (evt) {
-        savePreset()
+        legApps[5] = createApp('j', {
+          width: 1,
+          height: 1,
+          ca: 0,
+          cb: 1,
+          idle: 0,
+          pressed: 1,
+          foreground: '#990D35',
+          background: '#5e0820',
+          label: 'Leg6'
+        })
+        legApps[1] = createApp('j', {
+          width: 1,
+          height: 1,
+          ca: 0,
+          cb: 1,
+          idle: 0,
+          pressed: 1,
+          foreground: '#990D35',
+          background: '#5e0820',
+          label: 'Leg2'
+        })
+        resetApp = createApp('b', {
+          width: 3,
+          height: 2,
+          ca: 0,
+          cb: 1,
+          idle: 0,
+          pressed: 1,
+          foreground: '#3772ff',
+          background: '#001f66',
+          label: 'Reset'
+        })
+        legApps[4] = createApp('j', {
+          width: 1,
+          height: 1,
+          ca: 0,
+          cb: 1,
+          idle: 0,
+          pressed: 1,
+          foreground: '#990D35',
+          background: '#5e0820',
+          label: 'Leg5'
+        })
+        legApps[2] = createApp('j', {
+          width: 1,
+          height: 1,
+          ca: 0,
+          cb: 1,
+          idle: 0,
+          pressed: 1,
+          foreground: '#990D35',
+          background: '#5e0820',
+          label: 'Leg2'
+        })
+        legApps[3] = createApp('j', {
+          width: 1,
+          height: 1,
+          ca: 0,
+          cb: 1,
+          idle: 0,
+          pressed: 1,
+          foreground: '#990D35',
+          background: '#5e0820',
+          label: 'Leg4'
+        })
       }
 
       $(document).ready(function() {
         rebuildLayout()
-        rebuildMixer()
 
-        setInterval(async function(){
+        let hexapod = new Hexapod()
+
+        let servoIndex = 0;
+        setInterval(async function() {
           var status = 'waiting'
-          let channels = readData().map(x => Math.round(1500 + (500 * x)))
+
           if (mlink) {
-            await mlink.setServos(channels)
+            // Update inputs
+            let stanceData = stanceApp?.channels || { 0: 0, 1: 0 }
+            hexapod.setStance(stanceData[0], stanceData[1])
+
+            let translationData = translationApp?.channels || { 0: 0, 1: 0 }
+            hexapod.setTranslation(translationData[0], translationData[1])
+
+            let rotationData = rotationApp?.channels || { 0: 0, 1: 0 }
+            hexapod.setRotation(rotationData[0], rotationData[1])
+
+            for (let leg = 0; leg < 6; ++leg) {
+              let legData = legApps[leg]?.channels || { 0: 0, 1: 0 }
+              hexapod.setLeg(leg, legData[0], legData[1])
+            }
+
+            let resetData = resetApp?.channels || { 0: 0 }
+            if (resetData[0]) {
+              hexapod.resetServos()
+            }
+
+            // Tick the hexapod 'mixer'
+            hexapod.tick()
+
+            // Send outputs to the servos
+            await mlink.setServos(hexapod.outputs)
+
+            // Store status
             status = mlink.status
           }
+
           var outputEl = document.getElementById('result')
           outputEl.innerHTML = status
-        }, 1/30 * 1000)
+        }, 1/60 * 1000)
       })
     </script>
   </body>

@@ -128,7 +128,7 @@ class Button extends Application {
   }
 
   get idle () {
-    return parseFloat(this._options.idle || -1)
+    return parseFloat(this._options.idle || 0)
   }
 
   get pressed () {
