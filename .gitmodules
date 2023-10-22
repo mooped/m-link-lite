@@ -1,6 +1,0 @@
-[submodule "mkspiffs"]
-	path = mkspiffs
-	url = https://github.com/igrr/mkspiffs
-[submodule "virtualjoystick.js"]
-	path = virtualjoystick.js
-	url = https://github.com/jeromeetienne/virtualjoystick.js

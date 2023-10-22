@@ -131,7 +131,7 @@ typedef enum
 #define PCA9685_FULL_ON     0x10    // Special 'full on' value when used in *_ON_H register
 #define PCA9685_FULL_OFF    0x10    // Special 'full off' value when used in *_OFF_H register
 
-int pca9685_addr = PCA9685_DEFAULT_ADDR;
+static volatile int pca9685_addr = PCA9685_DEFAULT_ADDR;
 
 inline esp_err_t twi_write_addr(i2c_cmd_handle_t cmd, uint8_t addr)
 {
@@ -227,11 +227,14 @@ void pca9685_set_addr(int address)
   pca9685_addr = address;
 }
 
-void pca9685_initialize(void)
+void pca9685_reset_all(void)
 {
-  // Software reset
+  // Software reset all pca9685 devices on the bus
   ESP_ERROR_CHECK(twi_pca9685_reset());
+}
 
+void pca9685_initialize(uint8_t prescale_value)
+{
   // Write to the mode registers setting auto-increment with the first write
   // MODE1: Stay in sleep, do not enable restart, external clock, or any of the extra addresses
   // MODE2: No inversion, outputs change on stop, outputs use totem pole drive, standard OE behaviour
@@ -239,14 +242,15 @@ void pca9685_initialize(void)
   ESP_ERROR_CHECK(twi_pca9685_write_registers(PCA9685_MODE1, mode_buffer, sizeof(mode_buffer)));
 
   // Set all outputs to always off duty cycle
-  // Set 500hz frequency
+  // Set 12 (500hz) frequency for driving motors with PLUS, or 60 (100hz) for simple servo outputs
   // prescale_value = round(osc_clock / (4096 * update_rate)) - 1
   // Internal oscillator is 25mhz
   uint8_t pwm_buffer[] = { 0x00, 0x00, 0x00, PCA9685_FULL_OFF, 12};    // { ALL_ON_L, ALL_ON_H, ALL_OFF_L, ALL_OFF_H, PRE_SCALE }
-ESP_ERROR_CHECK(twi_pca9685_write_registers(PCA9685_ALL_LED_ON_L, pwm_buffer, sizeof(pwm_buffer)));
+  pwm_buffer[4] = prescale_value;
+  ESP_ERROR_CHECK(twi_pca9685_write_registers(PCA9685_ALL_LED_ON_L, pwm_buffer, sizeof(pwm_buffer)));
 
-// Disable sleep mode now PRE_SCALE is set
-ESP_ERROR_CHECK(twi_pca9685_write_register(PCA9685_MODE1, PCA9685_M1_AI));
+  // Disable sleep mode now PRE_SCALE is set
+  ESP_ERROR_CHECK(twi_pca9685_write_register(PCA9685_MODE1, PCA9685_M1_AI));
 }
 
 void pca9685_set_raw(int channel, int value)

@@ -1,5 +1,3 @@
-#if !defined(CONFIG_PLUS)
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -18,6 +16,7 @@
 
 #include "servo.h"
 
+#if !defined(CONFIG_PLUS) && !defined(CONFIG_HEXAPOD)
 
 #define PWM_IO_COUNT      6
 

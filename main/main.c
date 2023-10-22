@@ -125,8 +125,8 @@ static int servos[SERVO_NUM] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 static int failsafes[SERVO_NUM] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 #else
 # define SERVO_NUM   6
-static int servos[SERVO_NUM] = { 1500, 1500, 1500, 1500, 1500, 1500 };
-static int failsafes[SERVO_NUM] = { 1500, 1500, 1500, 1500, 1500, 1500 };
+static int servos[SERVO_NUM] = { 0, 0, 0, 0, 0, 0 };
+static int failsafes[SERVO_NUM] = { 0, 0, 0, 0, 0, 0 };
 #endif
 
 int query_supported_channels(void)
@@ -231,10 +231,24 @@ void rx_task(void* args)
   const TickType_t interval = pdMS_TO_TICKS(20);
   TickType_t previous_wake_time = xTaskGetTickCount();
 
+  int counter = 0;
+
   for (;;)
   {
     if (!failsafe_elapsed)
     {
+      // Trace servo outputs occasionally
+      if ((counter++ % 50) == 0)
+      {
+        ESP_LOGI(TAG, "Servos: [%d %d %d] [%d %d %d] [%d %d %d] [%d %d %d] [%d %d %d] [%d %d %d] [%d]", 
+          servos[0], servos[1], servos[2], servos[3],
+          servos[4], servos[5], servos[6], servos[7],
+          servos[8], servos[9], servos[10], servos[11],
+          servos[12], servos[13], servos[14], servos[15],
+          servos[16], servos[17], servos[18]
+        );
+      }
+
       // Update the servo driver if not in failsafe mode
       for (int channel = 0; channel < SERVO_NUM; ++channel)
       {
@@ -249,7 +263,7 @@ void rx_task(void* args)
 
 void app_main()
 {
-#if CONFIG_PLUS
+#if defined(CONFIG_PLUS) || defined(CONFIG_HEXAPOD)
   // Initialise I2C driver
   ESP_ERROR_CHECK( twi_init() );
 #endif
@@ -295,7 +309,7 @@ void app_main()
   xTaskCreate(rx_telemetry_task, "rx-telemetry-task", 2048, NULL, 7, NULL);
 
   // Initialise mDNS
-  //mlink_dns_init();
+  mlink_dns_init();
 
   // Start failsafe timer
   rx_failsafe_timer = xTimerCreate("rx-failsafe-timer", pdMS_TO_TICKS(500), pdTRUE, NULL, rx_failsafe_callback);
