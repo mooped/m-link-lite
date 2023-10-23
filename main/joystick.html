@@ -95,6 +95,7 @@
       let rotationApp = undefined
       let legApps = [undefined, undefined, undefined, undefined, undefined, undefined]
       let resetApp = undefined
+      let stopApp = undefined
 
       let rebuildLayout = function (evt) {
         while (apps.length > 0) {
@@ -168,7 +169,7 @@
           label: 'Leg2'
         })
         resetApp = createApp('b', {
-          width: 3,
+          width: 1,
           height: 2,
           ca: 0,
           cb: 1,
@@ -177,6 +178,17 @@
           foreground: '#3772ff',
           background: '#001f66',
           label: 'Reset'
+        })
+        stopApp = createApp('b', {
+          width: 2,
+          height: 2,
+          ca: 0,
+          cb: 1,
+          idle: 0,
+          pressed: 1,
+          foreground: '#3772ff',
+          background: '#001f66',
+          label: 'Stop'
         })
         legApps[4] = createApp('j', {
           width: 1,
@@ -241,6 +253,11 @@
             let resetData = resetApp?.channels || { 0: 0 }
             if (resetData[0]) {
               hexapod.resetServos()
+            }
+
+            let stopData = stopApp?.channels || { 0: 0 }
+            if (stopData[0]) {
+              hexapod.stopServos()
             }
 
             // Tick the hexapod 'mixer'

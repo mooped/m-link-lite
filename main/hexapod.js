@@ -1,19 +1,11 @@
 class Hexapod {
   constructor (options = {}) {
-    this._pulsewidths = [ 1500, 1500, 1500,
-                          1500, 1500, 1500,
-                          1500, 1500, 1500,
-                          1500, 1500, 1500,
-                          1500, 1500, 1500,
-                          1500, 1500, 1500,
-                          1500 ]
-    this._enabledServos = [ 0, 0, 0,
-                            0, 0, 0,
-                            0, 0, 0,
-                            0, 0, 0,
-                            0, 0, 0,
-                            0, 0, 0,
-                            0 ]
+    this.reset()
+
+    this._ticking = false
+  }
+
+  resetConstants() {
     this._trim = [ 60, -20, -40,
                    -70, 20, 0,
                    0, 20, 0,
@@ -37,25 +29,60 @@ class Hexapod {
     this._legDirections = [ new Vector([-1, 0, 0]), new Vector([-1, 0, 0]), new Vector([-1, 0, 0]),
                             new Vector([1, 0, 0]), new Vector([1, 0, 0]), new Vector([1, 0, 0]) ]
 
+    this._defaultTargets = []
+
+    for (var leg = 0; leg < 6; ++leg) {
+      this._defaultTargets.push(Vector.add(Vector.add(this._legPositions[leg], Vector.mul(this._legDirections[leg], this._coxaLength + this._femurLength / 2)), new Vector([0, 0, -20])))
+    }
+  }
+
+  reset () {
+    this._smoothed = [ 1500, 1500, 1500,
+                       1500, 1500, 1500,
+                       1500, 1500, 1500,
+                       1500, 1500, 1500,
+                       1500, 1500, 1500,
+                       1500, 1500, 1500,
+                       1500 ]
+    this._pulsewidths = [ 1500, 1500, 1500,
+                          1500, 1500, 1500,
+                          1500, 1500, 1500,
+                          1500, 1500, 1500,
+                          1500, 1500, 1500,
+                          1500, 1500, 1500,
+                          1500 ]
+    this._enabledServos = [ 0, 0, 0,
+                            0, 0, 0,
+                            0, 0, 0,
+                            0, 0, 0,
+                            0, 0, 0,
+                            0, 0, 0,
+                            0 ]
+
     this._inputTranslation = new Vector([0, 0])
     this._inputRotation = new Vector([0, 0])
     this._inputStance = new Vector([0, 0])
     this._inputLegs = []
 
-    this._defaultTargets = []
-
     for (var leg = 0; leg < 6; ++leg) {
       this._inputLegs.push(new Vector([0, 0]))
+    }
 
-      this._defaultTargets.push(Vector.add(Vector.add(this._legPositions[leg], Vector.mul(this._legDirections[leg], this._coxaLength + this._femurLength / 2)), new Vector([0, 0, -20])))
+    this._debug = [ {}, {}, {}, {}, {}, {}, ]
+
+    this.resetConstants()
+  }
+
+  stopServos() {
+    for (var i = 0; i < this._enabledServos.length; ++i) {
+      this._enabledServos[i] = 0
     }
   }
 
   resetServos() {
-    // @TODO: Extract into a 'stop function' with reset serving as a restart
-    for (var i = 0; i < this._enabledServos.length; ++i) {
-      this._enabledServos[i] = 0
-    }
+    this.stopServos()
+
+    //this.reset()
 
     let localThis = this
 
@@ -132,19 +159,46 @@ class Hexapod {
   }
 
   tick () {
+    if (this._ticking) {
+      return
+    }
+    this._ticking = true
+
+    this.resetConstants()
+
     for (var leg = 0; leg < 6; ++leg) {
+      let inputLeg = this._inputLegs[leg]
       let target = Vector.add(this._defaultTargets[leg], this._inputTranslation)
       target = Vector.add(target, new Vector(0, 0, this._inputStance.y))
+
+      target = Vector.add(target, Vector.add(new Vector([0, 0, inputLeg.y]), Vector.mul(this._legDirections[leg], inputLeg.x)))
 
       let angles = this.solveLeg(leg, target)
       let mirror = (leg > 2) ? -1 : 1
 
-      console.log("Leg", leg, " Coxa: ", angles.coxaAngle, " Femur: ", angles.femurAngle, " Tibia: ", angles.tibiaAngle)
+      this._debug[leg] = Object.assign(angles, { target })
 
-      this._pulsewidths[leg * 3 + 0] = this.convertAngle(angles.coxaAngle)
-      this._pulsewidths[leg * 3 + 1] = this.convertAngle(angles.femurAngle * mirror)
-      this._pulsewidths[leg * 3 + 2] = this.convertAngle(angles.tibiaAngle * mirror)
+      let legOffset = leg * 3
+
+      this._pulsewidths[legOffset + 0] = this.convertAngle(angles.coxaAngle)
+      this._pulsewidths[legOffset + 1] = this.convertAngle(angles.femurAngle * mirror)
+      this._pulsewidths[legOffset + 2] = this.convertAngle(angles.tibiaAngle * mirror)
+
+      for (var joint = legOffset; joint < legOffset + 3; ++joint) {
+        this._smoothed[joint] = parseInt(0.95 * this._smoothed[joint] + 0.05 * this._pulsewidths[joint])
+      }
     }
+
+    /*
+    // Direct control of the legs
+    for (var i = 0; i < 6; ++i) {
+      this._smoothed[i * 3 + 0] = 1500 + (this._inputTranslation.x * 12)
+      this._smoothed[i * 3 + 1] = 1500 + (this._inputLegs[i].x * 12)
+      this._smoothed[i * 3 + 2] = 1500 + (this._inputLegs[i].y * 12)
+    }
+    */
+
+    this._ticking = false
   }
 
   get outputs () {
@@ -152,7 +206,20 @@ class Hexapod {
 
     for (var i = 0; i < 19; ++i) {
       if (this._enabledServos[i]) {
-        output[i] = this._pulsewidths[i] + this._trim[i]
+        let value = this._smoothed[i]
+
+        // Don't apply trim or clamp zeroes - they disable the servo
+        if (value !== 0) {
+          //value += this._trim[i]
+
+          if (value < 1000) {
+            value = 1000
+          } else if (value > 2000) {
+            value = 2000
+          }
+        }
+
+        output[i] = value
       }
     }
 
