@@ -338,6 +338,8 @@ DEFINE_EMBEDDED_FILE_HANDLER(joystick_html, "text/html");
 DEFINE_EMBEDDED_FILE_HANDLER(m_link_js, "text/javascript");
 DEFINE_EMBEDDED_FILE_HANDLER(nipplejs_js, "text/javascript");
 DEFINE_EMBEDDED_FILE_HANDLER(grid_js, "text/javascript");
+DEFINE_EMBEDDED_FILE_HANDLER(hexapod_js, "text/javascript");
+DEFINE_EMBEDDED_FILE_HANDLER(vector_js, "text/javascript");
 DEFINE_EMBEDDED_FILE_HANDLER(jquery_min_js, "text/javascript");
 DEFINE_EMBEDDED_FILE_HANDLER(favicon_ico, "image/x-icon");
 DEFINE_EMBEDDED_FILE_HANDLER(hamburger_svg, "image/svg+xml");
@@ -578,6 +580,14 @@ static esp_err_t file_get_handler(httpd_req_t *req)
     else if (strcmp(filename, "/grid.js") == 0)
     {
       return grid_js_get_handler(req);
+    }
+    else if (strcmp(filename, "/hexapod.js") == 0)
+    {
+      return hexapod_js_get_handler(req);
+    }
+    else if (strcmp(filename, "/vector.js") == 0)
+    {
+      return vector_js_get_handler(req);
     }
     else if (strcmp(filename, "/favicon.ico") == 0)
     {
