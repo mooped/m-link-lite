@@ -32,7 +32,7 @@ class Hexapod {
     this._defaultTargets = []
 
     for (var leg = 0; leg < 6; ++leg) {
-      this._defaultTargets.push(Vector.add(Vector.add(this._legPositions[leg], Vector.mul(this._legDirections[leg], this._coxaLength + this._femurLength)), new Vector([0, 0, 60])))
+      this._defaultTargets.push(Vector.add(Vector.add(this._legPositions[leg], Vector.mul(this._legDirections[leg], this._coxaLength + this._femurLength / 2)), new Vector([0, 0, 20])))
     }
   }
 
@@ -82,7 +82,7 @@ class Hexapod {
   resetServos() {
     this.stopServos()
 
-    //this.reset()
+    this.reset()
 
     let localThis = this
 
@@ -114,12 +114,12 @@ class Hexapod {
   }
 
   setStance (x, y) {
-    this._inputStance = Vector.mul(new Vector([x, y]), 50)
+    this._inputStance = Vector.add(this._inputStance, Vector.mul(new Vector([x, y]), 2))
   }
 
   setLeg (leg, x, y) {
     if (leg >= 0 && leg < 6) {
-      this._inputLegs[leg] = Vector.mul(new Vector([(leg > 2) ? x : -x, -y]), 100)
+      this._inputLegs[leg] = Vector.mul(new Vector([(leg > 2) ? x : -x, -y]), 75)
     }
   }
 
@@ -142,7 +142,7 @@ class Hexapod {
 
     // Then subtract the length of the coxa to get the distance from the femur joint
     const hDistance = Vector.len(hOffset) - this._coxaLength
-    const vDistance = target.z
+    const vDistance = fullOffset.z
 
     // Calculate the distance from the femur joint to the target
     const distanceSquared = hDistance * hDistance + vDistance * vDistance
@@ -150,7 +150,7 @@ class Hexapod {
 
     // Calculate the tibia angle by cosine law, add the tibia rest pose of 113 degrees
     const tibiaOffset = Math.acos((this._tibiaLengthSquared + this._femurLengthSquared - distanceSquared) / (2 * this._tibiaLength * this._femurLength)) * (180 / Math.PI)
-    const tibiaAngle = 113 - tibiaOffset
+    const tibiaAngle = 77 - tibiaOffset
 
     // Calculate the femur to target angle by cosine law, then subtract the angle to the target
     const targetAngle = Math.atan(vDistance / hDistance) * (180 / Math.PI)
