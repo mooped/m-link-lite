@@ -148,18 +148,20 @@ class Hexapod {
       return min + value * (max - min)
     }
 
-    if (time < 0.1) { // Lift
-      multiplier = -1
-      lift = lerp(time * (1 / 0.1), 0, height)
-    } else if (time < 0.5) { // Return
+    if (time < 0.2) { // Lift
+      lift = lerp(time * 5, 0, height)
+    } else if (time < 0.5) {
       lift = height
-      multiplier = lerp((time - 0.1) * (1 / 0.4), -1, 1)
-    } else if (time < 0.6) { // Drop
-      multiplier = 1
-      lift = lerp((time - 0.5) * (1 / 0.1), height, 0)
-    } else { // Stroke
+    } else if (time < 0.7) { // Drop
+      lift = lerp((time - 0.5) * 5, height, 0)
+    } else {
       lift = 0
-      multiplier = lerp((time - 0.6) * (1 / 0.4), 1, -1)
+    }
+
+    if (time < 0.5) { // Return
+      multiplier = lerp(time * 2, -1, 1)
+    } else { // Stroke
+      multiplier = lerp((time - 0.5) * 2, 1, -1)
     }
 
     return Vector.add(Vector.mul(vector, multiplier), new Vector([0, 0, lift]))
@@ -192,20 +194,6 @@ class Hexapod {
     const targetAngle = Math.atan(vDistance / hDistance) * (180 / Math.PI)
     const femurAngle = (Math.acos((this._femurLengthSquared + distanceSquared - this._tibiaLengthSquared) / (2 * this._femurLength * distance)) * (180 / Math.PI)) - targetAngle
 
-    /*
-    if (leg === 0) {
-      console.log({
-        hDistance,
-        vDistance,
-        distance,
-        tibiaAngle,
-        tibiaOffset,
-        targetAngle,
-        femurAngle
-      })
-    }
-    */
-
     return {
       coxaAngle,
       femurAngle: femurAngle,
@@ -218,13 +206,16 @@ class Hexapod {
 
     for (var leg = 0; leg < 6; ++leg) {
       let inputLeg = this._inputLegs[leg]
-      let target = this._defaultTargets[leg]//Vector.add(this._defaultTargets[leg], this._inputTranslation)
+      let target = this._defaultTargets[leg]
       target = Vector.add(target, new Vector(0, 0, this._inputStance.y))
       target = Vector.add(target, Vector.mul(this._legDirections[leg], this._inputStance.x))
 
       target = Vector.add(target, Vector.add(new Vector([0, 0, inputLeg.y]), Vector.mul(this._legDirections[leg], inputLeg.x)))
 
-      target = Vector.add(target, this.gaitOffset(leg, new Vector(this._inputTranslation.x, this._inputTranslation.y), 20))
+      const rotationDirection = (leg > 2) ? 1 : -1
+      const translation = Vector.add(this._inputTranslation, new Vector([0, this._inputRotation.x * rotationDirection]))
+      const lift = Math.min(Vector.len(translation) * 15, 30)
+      target = Vector.add(target, this.gaitOffset(leg, translation, lift))
 
       let angles = this.solveLeg(leg, target)
 
