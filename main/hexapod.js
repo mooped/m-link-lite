@@ -1,8 +1,6 @@
 class Hexapod {
   constructor (options = {}) {
     this.reset()
-
-    this._ticking = false
   }
 
   resetConstants() {
@@ -17,7 +15,9 @@ class Hexapod {
 
     this._coxaLength = 15
     this._femurLength = 50
+    this._femurLengthSquared = this._femurLength * this._femurLength
     this._tibiaLength = 71.589
+    this._tibiaLengthSquared = this._tibiaLength * this._tibiaLength
     this._footRadius = 3.75
     this._bodyWidth = 100
     this._legSpacing = 62
@@ -26,13 +26,13 @@ class Hexapod {
       new Vector([this._bodyWidth / 2, this._legSpacing, 0]), new Vector([this._bodyWidth / 2, 0, 0]), new Vector([this._bodyWidth / 2, -this._legSpacing, 0]),
       new Vector([-this._bodyWidth / 2, -this._legSpacing, 0]), new Vector([-this._bodyWidth / 2, 0, 0]), new Vector([-this._bodyWidth / 2, this._legSpacing, 0])
     ]
-    this._legDirections = [ new Vector([-1, 0, 0]), new Vector([-1, 0, 0]), new Vector([-1, 0, 0]),
-                            new Vector([1, 0, 0]), new Vector([1, 0, 0]), new Vector([1, 0, 0]) ]
+    this._legDirections = [ new Vector([1, 0, 0]), new Vector([1, 0, 0]), new Vector([1, 0, 0]),
+                            new Vector([-1, 0, 0]), new Vector([-1, 0, 0]), new Vector([-1, 0, 0]) ]
 
     this._defaultTargets = []
 
     for (var leg = 0; leg < 6; ++leg) {
-      this._defaultTargets.push(Vector.add(Vector.add(this._legPositions[leg], Vector.mul(this._legDirections[leg], this._coxaLength + this._femurLength)), new Vector([0, 0, -20])))
+      this._defaultTargets.push(Vector.add(Vector.add(this._legPositions[leg], Vector.mul(this._legDirections[leg], this._coxaLength + this._femurLength)), new Vector([0, 0, 60])))
     }
   }
 
@@ -119,57 +119,68 @@ class Hexapod {
 
   setLeg (leg, x, y) {
     if (leg >= 0 && leg < 6) {
-      this._inputLegs[leg] = Vector.mul(new Vector([x, y]), 50)
+      this._inputLegs[leg] = Vector.mul(new Vector([(leg > 2) ? x : -x, -y]), 100)
     }
   }
 
   // Convert an angle in degrees to a pulse width
   // The servos swing about 55 degrees each way from centre (500 microsecond change in pulse width)
   convertAngle (angle) {
-    return 1500 + ((angle / 55.0) * 250)
+    return 1500 + ((angle / 55.0) * 500)
   }
 
   // Default orientation for each coxa is always the reference frame
   // Body transformations are inverted and applied to all targets
   solveLeg (leg, target) {
-    // Calculate the distance from the coxa to the target
-    const offset = Vector.sub(target, this._legPositions[leg])
-    const distance = Vector.len(offset)
-
-    // Calculate offset in the horizontal plane only
-    const hOffset = new Vector([offset.x, offset.y])
-    const hDistance = Vector.len(hOffset)
+    // Calculate the offset from the coxa joint to the target - we only want the horizontal plane here
+    const fullOffset = Vector.sub(target, this._legPositions[leg])
+    const hOffset = new Vector([fullOffset.x, fullOffset.y])
 
     // Calculate the angle from the coxa default orientation to the target
-    // Since the legs are oriented horizontally we can get away with just ata2n
-    const coxaAngle = Math.atan(offset.y / offset.x) * (180 / Math.PI)
+    // Since the legs are oriented horizontally we can get away with just atan
+    const coxaAngle = Math.atan(hOffset.y / hOffset.x) * (180 / Math.PI)
+
+    // Then subtract the length of the coxa to get the distance from the femur joint
+    const hDistance = Vector.len(hOffset) - this._coxaLength
+    const vDistance = target.z
+
+    // Calculate the distance from the femur joint to the target
+    const distanceSquared = hDistance * hDistance + vDistance * vDistance
+    const distance = Math.sqrt(distanceSquared)
 
     // Calculate the tibia angle by cosine law, add the tibia rest pose of 113 degrees
-    const tibiaAngle = 113 - (Math.acos((this._tibiaLength * this._tibiaLength + this._femurLength * this._femurLength - distance * distance) / (2 * this._tibiaLength * this._femurLength)) * (180 / Math.PI))
+    const tibiaOffset = Math.acos((this._tibiaLengthSquared + this._femurLengthSquared - distanceSquared) / (2 * this._tibiaLength * this._femurLength)) * (180 / Math.PI)
+    const tibiaAngle = 113 - tibiaOffset
 
     // Calculate the femur to target angle by cosine law, then subtract the angle to the target
-    const targetAngle = Math.atan(offset.z / hDistance)
-    const femurAngle = (Math.acos((this._femurLength * this._femurLength + distance * distance - this._tibiaLength * this._tibiaLength) / (2 * this._femurLength * distance)) - targetAngle) * (180 / Math.PI)
+    const targetAngle = Math.atan(vDistance / hDistance) * (180 / Math.PI)
+    const femurAngle = (Math.acos((this._femurLengthSquared + distanceSquared - this._tibiaLengthSquared) / (2 * this._femurLength * distance)) * (180 / Math.PI)) - targetAngle
+
+    if (leg === 0) {
+      console.log({
+        hDistance,
+        vDistance,
+        distance,
+        tibiaAngle,
+        tibiaOffset,
+        targetAngle,
+        femurAngle
+      })
+    }
 
     return {
       coxaAngle,
-      femurAngle,
+      femurAngle: femurAngle,
       tibiaAngle
     }
   }
 
   tick () {
-    if (this._ticking) {
-      return
-    }
-    this._ticking = true
-
-    this.resetConstants()
-
     for (var leg = 0; leg < 6; ++leg) {
       let inputLeg = this._inputLegs[leg]
       let target = Vector.add(this._defaultTargets[leg], this._inputTranslation)
       target = Vector.add(target, new Vector(0, 0, this._inputStance.y))
+      target = Vector.add(target, Vector.mul(this._legDirections[leg], this._inputStance.x))
 
       target = Vector.add(target, Vector.add(new Vector([0, 0, inputLeg.y]), Vector.mul(this._legDirections[leg], inputLeg.x)))
 
@@ -193,13 +204,13 @@ class Hexapod {
       this._pulsewidths[legOffset + 1] = this.convertAngle(angles.femurAngle * mirror)
       this._pulsewidths[legOffset + 2] = this.convertAngle(angles.tibiaAngle * mirror)
 
-      const smoothing = 0.5
+      const smoothing = 0.25
       for (var joint = legOffset; joint < legOffset + 3; ++joint) {
-        this._smoothed[joint] = parseInt(smoothing * this._smoothed[joint] + (1.0 - smoothing) * this._pulsewidths[joint])
+        this._smoothed[joint] = parseInt((1.0 - smoothing) * this._smoothed[joint] + smoothing * this._pulsewidths[joint])
       }
     }
 
-    this._ticking = false
+    //console.log("Leg 0:", this._debug[0])
   }
 
   get outputs () {
@@ -211,7 +222,7 @@ class Hexapod {
 
         // Don't apply trim or clamp zeroes - they disable the servo
         if (value !== 0) {
-          //value += this._trim[i]
+          value += this._trim[i]
 
           if (value < 1000) {
             value = 1000
