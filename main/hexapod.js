@@ -31,6 +31,13 @@ class Hexapod {
 
     this._defaultTargets = []
 
+    this._smoothing = 0.3
+
+    this._timer = 0.0
+
+    this._gaitPeriod = 0.75
+    this._gaitPhases = [0, 0.5, 0, 0.5, 0, 0.5] // Alternating tripod gait
+
     for (var leg = 0; leg < 6; ++leg) {
       this._defaultTargets.push(Vector.add(Vector.add(this._legPositions[leg], Vector.mul(this._legDirections[leg], this._coxaLength + this._femurLength / 2)), new Vector([0, 0, 20])))
     }
@@ -106,11 +113,11 @@ class Hexapod {
   }
 
   setTranslation (x, y) {
-    this._inputTranslation = Vector.mul(new Vector([x, y]), 50)
+    this._inputTranslation = Vector.mul(new Vector([x, -y]), 20)
   }
 
   setRotation (x, y) {
-    this._inputRotation = new Vector([x, y])
+    this._inputRotation = Vector.mul(new Vector([x, y]), 20)
   }
 
   setStance (x, y) {
@@ -119,7 +126,7 @@ class Hexapod {
 
   setLeg (leg, x, y) {
     if (leg >= 0 && leg < 6) {
-      this._inputLegs[leg] = Vector.mul(new Vector([(leg > 2) ? x : -x, -y]), 75)
+      this._inputLegs[leg] = Vector.mul(new Vector([(leg > 2) ? x : -x, -y]), 100)
     }
   }
 
@@ -127,6 +134,35 @@ class Hexapod {
   // The servos swing about 55 degrees each way from centre (500 microsecond change in pulse width)
   convertAngle (angle) {
     return 1500 + ((angle / 55.0) * 500)
+  }
+
+  // Calculate the leg offset for a given time and gait
+  gaitOffset (leg, vector, height) {
+    // Time parameter normalised from 0 - throughout the gait, and and adjusted for this leg's phase
+    const time = (((this._timer % this._gaitPeriod) / this._gaitPeriod) + this._gaitPhases[leg]) % 1
+
+    let multiplier = 0
+    let lift = 0
+
+    const lerp = (value, min, max) => {
+      return min + value * (max - min)
+    }
+
+    if (time < 0.1) { // Lift
+      multiplier = -1
+      lift = lerp(time * (1 / 0.1), 0, height)
+    } else if (time < 0.5) { // Return
+      lift = height
+      multiplier = lerp((time - 0.1) * (1 / 0.4), -1, 1)
+    } else if (time < 0.6) { // Drop
+      multiplier = 1
+      lift = lerp((time - 0.5) * (1 / 0.1), height, 0)
+    } else { // Stroke
+      lift = 0
+      multiplier = lerp((time - 0.6) * (1 / 0.4), 1, -1)
+    }
+
+    return Vector.add(Vector.mul(vector, multiplier), new Vector([0, 0, lift]))
   }
 
   // Default orientation for each coxa is always the reference frame
@@ -156,6 +192,7 @@ class Hexapod {
     const targetAngle = Math.atan(vDistance / hDistance) * (180 / Math.PI)
     const femurAngle = (Math.acos((this._femurLengthSquared + distanceSquared - this._tibiaLengthSquared) / (2 * this._femurLength * distance)) * (180 / Math.PI)) - targetAngle
 
+    /*
     if (leg === 0) {
       console.log({
         hDistance,
@@ -167,6 +204,7 @@ class Hexapod {
         femurAngle
       })
     }
+    */
 
     return {
       coxaAngle,
@@ -175,14 +213,18 @@ class Hexapod {
     }
   }
 
-  tick () {
+  tick (deltaTime) {
+    this._timer += deltaTime
+
     for (var leg = 0; leg < 6; ++leg) {
       let inputLeg = this._inputLegs[leg]
-      let target = Vector.add(this._defaultTargets[leg], this._inputTranslation)
+      let target = this._defaultTargets[leg]//Vector.add(this._defaultTargets[leg], this._inputTranslation)
       target = Vector.add(target, new Vector(0, 0, this._inputStance.y))
       target = Vector.add(target, Vector.mul(this._legDirections[leg], this._inputStance.x))
 
       target = Vector.add(target, Vector.add(new Vector([0, 0, inputLeg.y]), Vector.mul(this._legDirections[leg], inputLeg.x)))
+
+      target = Vector.add(target, this.gaitOffset(leg, new Vector(this._inputTranslation.x, this._inputTranslation.y), 20))
 
       let angles = this.solveLeg(leg, target)
 
@@ -204,9 +246,8 @@ class Hexapod {
       this._pulsewidths[legOffset + 1] = this.convertAngle(angles.femurAngle * mirror)
       this._pulsewidths[legOffset + 2] = this.convertAngle(angles.tibiaAngle * mirror)
 
-      const smoothing = 0.25
       for (var joint = legOffset; joint < legOffset + 3; ++joint) {
-        this._smoothed[joint] = parseInt((1.0 - smoothing) * this._smoothed[joint] + smoothing * this._pulsewidths[joint])
+        this._smoothed[joint] = parseInt((1.0 - this._smoothing) * this._smoothed[joint] + this._smoothing * this._pulsewidths[joint])
       }
     }
 

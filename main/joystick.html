@@ -261,7 +261,7 @@
             }
 
             // Tick the hexapod 'mixer'
-            hexapod.tick()
+            hexapod.tick(1 / 60)
 
             // Send outputs to the servos
             await mlink.setServos(hexapod.outputs)
