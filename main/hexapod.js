@@ -32,7 +32,7 @@ class Hexapod {
     this._defaultTargets = []
 
     for (var leg = 0; leg < 6; ++leg) {
-      this._defaultTargets.push(Vector.add(Vector.add(this._legPositions[leg], Vector.mul(this._legDirections[leg], this._coxaLength + this._femurLength / 2)), new Vector([0, 0, -20])))
+      this._defaultTargets.push(Vector.add(Vector.add(this._legPositions[leg], Vector.mul(this._legDirections[leg], this._coxaLength + this._femurLength)), new Vector([0, 0, -20])))
     }
   }
 
@@ -174,6 +174,15 @@ class Hexapod {
       target = Vector.add(target, Vector.add(new Vector([0, 0, inputLeg.y]), Vector.mul(this._legDirections[leg], inputLeg.x)))
 
       let angles = this.solveLeg(leg, target)
+
+      // If any angles come out NaN, log and discard the data
+      if (Number.isNaN(angles.coxaAngle) || Number.isNaN(angles.femurAngle) || Number.isNaN(angles.tibiaAngle)) {
+        console.error("NaN in leg solve!")
+        console.log("Target: ", target)
+        console.log("Output: ", angles)
+        break
+      }
+
       let mirror = (leg > 2) ? -1 : 1
 
       this._debug[leg] = Object.assign(angles, { target })
@@ -184,19 +193,11 @@ class Hexapod {
       this._pulsewidths[legOffset + 1] = this.convertAngle(angles.femurAngle * mirror)
       this._pulsewidths[legOffset + 2] = this.convertAngle(angles.tibiaAngle * mirror)
 
+      const smoothing = 0.5
       for (var joint = legOffset; joint < legOffset + 3; ++joint) {
-        this._smoothed[joint] = parseInt(0.95 * this._smoothed[joint] + 0.05 * this._pulsewidths[joint])
+        this._smoothed[joint] = parseInt(smoothing * this._smoothed[joint] + (1.0 - smoothing) * this._pulsewidths[joint])
       }
     }
-
-    /*
-    // Direct control of the legs
-    for (var i = 0; i < 6; ++i) {
-      this._smoothed[i * 3 + 0] = 1500 + (this._inputTranslation.x * 12)
-      this._smoothed[i * 3 + 1] = 1500 + (this._inputLegs[i].x * 12)
-      this._smoothed[i * 3 + 2] = 1500 + (this._inputLegs[i].y * 12)
-    }
-    */
 
     this._ticking = false
   }
