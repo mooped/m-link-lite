@@ -152,23 +152,23 @@ class Hexapod {
       return min + value * (max - min)
     }
 
-    if (time < 0.2) { // Lift
-      lift = lerp(time * 5, 0, height)
-    } else if (time < 0.5) {
+    if (time < 0.1) { // Lift
+      lift = lerp(time * 10, 0, height)
+    } else if (time < 0.4) {
       lift = height
-    } else if (time < 0.7) { // Drop
-      lift = lerp((time - 0.5) * 5, height, 0)
+    } else if (time < 0.5) { // Drop
+      lift = lerp((time - 0.4) * 10, height, 0)
     } else {
       lift = 0
     }
 
     if (time < 0.5) { // Return
-      multiplier = lerp(time * 2, -1, 1)
+      multiplier = lerp(time * 2, 1, -1)
     } else { // Stroke
-      multiplier = lerp((time - 0.5) * 2, 1, -1)
+      multiplier = lerp((time - 0.5) * 2, -1, 1)
     }
 
-    return Vector.add(Vector.mul(vector, multiplier), new Vector([0, 0, lift]))
+    return Vector.add(Vector.mul(vector, multiplier), new Vector([0, 0, -lift]))
   }
 
   // Default orientation for each coxa is always the reference frame
