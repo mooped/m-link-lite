@@ -1,3 +1,10 @@
+const State = {
+  IDLE: "IDLE",
+  ENABLING: "ENABLING",
+  DEFAULT: "DEFAULT",
+}
+
+
 class Hexapod {
   constructor (options = {}) {
     this.reset()
@@ -35,7 +42,7 @@ class Hexapod {
 
     this._defaultTargets = []
 
-    this._smoothing = 0.3
+    this._smoothing = 0.27
 
     this._timer = 0.0
 
@@ -48,6 +55,9 @@ class Hexapod {
   }
 
   reset () {
+    this.resetConstants()
+
+    this._state = State.IDLE
     this._smoothed = [ 1500, 1500, 1500,
                        1500, 1500, 1500,
                        1500, 1500, 1500,
@@ -80,8 +90,6 @@ class Hexapod {
     }
 
     this._debug = [ {}, {}, {}, {}, {}, {}, ]
-
-    this.resetConstants()
   }
 
   stopServos() {
@@ -91,6 +99,12 @@ class Hexapod {
   }
 
   resetServos() {
+    if (this._state == State.ENABLING) {
+      return
+    }
+
+    this._state = State.ENABLING
+
     this.stopServos()
 
     this.reset()
@@ -112,8 +126,9 @@ class Hexapod {
       // If all servos are enabled clear the timer
       if (!anyEnabled) {
         clearInterval(resetServosHandle)
+        localThis._state = State.DEFAULT
       }
-    }, 100)
+    }, 200)
   }
 
   setTranslation (x, y) {
@@ -208,6 +223,39 @@ class Hexapod {
   tick (deltaTime) {
     this._timer += deltaTime
 
+    if (this._state === State.IDLE || this.state === State.ENABLING) {
+      this._tickFold()
+    } else if (this._state == State.DEFAULT) {
+      this._tickDefault()
+    }
+
+    for (var joint = 0; joint < 18; ++joint) {
+      this._smoothed[joint] = parseInt((1.0 - this._smoothing) * this._smoothed[joint] + this._smoothing * this._pulsewidths[joint])
+    }
+  }
+
+  _tickFold () {
+    this._pulsewidths = [
+      1500, 2000, 2000,
+      1500, 2000, 2000,
+      1500, 2000, 2000,
+      1500, 1000, 1000,
+      1500, 1000, 1000,
+      1500, 1000, 1000,
+      1500
+    ]
+    this._smoothed = [
+      1500, 2000, 2000,
+      1500, 2000, 2000,
+      1500, 2000, 2000,
+      1500, 1000, 1000,
+      1500, 1000, 1000,
+      1500, 1000, 1000,
+      1500
+    ]
+  }
+
+  _tickDefault () {
     for (var leg = 0; leg < 6; ++leg) {
       let inputLeg = this._inputLegs[leg]
       let target = this._defaultTargets[leg]
@@ -240,13 +288,7 @@ class Hexapod {
       this._pulsewidths[legOffset + 0] = this.convertAngle(angles.coxaAngle)
       this._pulsewidths[legOffset + 1] = this.convertAngle(angles.femurAngle * mirror)
       this._pulsewidths[legOffset + 2] = this.convertAngle(angles.tibiaAngle * mirror)
-
-      for (var joint = legOffset; joint < legOffset + 3; ++joint) {
-        this._smoothed[joint] = parseInt((1.0 - this._smoothing) * this._smoothed[joint] + this._smoothing * this._pulsewidths[joint])
-      }
     }
-
-    //console.log("Leg 0:", this._debug[0])
   }
 
   get outputs () {
