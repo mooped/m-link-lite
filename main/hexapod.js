@@ -21,6 +21,10 @@ class Hexapod {
     this._footRadius = 3.75
     this._bodyWidth = 100
     this._legSpacing = 62
+    this._minimumDistance = 40  // Measured, but could be calculated
+    this._minimumDistanceSquared = this._minimumDistance * this._minimumDistance
+    this._maximumDistance = 110 // Measured, but could be calculated
+    this._maximumDistanceSquared = this._maximumDistance * this._maximumDistance
 
     this._legPositions = [
       new Vector([this._bodyWidth / 2, this._legSpacing, 0]), new Vector([this._bodyWidth / 2, 0, 0]), new Vector([this._bodyWidth / 2, -this._legSpacing, 0]),
@@ -183,7 +187,7 @@ class Hexapod {
     const vDistance = fullOffset.z
 
     // Calculate the distance from the femur joint to the target
-    const distanceSquared = hDistance * hDistance + vDistance * vDistance
+    const distanceSquared = Math.min(Math.max(hDistance * hDistance + vDistance * vDistance, this._minimumDistanceSquared), this._maximumDistanceSquared)
     const distance = Math.sqrt(distanceSquared)
 
     // Calculate the tibia angle by cosine law, add the tibia rest pose of 113 degrees
