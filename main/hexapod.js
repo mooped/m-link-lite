@@ -4,12 +4,12 @@ class Hexapod {
   }
 
   resetConstants() {
-    this._trim = [ 60, -20, -40,
+    this._trim = [ 60, -20, 60,
                    -70, 20, 0,
                    0, 20, 0,
                    0, 20, 0,
                    0, 20, 0,
-                   90, -40, 0,
+                   90, -40, -60,
                    0 ]
     this._width = 100
 
@@ -43,7 +43,7 @@ class Hexapod {
     this._gaitPhases = [0, 0.5, 0, 0.5, 0, 0.5] // Alternating tripod gait
 
     for (var leg = 0; leg < 6; ++leg) {
-      this._defaultTargets.push(Vector.add(Vector.add(this._legPositions[leg], Vector.mul(this._legDirections[leg], this._coxaLength + this._femurLength / 2)), new Vector([0, 0, 20])))
+      this._defaultTargets.push(Vector.add(Vector.add(this._legPositions[leg], Vector.mul(this._legDirections[leg], this._coxaLength + this._femurLength)), new Vector([0, this._legPositions[leg].y / 2, 20])))
     }
   }
 
