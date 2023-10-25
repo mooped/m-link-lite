@@ -30,11 +30,13 @@ static const char *TAG = "pca9685-servo";
 #define PCA9685_LOCAL_ADDR        (0x40<<1)
 #define PCA9685_LOCAL_NUM         3
 #define PCA9685_LOCAL_START       16
+#define PCA9685_LOCAL_OFFSET      3
 
 // Remote - channels 0 - 16
 #define PCA9685_REMOTE_ADDR       (0x41<<1)
 #define PCA9685_REMOTE_NUM        16
 #define PCA9685_REMOTE_START      0
+#define PCA9685_REMOTE_OFFSET     0
 
 # define SERVO_NUM_CHANNELS       19
 
@@ -106,7 +108,7 @@ void servo_task(void* args)
       const int index = i + PCA9685_LOCAL_START;
       if (pulsewidths[index] != last_pulsewidths[index])
       {
-        pca9685_set_microseconds(i, servo_enabled ? pulsewidths[index] : 0);
+        pca9685_set_microseconds(i + PCA9685_LOCAL_OFFSET, servo_enabled ? pulsewidths[index] : 0);
         last_pulsewidths[index] = pulsewidths[index];
         ++updates;
       }
@@ -119,7 +121,7 @@ void servo_task(void* args)
       const int index = i + PCA9685_REMOTE_START;
       if (pulsewidths[index] != last_pulsewidths[index])
       {
-        pca9685_set_microseconds(i, servo_enabled ? pulsewidths[index] : 0);
+        pca9685_set_microseconds(i + PCA9685_REMOTE_OFFSET, servo_enabled ? pulsewidths[index] : 0);
         last_pulsewidths[index] = pulsewidths[index];
         ++updates;
       }
