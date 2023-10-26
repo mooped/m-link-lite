@@ -26,6 +26,8 @@
 
 static const char *TAG = "pca9685-servo";
 
+# define ENABLE_IO_NUM            12
+
 // Local - channels 16 - 31
 #define PCA9685_LOCAL_ADDR        (0x40<<1)
 #define PCA9685_LOCAL_NUM         3
@@ -136,6 +138,16 @@ void servo_init(void)
 {
   // Create the semaphore
   xServoSemaphore = xSemaphoreCreateBinary();
+
+  // Configure the enable pin and pull low to enable all outputs
+  gpio_config_t config;
+  config.pin_bit_mask = (1ull<<(ENABLE_IO_NUM));
+  config.mode = GPIO_MODE_OUTPUT;
+  config.pull_up_en = GPIO_PULLUP_DISABLE;
+  config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+  config.intr_type = GPIO_INTR_DISABLE;
+  ESP_ERROR_CHECK( gpio_config(&config) );
+  ESP_ERROR_CHECK( gpio_set_level(ENABLE_IO_NUM, 0) );
 
   // Initialize the PCA 9685s - 100hz frequency for simple servos
   pca9685_reset_all();
