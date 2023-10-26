@@ -477,7 +477,9 @@
           layout
         })
         presets['saved'] = layout
-        $.post('/delete/files/layout.json', function (data) {
+        $.post('/delete/files/layout.json').done(function (data) {
+          $.post('/upload/layout.json', JSON.stringify(presets['saved']))
+        }).fail(function () {
           $.post('/upload/layout.json', JSON.stringify(presets['saved']))
         })
       }

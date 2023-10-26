@@ -247,7 +247,8 @@ void pca9685_set_raw(int channel, int value)
   {
     if (value <= 0)
     {
-      value = 1;
+      pca9685_set_off(channel);
+      return;
     }
     uint8_t buffer[] = { 0x00, 0x00, value & 0xff, (value >> 8) & PCA9685_HIGH_MASK};
     ESP_ERROR_CHECK(twi_pca9685_write_registers(PCA9685_LED0_ON_L + 4 * channel, buffer, sizeof(buffer)));
@@ -258,7 +259,8 @@ void pca9685_set_all_raw(int value)
 {
   if (value <= 0)
   {
-    value = 1;
+    pca9685_set_all_off();
+    return;
   }
   uint8_t buffer[] = { 0x00, 0x00, value & 0xff, (value >> 8) & PCA9685_HIGH_MASK};
   ESP_ERROR_CHECK(twi_pca9685_write_registers(PCA9685_ALL_LED_ON_L, buffer, sizeof(buffer)));
@@ -272,7 +274,8 @@ void pca9685_set_microseconds(int channel, int pulsewidth)
     int value = (pulsewidth * 4095) / period;
     if (value <= 0)
     {
-      value = 1;
+      pca9685_set_off(channel);
+      return;
     }
     uint8_t buffer[] = { 0x00, 0x00, value & 0xff, (value >> 8) & PCA9685_HIGH_MASK};
     ESP_ERROR_CHECK(twi_pca9685_write_registers(PCA9685_LED0_ON_L + 4 * channel, buffer, sizeof(buffer)));
@@ -285,7 +288,8 @@ void pca9685_set_all_microseconds(int pulsewidth)
   int value = (pulsewidth * 4095) / period ;
   if (value <= 0)
   {
-    value = 1;
+    pca9685_set_all_off();
+    return;
   }
   uint8_t buffer[] = { 0x00, 0x00, value & 0xff, (value >> 8) & PCA9685_HIGH_MASK};
   ESP_ERROR_CHECK(twi_pca9685_write_registers(PCA9685_ALL_LED_ON_L, buffer, sizeof(buffer)));

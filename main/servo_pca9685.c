@@ -1,5 +1,3 @@
-#if defined(CONFIG_PLUS)
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -23,6 +21,8 @@
 #include "pca9685.h"
 
 #include "servo.h"
+
+#if defined(CONFIG_PLUS)
 
 #define ENABLE_IO_NUM             12
 #define FEEDBACK_IO_NUM           13
@@ -66,7 +66,11 @@ void servo_set(int channel, int pulsewidth_ms)
   if (channel >= 0 && channel < SERVO_NUM_CHANNELS)
   {
     // Store pulsewidth for the channel
-    if (pulsewidth_ms <= 1000)
+    if (pulsewidth_ms == 0) // No output
+    {
+      pulsewidths[channel] = 0;
+    }
+    else if (pulsewidth_ms <= 1000)
     {
       pulsewidths[channel] = 1000;
     }
@@ -179,7 +183,7 @@ void servo_task(void* args)
 
     // Update servo channels with pure PWM output
     pca9685_set_microseconds(PCA9685_CHANNEL_CH4, pulsewidths[3]);
-    pca9685_set_microseconds(PCA9685_CHANNEL_CH6, pulsewidths[5]);
+    pca9685_set_microseconds(PCA9685_CHANNEL_CH5, pulsewidths[4]);
     pca9685_set_microseconds(PCA9685_CHANNEL_CH6, pulsewidths[5]);
 
     // Wait for the next interval

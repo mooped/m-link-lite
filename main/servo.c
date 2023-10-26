@@ -1,5 +1,3 @@
-#if !defined(CONFIG_PLUS)
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -18,6 +16,7 @@
 
 #include "servo.h"
 
+#if !defined(CONFIG_PLUS)
 
 #define PWM_IO_COUNT      6
 
@@ -83,17 +82,24 @@ void servo_disable(void)
 
 void servo_set(int channel, int pulsewidth_ms)
 {
-  if (pulsewidth_ms <= 1000)
+  if (channel >= 0 && channel < PWM_IO_COUNT)
   {
-    duties[channel] = 1000;
-  }
-  else if (pulsewidth_ms >= 2000)
-  {
-    duties[channel] = 2000;
-  }
-  else
-  {
-    duties[channel] = pulsewidth_ms;
+    if (pulsewidth_ms == 0) // No output
+    {
+      duties[channel] = 0;
+    }
+    else if (pulsewidth_ms <= 1000)
+    {
+      duties[channel] = 1000;
+    }
+    else if (pulsewidth_ms >= 2000)
+    {
+      duties[channel] = 2000;
+    }
+    else
+    {
+      duties[channel] = pulsewidth_ms;
+    }
   }
 }
 
